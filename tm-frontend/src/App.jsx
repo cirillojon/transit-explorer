@@ -187,6 +187,41 @@ function App() {
         {sidebarOpen ? "✕" : "☰"}
       </button>
 
+      {selectedRoute && !sidebarOpen && (
+        <button
+          type="button"
+          className="mobile-current-route"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Show route details"
+        >
+          <span
+            className="swatch"
+            style={{
+              background: selectedRoute.color
+                ? `#${selectedRoute.color}`
+                : "var(--accent)",
+            }}
+          />
+          <span className="name">
+            {selectedRoute.short_name || selectedRoute.long_name}
+          </span>
+          {selectedRoute.short_name && selectedRoute.long_name && (
+            <span className="sub">{selectedRoute.long_name}</span>
+          )}
+          <span
+            className="clear"
+            role="button"
+            aria-label="Clear selected route"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedRoute(null);
+            }}
+          >
+            ✕
+          </span>
+        </button>
+      )}
+
       {sidebarOpen && (
         <div
           className="sidebar-backdrop"

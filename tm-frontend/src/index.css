@@ -1824,6 +1824,7 @@ button {
     box-shadow: 0 0 32px rgba(0, 0, 0, 0.6);
     border-right: 1px solid var(--border);
     border-bottom: none;
+    padding-top: env(safe-area-inset-top);
   }
   .app.sidebar-open .sidebar {
     transform: translateX(0);
@@ -1845,46 +1846,203 @@ button {
     align-items: center;
     justify-content: center;
     position: fixed;
-    top: 12px;
-    left: 12px;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    left: calc(env(safe-area-inset-left, 0px) + 12px);
     z-index: 950;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
     border: 1px solid var(--border);
-    background: rgba(19, 28, 48, 0.92);
+    background: rgba(19, 28, 48, 0.94);
     backdrop-filter: blur(8px);
     color: var(--text);
-    font-size: 22px;
+    font-size: 24px;
     line-height: 1;
     cursor: pointer;
     box-shadow: var(--shadow-lg);
+    -webkit-tap-highlight-color: transparent;
   }
+  .mobile-sidebar-toggle:active {
+    transform: scale(0.94);
+  }
+
+  /* Selected-route badge next to hamburger so user sees what's loaded
+     without opening the drawer */
+  .mobile-current-route {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    left: calc(env(safe-area-inset-left, 0px) + 72px);
+    right: calc(env(safe-area-inset-right, 0px) + 12px);
+    height: 48px;
+    z-index: 949;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(19, 28, 48, 0.94);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-current-route .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .mobile-current-route .name {
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .mobile-current-route .sub {
+    color: var(--text-muted);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .mobile-current-route .clear {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    line-height: 1;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .mobile-current-route .clear:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Move zoom controls to the bottom-right, away from hamburger */
+  .leaflet-top.leaflet-left {
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    left: auto;
+    right: calc(env(safe-area-inset-right, 0px) + 12px);
+  }
+  .leaflet-top.leaflet-left .leaflet-control {
+    margin: 0;
+  }
+  .leaflet-bar a {
+    width: 38px !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    font-size: 20px !important;
+  }
+
+  /* Direction tabs: move OUT of top so the hamburger area is clean.
+     Pin them above the legend at the bottom for thumb reach. */
+  .direction-tabs {
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 130px);
+    left: 12px;
+    right: auto;
+    transform: none;
+  }
+  .direction-tab {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  /* Legend — wider and bottom anchored, with safe-area */
   .map-legend {
     top: auto;
-    bottom: 16px;
-    right: 12px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    right: 64px; /* leave room for zoom controls on right */
     left: 12px;
     min-width: 0;
     max-width: none;
+    font-size: 12px;
+    padding: 10px 12px;
   }
+
   .map-hero-hint {
     left: 12px;
     right: 12px;
-    transform: none;
+    transform: translate(0, -50%);
+    top: 50%;
     max-width: none;
+    padding: 20px;
   }
+  .map-hero-hint h2 {
+    font-size: 16px;
+  }
+  .map-hero-hint p {
+    font-size: 13px;
+  }
+
   .pick-overlay {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+    left: 12px;
+    right: 12px;
+    transform: none;
     flex-wrap: wrap;
-    max-width: 90%;
+    max-width: none;
     white-space: normal;
+    font-size: 13px;
   }
-  /* Leaflet zoom buttons get out of the way of the hamburger */
-  .leaflet-top.leaflet-left {
-    top: 64px;
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .map-toast {
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+  }
+
+  .highlight-banner {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 200px);
+    left: 12px;
+    right: 12px;
+    transform: none;
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Achievement toasts: keep them on the left side at the bottom on mobile
+     so they don't overlap the zoom buttons */
+  .popup-toast-stack {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    left: 12px;
+    right: 64px;
+  }
+  .popup-toast {
+    font-size: 13px;
+    padding: 12px 16px;
+  }
+
+  /* Bigger tap targets in the sidebar */
+  .tab-button {
+    min-height: 44px;
+  }
+  .route-item,
+  .filter-chip,
+  .type-chip {
+    min-height: 40px;
   }
 }
 
