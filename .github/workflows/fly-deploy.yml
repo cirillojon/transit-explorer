@@ -27,6 +27,6 @@ jobs:
       - uses: actions/checkout@v5
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only --ha=false --wait-timeout 600
+        run: flyctl deploy --local-only --ha=false --wait-timeout 600
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
