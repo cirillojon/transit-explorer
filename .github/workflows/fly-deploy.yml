@@ -14,8 +14,10 @@ on:
   workflow_dispatch: # allow manual runs from the Actions tab
 
 concurrency:
+  # If a new deploy comes in while one is running, cancel the in-flight one.
+  # Prevents the "4 stuck releases all holding leases" mess.
   group: fly-deploy-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
