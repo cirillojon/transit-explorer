@@ -303,4 +303,7 @@ wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explor
 
 # Example check logs from powershell:
 wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl logs -a transit-explorer"
+
+# View releases from powershell:
+wsl -e bash -lc "/home/jon/.fly/bin/flyctl releases -a transit-explorer"
 ```

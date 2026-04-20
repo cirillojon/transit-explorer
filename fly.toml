@@ -9,6 +9,12 @@ primary_region = 'sjc'
 [build]
   dockerfile = 'Dockerfile'
 
+[deploy]
+  # Single machine + mounted volume can't do a rolling swap (volume can't be
+  # mounted twice). `immediate` stops the old machine, starts the new one,
+  # accepts ~30-60s of downtime during the OBA preload.
+  strategy = 'immediate'
+
 [env]
   FLASK_ENV = 'production'
   FLASK_PORT = '8880'
