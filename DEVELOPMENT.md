@@ -82,7 +82,7 @@ git push -u origin feature/my-thing
 ```
 
 - **Vercel** auto-deploys every PR to a preview URL — see the PR check or the Vercel dashboard.
-- **Fly.io** auto-deploys when backend files change on `main` (see §4). PRs do *not* deploy to Fly — only merges to `main`.
+- **Fly.io** auto-deploys when backend files change on `main` (see §4). PRs do _not_ deploy to Fly — only merges to `main`.
 
 **Commit hygiene:** rebase or squash before merge so `main` history is clean. Avoid committing `.env`, `service-account.json`, `*.db`, `node_modules/`, `tm-instance/`. (`.gitignore` covers them, but double-check `git status` before pushing.)
 
