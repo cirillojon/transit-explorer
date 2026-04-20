@@ -1,2 +1,3 @@
 # Keep this directory tracked even when empty.
+
 # Alembic migration revision files will be created here by `flask db migrate`.

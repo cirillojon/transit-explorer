@@ -1,52 +1,52 @@
-# fly.toml — Transit Explorer backend on Fly.io
+# fly.toml app configuration file generated for transit-explorer on 2026-04-20T17:52:18-04:00
 #
-# First-time setup:
-#   fly launch --no-deploy --name <your-app-name>     # generates this scaffolding
-#   fly volumes create tm_data --size 3 --region <region>
-#   fly secrets set OBA_API_KEY=... FIREBASE_PROJECT_ID=... ALLOWED_ORIGINS=https://your-frontend.example.com
-#   fly secrets set GOOGLE_APPLICATION_CREDENTIALS_JSON="$(cat service-account.json)"
-#   # In your Dockerfile or release_command, write that JSON to /app/service-account.json on boot
-#   fly deploy
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "transit-explorer"           # change to your unique fly app name
-primary_region = "sea"           # closest to Seattle riders
+app = 'transit-explorer'
+primary_region = 'sjc'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  FLASK_PORT = "8880"
-  FLASK_ENV = "production"
-  LOG_LEVEL = "INFO"
-  WEB_CONCURRENCY = "2"
-  GUNICORN_TIMEOUT = "120"
-  GOOGLE_APPLICATION_CREDENTIALS = "/app/service-account.json"
+  FLASK_ENV = 'production'
+  FLASK_PORT = '8880'
+  GOOGLE_APPLICATION_CREDENTIALS = '/app/service-account.json'
+  GUNICORN_TIMEOUT = '120'
+  LOG_LEVEL = 'INFO'
+  WEB_CONCURRENCY = '2'
+  # create_app() already kicks off transit-data load in a background thread,
+  # so skip the foreground load in gunicorn_startup.sh to avoid SQLite lock
+  # contention from two concurrent loaders.
+  SKIP_DATA_LOAD = '1'
 
 [[mounts]]
-  source = "tm_data"
-  destination = "/app/tm-instance"
+  source = 'tm_data'
+  destination = '/app/tm-instance'
 
 [http_service]
   internal_port = 8880
   force_https = true
-  auto_stop_machines  = "off"     # don't sleep — preloaded data takes ~30s
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
-  processes = ["app"]
+  processes = ['app']
 
   [http_service.concurrency]
-    type = "requests"
-    soft_limit = 100
+    type = 'requests'
     hard_limit = 200
+    soft_limit = 100
 
-[[http_service.checks]]
-  grace_period = "60s"
-  interval = "30s"
-  method = "GET"
-  timeout = "5s"
-  path = "/api/health"
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '1m0s'
+    method = 'GET'
+    path = '/api/health'
 
 [[vm]]
-  memory = "1gb"                  # bump to 2gb if OOM
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 1024
