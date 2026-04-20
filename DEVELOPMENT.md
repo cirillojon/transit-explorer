@@ -154,6 +154,17 @@ Deploy is rolling: Fly stops the old machine, starts the new one, runs the healt
 | Inspect SQLite on the volume          | `flyctl ssh console -C "sqlite3 /app/tm-instance/data.db .tables" -a transit-explorer`                                            |
 | Roll back a deploy                    | Find prior image: `flyctl releases -a transit-explorer`; redeploy: `flyctl deploy --image registry.fly.io/transit-explorer:<tag>` |
 
+> **First-time SSH setup (Windows + WSL gotcha):** `flyctl ssh console` needs a personal SSH cert in your ssh-agent. PowerShell's `ssh-agent` service is disabled by default, so run the cert step **inside WSL** once per shell:
+>
+> ```bash
+> wsl
+> eval "$(ssh-agent -s)"
+> flyctl ssh issue --org personal --agent
+> flyctl ssh console -a transit-explorer
+> ```
+>
+> The cert lasts 24 hours. After that just re-run the `eval` + `issue` two-liner.
+
 ### When something goes wrong
 
 - **Healthcheck failing after deploy:** `flyctl logs` and look for the error. If the OBA load is the culprit, give it more time (`grace_period` in `fly.toml`) or set `SKIP_DATA_LOAD=1` and run the loader manually via `flyctl ssh console`.
