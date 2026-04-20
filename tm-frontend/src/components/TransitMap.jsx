@@ -14,6 +14,27 @@ import { fetchRouteDetail, markSegments } from "../services/api";
 
 const SEATTLE_CENTER = [47.6062, -122.3321];
 
+const ROUTE_TYPE_LABELS = {
+  0: "Tram",
+  1: "Subway",
+  2: "Rail",
+  3: "Bus",
+  4: "Ferry",
+  5: "Cable",
+  6: "Gondola",
+  7: "Funicular",
+};
+const ROUTE_TYPE_ICONS = {
+  0: "🚊",
+  1: "🚇",
+  2: "🚆",
+  3: "🚌",
+  4: "⛴️",
+  5: "🚠",
+  6: "🚠",
+  7: "🚞",
+};
+
 function decode(encoded) {
   if (!encoded) return [];
   return polyline.decode(encoded);
@@ -430,7 +451,19 @@ function TransitMap({
               className="map-legend-swatch"
               style={{ background: routeColor }}
             />
-            {selectedRoute.short_name || selectedRoute.long_name}
+            <span className="map-legend-mode">
+              {ROUTE_TYPE_ICONS[selectedRoute.route_type] || "🚌"}{" "}
+              {ROUTE_TYPE_LABELS[selectedRoute.route_type] || "Transit"}
+            </span>
+            <span className="map-legend-name">
+              {selectedRoute.short_name || selectedRoute.long_name}
+              {selectedRoute.short_name && selectedRoute.long_name ? (
+                <span className="map-legend-sub">
+                  {" "}
+                  · {selectedRoute.long_name}
+                </span>
+              ) : null}
+            </span>
           </div>
           {completionStats && (
             <div className="map-legend-progress">

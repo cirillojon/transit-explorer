@@ -1796,20 +1796,69 @@ button {
   box-shadow: var(--shadow-md);
 }
 
-/* ── Mobile (basic) ─────────────────────────────────────── */
+/* ── Mobile (drawer) ───────────────────────────────────── */
+.mobile-sidebar-toggle {
+  display: none;
+}
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 800px) {
   .app {
-    flex-direction: column;
+    flex-direction: row;
+    position: relative;
   }
   .sidebar {
-    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 86vw;
+    max-width: 380px;
     min-width: 0;
-    height: 50vh;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    height: 100dvh;
+    z-index: 900;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 0 0 32px rgba(0, 0, 0, 0.6);
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .app.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 800;
+    animation: fade-in 0.2s ease;
   }
   .map-wrapper {
-    height: 50vh;
+    height: 100dvh;
+    width: 100vw;
+  }
+  .mobile-sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 950;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(19, 28, 48, 0.92);
+    backdrop-filter: blur(8px);
+    color: var(--text);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
   }
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
@@ -1820,10 +1869,73 @@ button {
     right: 12px;
     left: 12px;
     min-width: 0;
+    max-width: none;
+  }
+  .map-hero-hint {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    max-width: none;
   }
   .pick-overlay {
     flex-wrap: wrap;
     max-width: 90%;
     white-space: normal;
   }
+  /* Leaflet zoom buttons get out of the way of the hamburger */
+  .leaflet-top.leaflet-left {
+    top: 64px;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Sidebar footer / source link ──────────────────────── */
+.sidebar-footer {
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.source-link:hover {
+  color: var(--text);
+}
+
+/* ── Map legend mode label ─────────────────────────────── */
+.map-legend-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--surface-3, rgba(255, 255, 255, 0.08));
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.map-legend-name {
+  font-weight: 700;
+}
+.map-legend-sub {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 12px;
 }

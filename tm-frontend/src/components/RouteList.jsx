@@ -129,7 +129,9 @@ function RouteList({ routes, progress, selectedRoute, onSelectRoute }) {
           <button
             key={b.key}
             className={`chip ${filter === b.key ? "chip-active" : ""}`}
-            onClick={() => setFilter(b.key)}
+            onClick={() =>
+              setFilter(filter === b.key && b.key !== "all" ? "all" : b.key)
+            }
           >
             {b.label}
           </button>
@@ -148,7 +150,9 @@ function RouteList({ routes, progress, selectedRoute, onSelectRoute }) {
             <button
               key={t}
               className={`chip ${String(typeFilter) === String(t) ? "chip-active" : ""}`}
-              onClick={() => setTypeFilter(t)}
+              onClick={() =>
+                setTypeFilter(String(typeFilter) === String(t) ? "all" : t)
+              }
             >
               {ROUTE_TYPE_ICONS[t] || "🚌"} {ROUTE_TYPE_NAMES[t] || "Transit"}
             </button>
