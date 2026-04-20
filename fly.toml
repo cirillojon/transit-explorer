@@ -41,7 +41,9 @@ primary_region = 'sjc'
   [[http_service.checks]]
     interval = '30s'
     timeout = '5s'
-    grace_period = '1m0s'
+    # OBA preloads ~90 routes from the upstream API on boot; give it room
+    # before we start probing /api/health, otherwise CI deploys flap.
+    grace_period = '3m0s'
     method = 'GET'
     path = '/api/health'
 
