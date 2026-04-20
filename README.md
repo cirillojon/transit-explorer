@@ -11,9 +11,9 @@ A gamified transit map for Seattle. Ride a bus or train, mark the segment you tr
 ```
  ┌────────────────┐   HTTPS   ┌──────────────────┐    ┌────────────────────┐
  │  React (Vite)  │ ────────► │  Flask + gunicorn│ ──►│  OneBusAway API    │
- │  Cloudflare    │   /api    │   (Docker)       │    └────────────────────┘
- │  Pages / nginx │ ◄──────── │   gunicorn       │ ──►┌────────────────────┐
- └───────┬────────┘   JSON    │   --preload      │    │  SQLite (volume)   │
+ │  Vercel        │   /api    │   (Docker, Fly)  │    └────────────────────┘
+ │  (static SPA)  │ ◄──────── │   gunicorn       │ ──►┌────────────────────┐
+ └───────┬────────┘   JSON    │   --preload      │    │  SQLite (Fly vol)  │
          │                    └─────────┬────────┘    └────────────────────┘
          │ Firebase Auth                │
          ▼                              ▼
@@ -173,61 +173,69 @@ docker start tm-blue
 
 ## Deployment
 
-The image is fully self-contained for the **backend**. The **frontend** is a static SPA — build it once and host the `dist/` folder anywhere.
+The app is currently live at:
 
-### Recommended setup (cheapest, simplest)
+| Layer    | Service               | URL                                              |
+| -------- | --------------------- | ------------------------------------------------ |
+| Frontend | Vercel                | https://transit-explorer-ten.vercel.app          |
+| Backend  | Fly.io (`sjc` region) | https://transit-explorer.fly.dev                 |
+| Volume   | Fly volume `tm_data`  | 3 GB, mounted at `/app/tm-instance` (SQLite)     |
+| Auth     | Firebase              | Project `transit-explorer-55b66`, Google sign-in |
 
-| Layer    | Provider             | Cost        | Why                                                |
-| -------- | -------------------- | ----------- | -------------------------------------------------- |
-| Frontend | Cloudflare Pages     | Free        | Global CDN, custom domain free, GitHub auto-deploy |
-| Backend  | Fly.io (1 GB shared) | ~$3 / month | Container-native, free TLS, built-in volumes       |
-| Volume   | Fly volume (3 GB)    | Free tier   | Persists SQLite across deploys                     |
-| DB       | SQLite (on volume)   | Free        | Right-sized for this workload                      |
+Cost: **~$3 / month** (Fly machine + volume; Vercel and Firebase Auth are free at this scale).
 
-#### A. Backend on Fly.io
+For day-to-day deploys see **[DEVELOPMENT.md](./DEVELOPMENT.md)**. The first-time setup that produced the live deployment is summarized below.
+
+### First-time setup (already done — keep for reference)
+
+#### Backend on Fly.io
 
 ```bash
-# One-time setup
-brew install flyctl                    # or curl -L https://fly.io/install.sh | sh
-fly auth signup
-fly launch --no-deploy                 # picks up Dockerfile + fly.toml
-fly volumes create tm_data --size 3 --region sea
+# One-time
+curl -L https://fly.io/install.sh | sh        # installs flyctl
+flyctl auth login
 
-fly secrets set \
+cd transit-explorer
+flyctl launch --no-deploy --copy-config --name transit-explorer --yes
+flyctl volumes create tm_data --size 3 --region sjc --yes
+
+# Secrets (file-based JSON gets materialized to disk by gunicorn_startup.sh)
+flyctl secrets set \
   OBA_API_KEY="..." \
-  FIREBASE_PROJECT_ID="..." \
-  ALLOWED_ORIGINS="https://your-frontend.pages.dev"
+  FIREBASE_PROJECT_ID="transit-explorer-55b66" \
+  ALLOWED_ORIGINS="https://transit-explorer-ten.vercel.app" \
+  GOOGLE_APPLICATION_CREDENTIALS_JSON="$(cat service-account.json)"
 
-# Upload the Firebase service-account JSON as a secret + drop it in via release
-fly secrets set GOOGLE_APPLICATION_CREDENTIALS_JSON="$(cat service-account.json)"
-# In your image, write it to /app/service-account.json on boot (e.g. add to gunicorn_startup.sh:
-#   if [ -n "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
-#       echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /app/service-account.json
-#   fi)
-
-fly deploy
+flyctl deploy --remote-only --ha=false
 ```
 
-Subsequent deploys are just `fly deploy` (zero-downtime, machine-by-machine rolling update).
+`fly.toml` already pins `WEB_CONCURRENCY=2`, `SKIP_DATA_LOAD=1` (the app factory loads OBA data in a background thread, so the foreground loader in `gunicorn_startup.sh` is disabled to avoid SQLite lock contention), and a 60-second healthcheck grace period.
 
-#### B. Frontend on Cloudflare Pages
+#### Frontend on Vercel
 
-1. Push this repo to GitHub.
-2. Cloudflare Pages → Create project → connect repo.
-3. **Build command:** `npm install && npm run build`
-4. **Build output directory:** `dist`
-5. **Root directory:** `tm-frontend`
-6. **Environment variables:** all the `VITE_*` values from your local `.env`, with `VITE_API_BASE_URL=https://transit-explorer.fly.dev` (or whatever your Fly URL is).
-7. Save → first build runs.
-8. Add your Firebase auth domain in Firebase Console → Authentication → Settings → Authorized domains.
-9. Set `ALLOWED_ORIGINS` on Fly to match your Pages URL.
+1. **vercel.com → New Project → Import** `cirillojon/transit-explorer`.
+2. Settings:
+   - Framework Preset: **Vite**
+   - Root Directory: `tm-frontend`
+   - Build / Output / Install commands: defaults are fine.
+3. Environment variables (all `Production`, `Preview`, `Development`):
 
-### Alternative: GCP VM with blue/green nginx
+   | Name                                | Value                                        |
+   | ----------------------------------- | -------------------------------------------- |
+   | `VITE_API_BASE_URL`                 | `https://transit-explorer.fly.dev`           |
+   | `VITE_FIREBASE_API_KEY`             | from Firebase console                        |
+   | `VITE_FIREBASE_AUTH_DOMAIN`         | `transit-explorer-55b66.firebaseapp.com`     |
+   | `VITE_FIREBASE_PROJECT_ID`          | `transit-explorer-55b66`                     |
+   | `VITE_FIREBASE_STORAGE_BUCKET`      | `transit-explorer-55b66.firebasestorage.app` |
+   | `VITE_FIREBASE_MESSAGING_SENDER_ID` | from Firebase console                        |
+   | `VITE_FIREBASE_APP_ID`              | from Firebase console                        |
+   | `VITE_FIREBASE_MEASUREMENT_ID`      | from Firebase console (optional)             |
 
-If you want to keep the existing GCP setup, the included `prod_container_update.sh` does zero-downtime blue/green deploys behind nginx. Two notes:
+4. Deploy → note the URL Vercel assigns.
 
-- **Right-size the VM:** an `e2-small` (2 GB) struggled because of `(2*cpu)+1` workers. The new `gunicorn_startup.sh` defaults to `WEB_CONCURRENCY=2` with `--preload`, which fits comfortably in 1 GB. If you still hit OOM, bump to `e2-medium` (4 GB, ~$24/mo).
-- **Frontend:** nothing in this repo builds the React app on the VM. Either push the built `dist/` separately, or run the included `docker-compose.yml` which adds an nginx-static container.
+#### Firebase
+
+In **Firebase Console → Authentication → Settings → Authorized domains**, add the Vercel hostname (e.g. `transit-explorer-ten.vercel.app`) and any custom domain you later attach.
 
 ### Local prod-like stack
 
@@ -237,8 +245,9 @@ docker compose up --build
 # → http://localhost:8080
 ```
 
-### Hosting options I considered and rejected
+### Hosting options considered and rejected
 
+- **Cloudflare Pages** — newer "Workers Builds" UI requires a custom API token and doesn't auto-create the project; clunky vs. Vercel for an SPA.
 - **Cloud Run** — stateless; the in-memory preloaded OBA data + SQLite file don't fit without paying for Cloud SQL.
 - **Render free tier** — sleeps after inactivity, and the ~30s OBA preload makes cold starts terrible.
 - **Heroku** — no longer has a free tier, more expensive than Fly for the same RAM.
