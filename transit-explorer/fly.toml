@@ -1,0 +1,52 @@
+# fly.toml — Transit Explorer backend on Fly.io
+#
+# First-time setup:
+#   fly launch --no-deploy --name <your-app-name>     # generates this scaffolding
+#   fly volumes create tm_data --size 3 --region <region>
+#   fly secrets set OBA_API_KEY=... FIREBASE_PROJECT_ID=... ALLOWED_ORIGINS=https://your-frontend.example.com
+#   fly secrets set GOOGLE_APPLICATION_CREDENTIALS_JSON="$(cat service-account.json)"
+#   # In your Dockerfile or release_command, write that JSON to /app/service-account.json on boot
+#   fly deploy
+
+app = "transit-explorer"           # change to your unique fly app name
+primary_region = "sea"           # closest to Seattle riders
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  FLASK_PORT = "8880"
+  FLASK_ENV = "production"
+  LOG_LEVEL = "INFO"
+  WEB_CONCURRENCY = "2"
+  GUNICORN_TIMEOUT = "120"
+  GOOGLE_APPLICATION_CREDENTIALS = "/app/service-account.json"
+
+[[mounts]]
+  source = "tm_data"
+  destination = "/app/tm-instance"
+
+[http_service]
+  internal_port = 8880
+  force_https = true
+  auto_stop_machines  = "off"     # don't sleep — preloaded data takes ~30s
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 100
+    hard_limit = 200
+
+[[http_service.checks]]
+  grace_period = "60s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/api/health"
+
+[[vm]]
+  memory = "1gb"                  # bump to 2gb if OOM
+  cpu_kind = "shared"
+  cpus = 1
