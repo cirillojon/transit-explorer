@@ -82,7 +82,7 @@ git push -u origin feature/my-thing
 ```
 
 - **Vercel** auto-deploys every PR to a preview URL — see the PR check or the Vercel dashboard.
-- **Fly.io** does **not** auto-deploy — backend changes need a manual `flyctl deploy` after merge (see §4).
+- **Fly.io** auto-deploys when backend files change on `main` (see §4). PRs do *not* deploy to Fly — only merges to `main`.
 
 **Commit hygiene:** rebase or squash before merge so `main` history is clean. Avoid committing `.env`, `service-account.json`, `*.db`, `node_modules/`, `tm-instance/`. (`.gitignore` covers them, but double-check `git status` before pushing.)
 
@@ -121,17 +121,33 @@ git push -u origin feature/my-thing
 
 ## 4. Deploying backend changes (Fly.io)
 
-**Backend deploys are manual** so you control timing (the OBA preload + machine restart causes a few seconds of cold-start latency on the first request after deploy).
+**Backend deploys are automatic via GitHub Actions.** Pushing to `main` with changes under `app/`, `requirements.txt`, `Dockerfile`, `fly.toml`, or `gunicorn_startup.sh` triggers [.github/workflows/fly-deploy.yml](.github/workflows/fly-deploy.yml), which runs `flyctl deploy --remote-only --ha=false` against the app. Frontend-only commits skip the workflow (path filter).
 
-```bash
-cd transit-explorer
-flyctl deploy --remote-only --ha=false
-```
+Watch a run: https://github.com/cirillojon/transit-explorer/actions
+
+You can also trigger a deploy manually:
+
+- **From GitHub:** Actions tab → Fly Deploy → Run workflow
+- **From your laptop** (e.g. testing an unmerged branch):
+  ```bash
+  cd transit-explorer
+  flyctl deploy --remote-only --ha=false
+  ```
 
 `--remote-only` builds on Fly's Depot builder so you don't need local Docker.
 `--ha=false` keeps the single-machine cost-saving setup; remove it later if you scale to >1 machine.
 
 Deploy is rolling: Fly stops the old machine, starts the new one, runs the healthcheck on `/api/health`, and only routes traffic when it passes. Total downtime: ~5–10 seconds.
+
+### Rotating the deploy token
+
+The workflow authenticates with a Fly deploy token stored in the GitHub repo secret `FLY_API_TOKEN`. To rotate:
+
+```bash
+flyctl tokens create deploy -a transit-explorer --expiry 8760h
+# → copy output, paste into GitHub → Settings → Secrets and variables → Actions → FLY_API_TOKEN
+flyctl tokens revoke <old-token-id>     # optional cleanup; list with `flyctl tokens list`
+```
 
 ### What happens on boot
 
@@ -268,8 +284,9 @@ flyctl machine restart <machine-id> -a transit-explorer
 flask run --port 8880          # backend
 npm --prefix tm-frontend run dev   # frontend
 
-# Deploy backend
-flyctl deploy --remote-only --ha=false
+# Deploy
+git push origin main           # auto-deploys backend (if app/ changed) AND frontend
+flyctl deploy --remote-only --ha=false   # manual backend deploy from a branch
 
 # Logs / debugging
 flyctl logs -a transit-explorer
@@ -277,7 +294,4 @@ flyctl ssh console -a transit-explorer
 
 # Update prod env / secret
 flyctl secrets set KEY=value -a transit-explorer
-
-# Frontend deploys itself when you push to main
-git push origin main
 ```
