@@ -294,4 +294,13 @@ flyctl ssh console -a transit-explorer
 
 # Update prod env / secret
 flyctl secrets set KEY=value -a transit-explorer
+
+# Example local deploy comand from powershell:
+wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl deploy --remote-only --ha=false"
+
+# Example console connect from powershell:
+wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl ssh console -a transit-explorer"
+
+# Example check logs from powershell:
+wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl logs -a transit-explorer"
 ```
