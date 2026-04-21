@@ -16,15 +16,19 @@ depends_on = None
 
 
 def upgrade():
-    # Idempotent: skip if the column already exists (e.g. legacy DBs
-    # where someone added it manually before stamping alembic).
+    # Idempotent + lock-friendly: a plain ADD COLUMN works natively on
+    # SQLite (no batch table copy) and on Postgres. batch_alter_table
+    # was hanging on a SQLite volume because it rewrites the whole
+    # table inside a transaction.
     bind = op.get_bind()
     insp = sa.inspect(bind)
     cols = {c['name'] for c in insp.get_columns('user_segments')}
     if 'duration_ms' in cols:
         return
-    with op.batch_alter_table('user_segments') as batch_op:
-        batch_op.add_column(sa.Column('duration_ms', sa.Integer(), nullable=True))
+    op.add_column(
+        'user_segments',
+        sa.Column('duration_ms', sa.Integer(), nullable=True),
+    )
 
 
 def downgrade():
@@ -33,5 +37,7 @@ def downgrade():
     cols = {c['name'] for c in insp.get_columns('user_segments')}
     if 'duration_ms' not in cols:
         return
+    # SQLite < 3.35 can't DROP COLUMN without a table rewrite; use
+    # batch mode only on the downgrade path where we have to.
     with op.batch_alter_table('user_segments') as batch_op:
         batch_op.drop_column('duration_ms')
