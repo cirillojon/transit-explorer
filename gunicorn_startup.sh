@@ -44,52 +44,13 @@ LOG_LEVEL=${LOG_LEVEL:-info}
 BIND_ADDR="0.0.0.0:${FLASK_PORT}"
 APP_MODULE="app:create_app()"
 
-# ─── Run database migrations ──────────────────────────────────
-if [ "${SKIP_DB_UPGRADE:-0}" != "1" ]; then
-    echo "Running database migrations..."
-
-    # Do detection + stamp + upgrade inside one Python invocation so
-    # we don't have to parse stdout (data loaders, logging, etc.) from
-    # `create_app()`. Self-heals legacy DBs created before Alembic was
-    # wired up: if app tables exist but `alembic_version` doesn't,
-    # stamp baseline first so `db upgrade` only applies *new* migrations
-    # instead of trying to re-CREATE existing tables.
-    SKIP_STARTUP_DATA_TASKS=1 FLASK_APP=app.py python3 - <<'PY' || {
-        echo "  WARNING: migration step failed — schema may be out of date" >&2
-    }
-import sys
-import logging
-
-logging.basicConfig(level=logging.INFO, format="  [migrate] %(message)s")
-log = logging.getLogger("migrate")
-
-BASELINE_REV = "f838d5f10e83"
-
-from sqlalchemy import inspect
-from flask_migrate import stamp, upgrade
-from app import create_app, db
-
-app = create_app()
-with app.app_context():
-    insp = inspect(db.engine)
-    tables = set(insp.get_table_names())
-    legacy = "user_segments" in tables and "alembic_version" not in tables
-    if legacy:
-        log.info("legacy DB detected (no alembic_version) — stamping baseline %s", BASELINE_REV)
-        try:
-            stamp(revision=BASELINE_REV)
-        except Exception as e:
-            log.error("stamp failed: %s", e)
-            sys.exit(1)
-    log.info("running flask db upgrade …")
-    try:
-        upgrade()
-    except Exception as e:
-        log.error("upgrade failed: %s", e)
-        sys.exit(1)
-    log.info("migrations done")
-PY
-fi
+# ─── Database migrations ──────────────────────────────────────
+# Migrations now run inside `create_app()` itself (see app/__init__.py:
+# `_run_migrations`). That keeps the legacy-DB self-heal in plain
+# Python instead of a fragile bash heredoc, and means workers and the
+# preload phase all see the up-to-date schema.
+#
+# Set SKIP_DB_UPGRADE=1 to bypass it (handled by create_app).
 
 # ─── Preload transit data ─────────────────────────────────────
 # Treat SKIP_DATA_LOAD and SKIP_STARTUP_DATA_TASKS as aliases.
