@@ -819,24 +819,18 @@ button {
   gap: 4px;
   padding: 4px;
 }
-.stop-search-toggle {
-  background: none;
-  border: none;
-  color: var(--text);
+.stop-search-icon {
+  color: var(--text-muted);
   width: 32px;
   height: 32px;
-  border-radius: 8px;
   font-size: 15px;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  user-select: none;
 }
-.stop-search-toggle:hover {
-  background: var(--surface-2);
-}
-.stop-search.is-open .stop-search-toggle {
+.stop-search.is-open .stop-search-icon {
   color: var(--accent);
 }
 .stop-search-input {

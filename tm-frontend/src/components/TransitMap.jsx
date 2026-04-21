@@ -96,7 +96,6 @@ function TransitMap({
   const [toast, setToast] = useState(null);
   const [hoverSeg, setHoverSeg] = useState(null);
   const [stopSearch, setStopSearch] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const toastTimerRef = useRef(null);
   const mapRef = useRef(null);
   const stopMarkerRefs = useRef({});
@@ -238,12 +237,26 @@ function TransitMap({
             ...stop,
             directionId: dir.direction_id,
             isTerminus: idx === 0 || idx === ids.length - 1,
+            orderIndex: idx,
           });
         }
       });
     }
     return result;
   }, [routeDetail, activeDirection]);
+
+  // When boarded, the boarding stop's index in the active direction tells us
+  // which other stops are *downstream* (valid) vs *upstream* (would be a
+  // backwards trip on a one-way direction).
+  const boardingOrderIndex = useMemo(() => {
+    if (!pickState) return null;
+    const boarding = visibleStops.find(
+      (s) =>
+        s.id === pickState.fromStopId &&
+        s.directionId === pickState.directionId,
+    );
+    return boarding ? boarding.orderIndex : null;
+  }, [pickState, visibleStops]);
 
   const highlightPositions = useMemo(() => {
     if (!highlightedSegment) return null;
@@ -381,7 +394,6 @@ function TransitMap({
   const handleSearchPick = (stop) => {
     focusStop(stop);
     setStopSearch("");
-    setSearchOpen(false);
     // Mirror a tap on the stop: board if no pick, alight if one is in flight.
     handleStopClick(stop.directionId, stop.id, stop.name);
   };
@@ -447,7 +459,20 @@ function TransitMap({
         {visibleStops.map((stop) => {
           const isPicking = pickState?.directionId === stop.directionId;
           const isFrom = isPicking && pickState?.fromStopId === stop.id;
-          const isCandidate = isPicking && !isFrom;
+          // A stop is a valid alighting candidate only if it sits *after* the
+          // boarding stop in the direction's stop order.
+          const isValidCandidate =
+            isPicking &&
+            !isFrom &&
+            boardingOrderIndex !== null &&
+            stop.orderIndex > boardingOrderIndex;
+          // Same-direction stops that come *before* boarding are invalid —
+          // dim them and show an explanatory tooltip.
+          const isUpstreamInvalid =
+            isPicking &&
+            !isFrom &&
+            boardingOrderIndex !== null &&
+            stop.orderIndex <= boardingOrderIndex;
 
           if (isFrom) {
             return (
@@ -469,7 +494,8 @@ function TransitMap({
                   <span style={{ fontWeight: 600 }}>{stop.name}</span>
                   <br />
                   <span style={{ fontSize: 11, color: "#facc15" }}>
-                    Boarding stop — tap your alighting stop
+                    Boarding stop — tap a stop ahead (toward{" "}
+                    {activeDirectionMeta?.lastStopName || "destination"})
                   </span>
                 </Tooltip>
               </Marker>
@@ -480,21 +506,49 @@ function TransitMap({
             <CircleMarker
               key={`${stop.directionId}-${stop.id}`}
               center={[stop.lat, stop.lon]}
-              radius={stop.isTerminus ? 7 : isCandidate ? 7 : 5}
-              fillColor={
-                isCandidate ? "#60a5fa" : stop.isTerminus ? routeColor : "#fff"
+              radius={
+                isUpstreamInvalid
+                  ? 4
+                  : stop.isTerminus
+                    ? 7
+                    : isValidCandidate
+                      ? 7
+                      : 5
               }
-              color={isCandidate ? "#60a5fa" : routeColor}
-              weight={isCandidate ? 3 : 2}
-              opacity={1}
-              fillOpacity={1}
+              fillColor={
+                isUpstreamInvalid
+                  ? "#475569"
+                  : isValidCandidate
+                    ? "#60a5fa"
+                    : stop.isTerminus
+                      ? routeColor
+                      : "#fff"
+              }
+              color={
+                isUpstreamInvalid
+                  ? "#475569"
+                  : isValidCandidate
+                    ? "#60a5fa"
+                    : routeColor
+              }
+              weight={isValidCandidate ? 3 : 2}
+              opacity={isUpstreamInvalid ? 0.5 : 1}
+              fillOpacity={isUpstreamInvalid ? 0.4 : 1}
               ref={(el) => {
                 if (el)
                   stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] = el;
               }}
               eventHandlers={{
-                click: () =>
-                  handleStopClick(stop.directionId, stop.id, stop.name),
+                click: () => {
+                  if (isUpstreamInvalid) {
+                    showToast(
+                      "That stop is behind your boarding point — pick one ahead.",
+                      "info",
+                    );
+                    return;
+                  }
+                  handleStopClick(stop.directionId, stop.id, stop.name);
+                },
               }}
             >
               <Tooltip direction="top" offset={[0, -8]} opacity={0.95}>
@@ -513,11 +567,19 @@ function TransitMap({
                     </span>
                   </>
                 )}
-                {isCandidate && (
+                {isValidCandidate && (
                   <>
                     <br />
                     <span style={{ fontSize: 11, color: "#60a5fa" }}>
                       Tap — got off here
+                    </span>
+                  </>
+                )}
+                {isUpstreamInvalid && (
+                  <>
+                    <br />
+                    <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                      Behind boarding — can't alight here
                     </span>
                   </>
                 )}
@@ -531,45 +593,39 @@ function TransitMap({
       {(directionChoices.length > 1 || selectedRoute) && (
         <div className="map-overlay-stack">
           {selectedRoute && visibleStops.length > 0 && (
-            <div className={`stop-search ${searchOpen ? "is-open" : ""}`}>
+            <div className={`stop-search ${stopSearch ? "is-open" : ""}`}>
               <div className="stop-search-row">
-                <button
-                  type="button"
-                  className="stop-search-toggle"
-                  onClick={() => setSearchOpen((v) => !v)}
+                <span
+                  className="stop-search-icon"
+                  aria-hidden="true"
                   title="Search stops on this route"
-                  aria-label="Search stops"
                 >
                   🔍
-                </button>
-                {searchOpen && (
-                  <>
-                    <input
-                      type="text"
-                      className="stop-search-input"
-                      placeholder={
-                        pickState
-                          ? "Find your alighting stop…"
-                          : "Find a stop on this route…"
-                      }
-                      value={stopSearch}
-                      onChange={(e) => setStopSearch(e.target.value)}
-                      autoFocus
-                    />
-                    {stopSearch && (
-                      <button
-                        type="button"
-                        className="stop-search-clear"
-                        onClick={() => setStopSearch("")}
-                        aria-label="Clear search"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </>
+                </span>
+                <input
+                  type="text"
+                  className="stop-search-input"
+                  placeholder={
+                    pickState
+                      ? "Find your alighting stop…"
+                      : "Find a stop on this route…"
+                  }
+                  value={stopSearch}
+                  onChange={(e) => setStopSearch(e.target.value)}
+                  aria-label="Search stops on this route"
+                />
+                {stopSearch && (
+                  <button
+                    type="button"
+                    className="stop-search-clear"
+                    onClick={() => setStopSearch("")}
+                    aria-label="Clear search"
+                  >
+                    ✕
+                  </button>
                 )}
               </div>
-              {searchOpen && stopSearch && (
+              {stopSearch && (
                 <div className="stop-search-results">
                   {stopSearchResults.length === 0 ? (
                     <div className="stop-search-empty">No matching stops</div>
