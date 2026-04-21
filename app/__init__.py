@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__)
+    skip_startup_data_tasks = os.getenv("SKIP_STARTUP_DATA_TASKS", "0") == "1"
 
     # Ensure database directory exists
     db_dir = os.path.join(os.getcwd(), "tm-instance")
@@ -76,41 +77,44 @@ def create_app():
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
     # Initialize data if needed
-    with app.app_context():
-        try:
-            # Import models so they're registered
-            from app import models  # noqa: F401
+    if skip_startup_data_tasks:
+        logger.info("SKIP_STARTUP_DATA_TASKS=1 — skipping startup transit data checks.")
+    else:
+        with app.app_context():
+            try:
+                # Import models so they're registered
+                from app import models  # noqa: F401
 
-            inspector = inspect(db.engine)
-            if not inspector.has_table("routes"):
-                logger.info("Routes table not found, creating tables...")
-                db.create_all()
+                inspector = inspect(db.engine)
+                if not inspector.has_table("routes"):
+                    logger.info("Routes table not found, creating tables...")
+                    db.create_all()
 
-                logger.info("Loading initial transit data in background...")
-                _start_background_data_load(app)
-            else:
-                # Check if directions data is properly populated
-                from app.models import RouteDirection
-                dir_count = RouteDirection.query.count()
-                dirs_with_stops = RouteDirection.query.filter(
-                    RouteDirection.stop_ids_json != None,
-                    RouteDirection.stop_ids_json != '',
-                    RouteDirection.stop_ids_json != '[]'
-                ).count()
-
-                if dirs_with_stops == 0:
-                    logger.info(f"Found {dir_count} directions but none have stop_ids — reloading in background...")
+                    logger.info("Loading initial transit data in background...")
                     _start_background_data_load(app)
                 else:
-                    # Always run a per-route backfill to pick up any routes
-                    # that are missing from the DB (e.g. a previous load
-                    # errored on individual route_ids). It's cheap when
-                    # everything is already present (one OBA call per agency).
-                    logger.info(f"Routes table OK ({dirs_with_stops}/{dir_count} directions with stops); running missing-route backfill in background.")
-                    _start_background_backfill(app)
-        except Exception as e:
-            logger.error(f"Error during initialization: {e}")
-            db.create_all()
+                    # Check if directions data is properly populated
+                    from app.models import RouteDirection
+                    dir_count = RouteDirection.query.count()
+                    dirs_with_stops = RouteDirection.query.filter(
+                        RouteDirection.stop_ids_json != None,
+                        RouteDirection.stop_ids_json != '',
+                        RouteDirection.stop_ids_json != '[]'
+                    ).count()
+
+                    if dirs_with_stops == 0:
+                        logger.info(f"Found {dir_count} directions but none have stop_ids — reloading in background...")
+                        _start_background_data_load(app)
+                    else:
+                        # Always run a per-route backfill to pick up any routes
+                        # that are missing from the DB (e.g. a previous load
+                        # errored on individual route_ids). It's cheap when
+                        # everything is already present (one OBA call per agency).
+                        logger.info(f"Routes table OK ({dirs_with_stops}/{dir_count} directions with stops); running missing-route backfill in background.")
+                        _start_background_backfill(app)
+            except Exception as e:
+                logger.error(f"Error during initialization: {e}")
+                db.create_all()
 
     return app
 

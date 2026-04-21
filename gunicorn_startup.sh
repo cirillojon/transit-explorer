@@ -53,7 +53,7 @@ fi
 # ─── Preload transit data ─────────────────────────────────────
 if [ "${SKIP_DATA_LOAD:-0}" != "1" ]; then
     echo "Loading transit data..."
-    python3 - <<'PY'
+    SKIP_STARTUP_DATA_TASKS=1 python3 - <<'PY'
 import logging
 logging.basicConfig(level=logging.INFO)
 from app import create_app

@@ -18,9 +18,16 @@ Day-to-day guide for working on Transit Explorer.
 git clone https://github.com/cirillojon/transit-explorer.git
 cd transit-explorer
 
-# Backend
+# Backend config shared by both workflows
 cp .env.example .env                      # then fill in values
 #   Drop your Firebase service-account.json next to .env
+
+# Pick one backend workflow below.
+
+# Preferred backend workflow: Docker helper
+./dev_container_update.sh 8880
+
+# Alternative: local Python environment
 python -m venv .venv
 source .venv/bin/activate                 # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -35,10 +42,16 @@ cd ..
 
 ### Daily loop
 
-Open two terminals:
+Open two terminals. For the backend terminal, pick one option:
 
 ```bash
-# Terminal 1 — backend
+# Terminal 1 — backend (preferred Docker helper)
+cd transit-explorer
+./dev_container_update.sh 8880
+```
+
+```bash
+# Terminal 1 alternative — backend without Docker
 cd transit-explorer
 source .venv/bin/activate
 FLASK_APP=app.py FLASK_DEBUG=1 flask run --port 8880
@@ -55,16 +68,19 @@ npm run dev
 
 On a fresh local DB, `/api/health` returns before the OneBusAway import is done. Give `/api/routes` and route detail 1-3 minutes to fully populate while the background loader/backfill catches up.
 
+If you use `./dev_container_update.sh`, it rebuilds the image and replaces the existing local backend container for the current git branch. On Windows, run it from WSL or Git Bash.
+
 ### Common tasks
 
-| Task                                 | Command                                                     |
-| ------------------------------------ | ----------------------------------------------------------- |
-| Reset local DB                       | `rm -rf tm-instance/*.db && flask db upgrade`               |
-| Re-run OBA data load                 | Delete the DB, restart backend. Loader runs in background.  |
-| Add a model field → migration        | `flask db migrate -m "describe change" && flask db upgrade` |
-| Run backend tests                    | `pytest tests/`                                             |
-| Frontend lint                        | `cd tm-frontend && npm run lint`                            |
-| Frontend production-build smoke test | `cd tm-frontend && npm run build && npm run preview`        |
+| Task                                    | Command                                                     |
+| --------------------------------------- | ----------------------------------------------------------- |
+| Rebuild/restart local backend container | `./dev_container_update.sh 8880`                            |
+| Reset local DB                          | `rm -rf tm-instance/*.db && flask db upgrade`               |
+| Re-run OBA data load                    | Delete the DB, restart backend. Loader runs in background.  |
+| Add a model field → migration           | `flask db migrate -m "describe change" && flask db upgrade` |
+| Run backend tests                       | `pytest tests/`                                             |
+| Frontend lint                           | `cd tm-frontend && npm run lint`                            |
+| Frontend production-build smoke test    | `cd tm-frontend && npm run build && npm run preview`        |
 
 ---
 
@@ -285,7 +301,8 @@ flyctl machine restart <machine-id> -a transit-explorer
 
 ```bash
 # Local dev
-flask run --port 8880          # backend
+./dev_container_update.sh 8880 # backend (preferred)
+flask run --port 8880          # backend without Docker
 npm --prefix tm-frontend run dev   # frontend
 
 # Deploy

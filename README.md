@@ -32,10 +32,29 @@ A gamified transit map for Seattle. Ride a bus or train, mark the segment you tr
 
 - Python 3.11+
 - Node 20+
+- Docker Desktop or a local Docker Engine install if you want the one-line backend helper
 - An [OneBusAway API key](https://onebusaway.org/contact/)
 - A Firebase project with Google sign-in enabled and a downloaded service-account JSON
 
 ### Backend
+
+Pick one local backend workflow.
+
+Preferred Docker-based workflow:
+
+```bash
+cd transit-explorer
+cp .env.example .env
+#   Edit .env and fill in OBA_API_KEY, FIREBASE_PROJECT_ID, etc.
+#   Drop your Firebase service-account JSON next to .env as service-account.json
+./dev_container_update.sh 8880
+```
+
+That one command rebuilds the backend image, recreates the local container, mounts a named Docker volume for `tm-instance`, and starts the API on `http://localhost:8880`.
+
+On Windows, run it from WSL or Git Bash.
+
+If you want the pure Python workflow instead:
 
 ```bash
 cd transit-explorer
@@ -78,22 +97,22 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 
 ### Backend (`.env`)
 
-| Variable                            | Required | Default                         | Notes                                                                                         |
-| ----------------------------------- | -------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `OBA_API_KEY`                       | yes      | —                               | OneBusAway API key                                                                            |
-| `GOOGLE_APPLICATION_CREDENTIALS`    | local    | —                               | Path to a Firebase service-account JSON file                                                  |
-| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | prod   | —                               | Optional JSON secret materialized to disk by `gunicorn_startup.sh`                            |
-| `FIREBASE_PROJECT_ID`               | fallback | `""`                            | Used when no service-account file is mounted                                                  |
-| `SQLALCHEMY_DATABASE_URI`           | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                                                 |
-| `ALLOWED_ORIGINS`                   | prod     | `""`                            | Comma-separated origin allow-list for `/api/*`; blank denies browser origins outside dev      |
-| `FLASK_ENV`                         | no       | `production`                    | If set to `development` and `ALLOWED_ORIGINS` is blank, CORS falls back to `*`               |
-| `FLASK_PORT`                        | no       | `5000` / `8880` in Docker       | Port the server binds                                                                         |
-| `FLASK_DEBUG`                       | no       | `0`                             | Used by `flask run` in local development                                                      |
-| `LOG_LEVEL`                         | no       | `INFO`                          | `DEBUG` / `INFO` / `WARNING` / `ERROR`                                                        |
-| `WEB_CONCURRENCY`                   | no       | `2`                             | Gunicorn workers; keep low because the app is memory- and SQLite-bound                        |
-| `GUNICORN_TIMEOUT`                  | no       | `120`                           | Per-request timeout for gunicorn                                                              |
-| `SKIP_DB_UPGRADE`                   | no       | `0`                             | Set `1` to skip boot-time `flask db upgrade` in Docker                                        |
-| `SKIP_DATA_LOAD`                    | no       | `0` locally / `1` on Fly        | Fly disables the foreground loader because `create_app()` already triggers background loading |
+| Variable                              | Required | Default                         | Notes                                                                                         |
+| ------------------------------------- | -------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
+| `OBA_API_KEY`                         | yes      | —                               | OneBusAway API key                                                                            |
+| `GOOGLE_APPLICATION_CREDENTIALS`      | local    | —                               | Path to a Firebase service-account JSON file                                                  |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | prod     | —                               | Optional JSON secret materialized to disk by `gunicorn_startup.sh`                            |
+| `FIREBASE_PROJECT_ID`                 | fallback | `""`                            | Used when no service-account file is mounted                                                  |
+| `SQLALCHEMY_DATABASE_URI`             | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                                                 |
+| `ALLOWED_ORIGINS`                     | prod     | `""`                            | Comma-separated origin allow-list for `/api/*`; blank denies browser origins outside dev      |
+| `FLASK_ENV`                           | no       | `production`                    | If set to `development` and `ALLOWED_ORIGINS` is blank, CORS falls back to `*`                |
+| `FLASK_PORT`                          | no       | `5000` / `8880` in Docker       | Port the server binds                                                                         |
+| `FLASK_DEBUG`                         | no       | `0`                             | Used by `flask run` in local development                                                      |
+| `LOG_LEVEL`                           | no       | `INFO`                          | `DEBUG` / `INFO` / `WARNING` / `ERROR`                                                        |
+| `WEB_CONCURRENCY`                     | no       | `2`                             | Gunicorn workers; keep low because the app is memory- and SQLite-bound                        |
+| `GUNICORN_TIMEOUT`                    | no       | `120`                           | Per-request timeout for gunicorn                                                              |
+| `SKIP_DB_UPGRADE`                     | no       | `0`                             | Set `1` to skip boot-time `flask db upgrade` in Docker                                        |
+| `SKIP_DATA_LOAD`                      | no       | `0` locally / `1` on Fly        | Fly disables the foreground loader because `create_app()` already triggers background loading |
 
 ### Frontend (`tm-frontend/.env`)
 
@@ -116,22 +135,22 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 
 All endpoints under `/api`. Endpoints marked 🔒 require a `Authorization: Bearer <Firebase ID token>` header.
 
-| Method    | Path                                         | Description                                                                          |
-| --------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
-| GET       | `/api/health`                                | Liveness probe plus DB connectivity and route count                                  |
-| GET       | `/api/debug/directions`                      | Debug-only summary of route-direction/polyline coverage                              |
-| GET       | `/api/routes`                                | All routes with computed `total_segments` (cached 5 minutes)                         |
-| GET       | `/api/routes/<route_id>`                     | Route detail with directions, encoded polylines, stop map, and `total_segments`      |
-| GET       | `/api/stops`                                 | All loaded stops                                                                     |
-| GET       | `/api/leaderboard?period=all\|week\|month`   | Top users with pagination via `limit` and `offset`                                   |
-| 🔒 GET    | `/api/me`                                    | Current user profile plus summary totals                                             |
-| 🔒 GET    | `/api/me/progress`                           | Per-route completion summary with segment detail                                     |
-| 🔒 GET    | `/api/me/stats`                              | Rank, 14-day sparkline, top routes, and achievements                                 |
-| 🔒 GET    | `/api/me/activity`                           | Recent journeys collapsed across adjacent hops in the same direction                  |
-| 🔒 POST   | `/api/me/segments`                           | Mark a contiguous run of hops; returns `created`, `skipped`, `segments`, and totals  |
-| 🔒 PUT    | `/api/me/segments/<segment_id>/notes`        | Update notes on a previously logged segment                                          |
-| 🔒 DELETE | `/api/me/segments/<segment_id>`              | Delete a single logged segment                                                       |
-| 🔒 DELETE | `/api/me/segments/bulk`                      | Bulk-delete by `ids[]`, or wipe an entire route with `route_id` + `confirm=true`     |
+| Method    | Path                                       | Description                                                                         |
+| --------- | ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| GET       | `/api/health`                              | Liveness probe plus DB connectivity and route count                                 |
+| GET       | `/api/debug/directions`                    | Debug-only summary of route-direction/polyline coverage                             |
+| GET       | `/api/routes`                              | All routes with computed `total_segments` (cached 5 minutes)                        |
+| GET       | `/api/routes/<route_id>`                   | Route detail with directions, encoded polylines, stop map, and `total_segments`     |
+| GET       | `/api/stops`                               | All loaded stops                                                                    |
+| GET       | `/api/leaderboard?period=all\|week\|month` | Top users with pagination via `limit` and `offset`                                  |
+| 🔒 GET    | `/api/me`                                  | Current user profile plus summary totals                                            |
+| 🔒 GET    | `/api/me/progress`                         | Per-route completion summary with segment detail                                    |
+| 🔒 GET    | `/api/me/stats`                            | Rank, 14-day sparkline, top routes, and achievements                                |
+| 🔒 GET    | `/api/me/activity`                         | Recent journeys collapsed across adjacent hops in the same direction                |
+| 🔒 POST   | `/api/me/segments`                         | Mark a contiguous run of hops; returns `created`, `skipped`, `segments`, and totals |
+| 🔒 PUT    | `/api/me/segments/<segment_id>/notes`      | Update notes on a previously logged segment                                         |
+| 🔒 DELETE | `/api/me/segments/<segment_id>`            | Delete a single logged segment                                                      |
+| 🔒 DELETE | `/api/me/segments/bulk`                    | Bulk-delete by `ids[]`, or wipe an entire route with `route_id` + `confirm=true`    |
 
 ---
 
@@ -278,6 +297,7 @@ transit-explorer/
 │   │   └── contexts/AuthContext.jsx
 │   └── vite.config.js
 ├── Dockerfile                 # Backend image
+├── dev_container_update.sh    # Rebuild + restart local backend container on one port
 ├── docker-compose.yml         # Local prod-like stack (backend + nginx + dist)
 ├── nginx.conf                 # Used by docker-compose
 ├── fly.toml                   # Fly.io deploy config
