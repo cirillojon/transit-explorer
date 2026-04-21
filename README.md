@@ -245,15 +245,6 @@ docker compose up --build
 # → http://localhost:8080
 ```
 
-### Hosting options considered and rejected
-
-- **Cloudflare Pages** — newer "Workers Builds" UI requires a custom API token and doesn't auto-create the project; clunky vs. Vercel for an SPA.
-- **Cloud Run** — stateless; the in-memory preloaded OBA data + SQLite file don't fit without paying for Cloud SQL.
-- **Render free tier** — sleeps after inactivity, and the ~30s OBA preload makes cold starts terrible.
-- **Heroku** — no longer has a free tier, more expensive than Fly for the same RAM.
-
----
-
 ## Layout
 
 ```

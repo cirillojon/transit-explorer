@@ -170,11 +170,7 @@ function UserProgress({
       <StatsCard stats={stats} profile={profile} />
 
       {highlightedSegment && highlightedRoute && (
-        <div
-          className="last-viewed-pill"
-          role="status"
-          aria-live="polite"
-        >
+        <div className="last-viewed-pill" role="status" aria-live="polite">
           <span
             className="last-viewed-color"
             style={{
