@@ -2519,8 +2519,12 @@ button {
     top: calc(env(safe-area-inset-top, 0px) + 76px);
   }
 
+  /* Anchor the highlight banner to the top on mobile so it can't overlap
+     the bottom-anchored route details / legend stack. Sits just below the
+     mobile route badge (top + 12 + 54px height + 10 gap ≈ 76px). */
   .highlight-banner {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 200px);
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    bottom: auto;
     left: 12px;
     right: 12px;
     transform: none;
