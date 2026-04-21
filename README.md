@@ -15,7 +15,7 @@
 ## What it is
 
 Transit Explorer turns riding transit into an exploration game. Pick a route,
-tap your boarding stop, tap your alighting stop — the segment lights up on
+tap your boarding stop, tap your ending stop — the segment lights up on
 your personal map. Over time you can see exactly which parts of the network
 you've ridden, and which you still haven't.
 
@@ -29,7 +29,7 @@ stay essentially free to host.
 
 - 🗺️ **Interactive map** of every route in the OneBusAway dataset, with
   per-direction polylines and stops.
-- 👆 **Tap-to-log rides** — mark the boarding stop, tap the alighting stop,
+- 👆 **Tap-to-log rides** — mark the boarding stop, tap the ending stop,
   and the segment is saved to your account.
 - 📈 **Per-route progress** — completion bars, recent activity feed, and a
   14-day rides sparkline.

@@ -68,9 +68,9 @@ function HelpModal({ open, onClose, onDontShowAgain }) {
           <li>
             <span className="help-modal-num">4</span>
             <div>
-              <strong>Tap your alighting stop</strong> — anywhere ahead on the
-              same direction. Every hop in between turns green and is added to
-              your progress.
+              <strong>Tap your ending stop</strong> — anywhere ahead on the same
+              direction. Every hop in between turns green and is added to your
+              progress.
             </div>
           </li>
         </ol>
@@ -80,8 +80,8 @@ function HelpModal({ open, onClose, onDontShowAgain }) {
           <ul>
             <li>
               <strong>Tap-and-go:</strong> tap your boarding stop when you
-              board, then tap the alighting stop when you get off. The app
-              tracks your trip time between taps.
+              board, then tap the ending stop when you get off. The app tracks
+              your trip time between taps.
             </li>
             <li>
               <strong>After the fact:</strong> tap both stops back-to-back once

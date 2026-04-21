@@ -711,7 +711,7 @@ function TransitMap({
         {visibleStops.map((stop) => {
           const isPicking = pickState?.directionId === stop.directionId;
           const isFrom = isPicking && pickState?.fromStopId === stop.id;
-          // A stop is a valid alighting candidate only if it sits *after* the
+          // A stop is a valid ending candidate only if it sits *after* the
           // boarding stop in the direction's stop order.
           const isValidCandidate =
             isPicking &&
@@ -859,7 +859,7 @@ function TransitMap({
                   className="stop-search-input"
                   placeholder={
                     pickState
-                      ? "Find your alighting stop…"
+                      ? "Find your ending stop…"
                       : "Find a stop on this route…"
                   }
                   value={stopSearch}
@@ -896,7 +896,7 @@ function TransitMap({
                             isBoardingChoice
                               ? "This is your boarding stop"
                               : pickState
-                                ? "Mark as alighting stop"
+                                ? "Mark as ending stop"
                                 : "Board here"
                           }
                         >
@@ -1044,7 +1044,7 @@ function TransitMap({
                     <span>
                       {justCompleted
                         ? "Trip logged — pick another or change direction"
-                        : "Tap your alighting stop in the same direction"}
+                        : "Tap your ending stop in the same direction"}
                     </span>
                   </div>
                 </div>
@@ -1066,7 +1066,7 @@ function TransitMap({
               {!legendCollapsed && tripStats && (
                 <div
                   className="map-legend-trip-stats"
-                  title="Average and most-recent ride time, measured between your boarding and alighting taps. Stored locally on this device."
+                  title="Average and most-recent ride time, measured between your boarding and ending taps. Stored locally on this device."
                 >
                   <span className="map-legend-trip-icon" aria-hidden>
                     ⏱
@@ -1110,7 +1110,7 @@ function TransitMap({
             </span>
           </div>
           <span className="pick-arrow">→</span>
-          <span className="pick-prompt">Now tap your alighting stop</span>
+          <span className="pick-prompt">Now tap your ending stop</span>
           {pickState.boardedAt && (
             <span
               className="pick-timer"
