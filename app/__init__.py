@@ -90,16 +90,31 @@ def create_app():
                 _start_background_data_load(app)
             else:
                 # Check if directions data is properly populated
-                from app.models import RouteDirection
+                from app.models import RouteDirection, Route
+                from app.oba_service import AGENCIES
                 dir_count = RouteDirection.query.count()
                 dirs_with_stops = RouteDirection.query.filter(
                     RouteDirection.stop_ids_json != None,
                     RouteDirection.stop_ids_json != '',
                     RouteDirection.stop_ids_json != '[]'
                 ).count()
+
+                # Detect agencies that are configured but absent from the DB
+                # (e.g. a previous load failed partway through for that agency).
+                present_agencies = {
+                    row[0] for row in db.session.query(Route.agency_id).distinct().all()
+                }
+                missing_agencies = [a for a in AGENCIES if a not in present_agencies]
+
                 if dirs_with_stops == 0:
                     logger.info(f"Found {dir_count} directions but none have stop_ids — reloading in background...")
                     _start_background_data_load(app)
+                elif missing_agencies:
+                    logger.info(
+                        f"Configured agencies {missing_agencies} have no routes in DB — "
+                        f"backfilling in background..."
+                    )
+                    _start_background_data_load(app, agency_ids=missing_agencies)
                 else:
                     logger.info(f"Routes table found with {dirs_with_stops}/{dir_count} directions with stops, skipping data load.")
         except Exception as e:
@@ -109,7 +124,7 @@ def create_app():
     return app
 
 
-def _start_background_data_load(app):
+def _start_background_data_load(app, agency_ids=None):
     """Load transit data in a background thread so the server can start immediately."""
     import threading
 
@@ -117,7 +132,7 @@ def _start_background_data_load(app):
         with app.app_context():
             try:
                 from app.data_loader import load_transit_data
-                load_transit_data()
+                load_transit_data(agency_ids=agency_ids)
                 logger.info("Background data load finished successfully.")
             except Exception as e:
                 logger.error(f"Background data load failed: {e}")

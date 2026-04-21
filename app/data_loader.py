@@ -27,14 +27,19 @@ def _call_with_backoff(fn, *args, label=""):
                 raise
 
 
-def load_transit_data():
-    """Load all transit routes, stops, and directions from the OneBusAway API."""
-    logger.info("Starting transit data load from OneBusAway API")
+def load_transit_data(agency_ids=None):
+    """Load all transit routes, stops, and directions from the OneBusAway API.
+
+    If agency_ids is None, loads every agency in AGENCIES. Pass a subset to
+    backfill only the agencies that are missing from the database.
+    """
+    targets = list(agency_ids) if agency_ids else list(AGENCIES)
+    logger.info(f"Starting transit data load from OneBusAway API for agencies={targets}")
 
     total_routes = 0
     total_stops = 0
 
-    for agency_id in AGENCIES:
+    for agency_id in targets:
         logger.info(f"Fetching routes for agency {agency_id}")
         try:
             routes = _call_with_backoff(fetch_routes_for_agency, agency_id, label=f"routes-for-agency/{agency_id}")
