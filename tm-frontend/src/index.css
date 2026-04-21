@@ -2226,9 +2226,9 @@ button {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--yellow);
+  background: var(--green);
   border: 3px solid #fff;
-  box-shadow: 0 0 12px rgba(250, 204, 21, 0.7);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.85);
   position: relative;
 }
 .boarding-pulse-ring {
@@ -2238,7 +2238,7 @@ button {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 3px solid var(--yellow);
+  border: 3px solid var(--green);
   animation: boarding-pulse 1.4s ease-out infinite;
 }
 @keyframes boarding-pulse {

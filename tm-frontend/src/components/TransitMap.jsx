@@ -751,7 +751,7 @@ function TransitMap({
                 <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
                   <span style={{ fontWeight: 600 }}>{stop.name}</span>
                   <br />
-                  <span style={{ fontSize: 11, color: "#facc15" }}>
+                  <span style={{ fontSize: 11, color: "#22c55e" }}>
                     Boarding stop — tap a stop ahead (toward{" "}
                     {activeDirectionMeta?.lastStopName || "destination"})
                   </span>
