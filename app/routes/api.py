@@ -6,6 +6,7 @@ from app import db, limiter
 from app.auth import require_auth
 from app.validators import (
     validate_id, validate_direction_id, validate_notes, validate_id_list,
+    validate_duration_ms,
 )
 from datetime import datetime, timedelta
 import json
@@ -511,6 +512,7 @@ def mark_segments():
         from_stop_id = validate_id(data.get('from_stop_id'), 'from_stop_id')
         to_stop_id = validate_id(data.get('to_stop_id'), 'to_stop_id')
         notes = validate_notes(data.get('notes'))
+        duration_ms = validate_duration_ms(data.get('duration_ms'))
     except ValueError as ve:
         return jsonify({'error': str(ve)}), 400
 
@@ -568,6 +570,10 @@ def mark_segments():
             to_stop_id=b,
             completed_at=now,
             notes=notes if i == 0 else '',
+            # Attach the measured trip duration to the first row of the run.
+            # Subsequent rows keep duration_ms=NULL so we don't double-count
+            # in aggregates.
+            duration_ms=duration_ms if i == 0 else None,
         )
         db.session.add(segment)
         created.append(segment)
@@ -596,6 +602,29 @@ def update_segment_notes(segment_id):
     data = request.get_json(silent=True) or {}
     try:
         segment.notes = validate_notes(data.get('notes'))
+    except ValueError as ve:
+        return jsonify({'error': str(ve)}), 400
+    db.session.commit()
+    return jsonify(segment.to_dict())
+
+
+@api_blueprint.route('/me/segments/<int:segment_id>/duration', methods=['PUT'])
+@require_auth
+def update_segment_duration(segment_id):
+    """Edit (or clear) the measured trip duration on a single segment row.
+
+    Pass `duration_ms`: a non-negative integer of milliseconds, or `null`
+    to clear it.
+    """
+    user = g.current_user
+    segment = UserSegment.query.filter_by(id=segment_id, user_id=user.id).first()
+    if not segment:
+        return jsonify({'error': 'Segment not found'}), 404
+    data = request.get_json(silent=True) or {}
+    if 'duration_ms' not in data:
+        return jsonify({'error': 'duration_ms is required (use null to clear)'}), 400
+    try:
+        segment.duration_ms = validate_duration_ms(data.get('duration_ms'))
     except ValueError as ve:
         return jsonify({'error': str(ve)}), 400
     db.session.commit()

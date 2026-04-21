@@ -1826,6 +1826,59 @@ button {
   color: var(--text-faint);
   flex-shrink: 0;
 }
+.ride-duration-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #facc15;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.1);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  white-space: nowrap;
+}
+.duration-edit {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.duration-edit-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.duration-edit input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.duration-edit input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+.duration-edit-help {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.duration-edit-error {
+  font-size: 11px;
+  color: var(--red, #f87171);
+}
 
 .ride-stops {
   display: flex;

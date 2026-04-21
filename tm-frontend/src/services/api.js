@@ -130,19 +130,27 @@ export const markSegments = async (
   fromStopId,
   toStopId,
   notes = "",
+  durationMs = null,
 ) => {
-  const r = await api.post("/api/me/segments", {
+  const payload = {
     route_id: routeId,
     direction_id: directionId,
     from_stop_id: fromStopId,
     to_stop_id: toStopId,
     notes,
-  });
+  };
+  if (durationMs != null) payload.duration_ms = durationMs;
+  const r = await api.post("/api/me/segments", payload);
   return r.data;
 };
 
 export const updateSegmentNotes = (segmentId, notes) =>
   api.put(`/api/me/segments/${segmentId}/notes`, { notes }).then((r) => r.data);
+
+export const updateSegmentDuration = (segmentId, durationMs) =>
+  api
+    .put(`/api/me/segments/${segmentId}/duration`, { duration_ms: durationMs })
+    .then((r) => r.data);
 
 export const deleteSegment = (segmentId) =>
   api.delete(`/api/me/segments/${segmentId}`).then((r) => r.data);

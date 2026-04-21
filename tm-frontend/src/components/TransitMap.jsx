@@ -477,11 +477,17 @@ function TransitMap({
 
     setMarking(true);
     try {
+      // Only send a duration to the server when we actually measured a
+      // live boarding -> alighting trip (>5s). After-the-fact taps leave
+      // duration_ms NULL on the new segment row.
+      const sendDuration = tripMs && tripMs > 5000 ? tripMs : null;
       const result = await markSegments(
         routeDetail.id,
         directionId,
         fromStopId,
         toStopId,
+        "",
+        sendDuration,
       );
       setPickState(null);
       onSegmentsMarked(result);

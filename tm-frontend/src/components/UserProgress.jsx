@@ -1,9 +1,58 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { updateSegmentNotes, bulkDeleteSegments } from "../services/api";
+import {
+  updateSegmentNotes,
+  updateSegmentDuration,
+  bulkDeleteSegments,
+} from "../services/api";
 import StatsCard from "./StatsCard";
 import Achievements from "./Achievements";
 import RecentActivity from "./RecentActivity";
 import ConfirmDialog from "./ConfirmDialog";
+
+function formatDurationMs(ms) {
+  if (ms == null || ms <= 0) return null;
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  if (min < 60) return sec ? `${min}m ${sec}s` : `${min}m`;
+  const hr = Math.floor(min / 60);
+  const remMin = min % 60;
+  return remMin ? `${hr}h ${remMin}m` : `${hr}h`;
+}
+
+function parseDurationInput(text) {
+  // Accept "12", "12m", "12m 30s", "1h 5m", "0:12:30", "12:30"
+  if (text == null) return null;
+  const t = String(text).trim().toLowerCase();
+  if (!t) return 0; // empty = clear
+  // colon form
+  if (/^\d+(:\d{1,2}){1,2}$/.test(t)) {
+    const parts = t.split(":").map((n) => parseInt(n, 10));
+    let h = 0,
+      m = 0,
+      s = 0;
+    if (parts.length === 3) [h, m, s] = parts;
+    else [m, s] = parts;
+    if (s >= 60 || m >= 60) return NaN;
+    return ((h * 3600 + m * 60 + s) * 1000) | 0;
+  }
+  // unit form
+  const re =
+    /(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours|m|min|mins|minute|minutes|s|sec|secs|second|seconds)?/g;
+  let total = 0;
+  let matched = false;
+  let m;
+  while ((m = re.exec(t)) !== null) {
+    matched = true;
+    const n = parseFloat(m[1]);
+    const unit = m[2] || "m"; // bare number defaults to minutes
+    if (/^h/.test(unit)) total += n * 3600 * 1000;
+    else if (/^s/.test(unit)) total += n * 1000;
+    else total += n * 60 * 1000;
+  }
+  return matched ? Math.round(total) : NaN;
+}
 
 /* Group consecutive same-direction hops into journey objects. */
 function groupIntoJourneys(segments) {
@@ -33,6 +82,10 @@ function groupIntoJourneys(segments) {
 function makeJourney(segs) {
   const first = segs[0];
   const last = segs[segs.length - 1];
+  // Duration is recorded only on the first row of a logged run, but if
+  // the user later edits a hop in the middle we still want to surface
+  // any non-null value here.
+  const durationSeg = segs.find((s) => s.duration_ms != null);
   return {
     key: `${first.direction_id}-${first.from_stop_id}-${last.to_stop_id}-${first.completed_at}`,
     directionId: first.direction_id,
@@ -49,6 +102,8 @@ function makeJourney(segs) {
           : undefined,
     }),
     notes: segs.find((s) => s.notes)?.notes || "",
+    durationMs: durationSeg ? durationSeg.duration_ms : null,
+    durationSegmentId: durationSeg ? durationSeg.id : first.id,
     segments: segs,
   };
 }
@@ -66,6 +121,10 @@ function UserProgress({
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [noteText, setNoteText] = useState("");
+  const [editingDuration, setEditingDuration] = useState(null);
+  const [durationText, setDurationText] = useState("");
+  const [durationError, setDurationError] = useState("");
+  const [savingDuration, setSavingDuration] = useState(false);
   const [confirm, setConfirm] = useState(null); // { title, message, onConfirm, danger }
   const [view, setView] = useState("overview"); // overview | routes | achievements
   const routeRefs = useRef({});
@@ -130,6 +189,43 @@ function UserProgress({
     setEditingNote(null);
     setNoteText("");
     onRefresh();
+  };
+
+  const beginEditDuration = (journey) => {
+    setEditingDuration(journey.key);
+    setDurationText(
+      journey.durationMs != null ? formatDurationMs(journey.durationMs) : "",
+    );
+    setDurationError("");
+  };
+
+  const handleSaveDuration = async (journey) => {
+    const ms = parseDurationInput(durationText);
+    if (Number.isNaN(ms)) {
+      setDurationError(
+        "Use formats like 12m, 1h 5m, 12:30, or leave empty to clear.",
+      );
+      return;
+    }
+    if (ms < 0 || ms > 24 * 60 * 60 * 1000) {
+      setDurationError("Must be between 0 and 24h.");
+      return;
+    }
+    setSavingDuration(true);
+    try {
+      await updateSegmentDuration(
+        journey.durationSegmentId,
+        ms === 0 ? null : ms,
+      );
+      setEditingDuration(null);
+      setDurationText("");
+      setDurationError("");
+      onRefresh();
+    } catch (err) {
+      setDurationError(err?.message || "Could not save");
+    } finally {
+      setSavingDuration(false);
+    }
   };
 
   const askDeleteRide = (journey) =>
@@ -394,6 +490,14 @@ function UserProgress({
                             <span className="ride-direction-tag">
                               {journey.directionName}
                             </span>
+                            {journey.durationMs != null && (
+                              <span
+                                className="ride-duration-tag"
+                                title="Time spent on this ride"
+                              >
+                                ⏱ {formatDurationMs(journey.durationMs)}
+                              </span>
+                            )}
                             <span className="ride-date">{journey.date}</span>
                           </div>
 
@@ -468,6 +572,19 @@ function UserProgress({
                               {journey.notes ? "Edit note" : "Add note"}
                             </button>
                             <button
+                              className="btn-small"
+                              onClick={() => beginEditDuration(journey)}
+                              title={
+                                journey.durationMs != null
+                                  ? "Change recorded ride time"
+                                  : "Record how long this ride took"
+                              }
+                            >
+                              {journey.durationMs != null
+                                ? "Edit time"
+                                : "Add time"}
+                            </button>
+                            <button
                               className="btn-small btn-danger ride-delete"
                               onClick={() => askDeleteRide(journey)}
                               title="Remove this ride from your progress"
@@ -476,6 +593,56 @@ function UserProgress({
                               ✕
                             </button>
                           </div>
+
+                          {editingDuration === journey.key && (
+                            <div className="duration-edit">
+                              <label
+                                className="duration-edit-label"
+                                htmlFor={`dur-${journey.key}`}
+                              >
+                                Time on bus
+                              </label>
+                              <input
+                                id={`dur-${journey.key}`}
+                                type="text"
+                                inputMode="text"
+                                value={durationText}
+                                onChange={(e) => {
+                                  setDurationText(e.target.value);
+                                  if (durationError) setDurationError("");
+                                }}
+                                placeholder="e.g. 12m, 1h 5m, or 12:30"
+                                disabled={savingDuration}
+                              />
+                              {durationError && (
+                                <div className="duration-edit-error">
+                                  {durationError}
+                                </div>
+                              )}
+                              <div className="duration-edit-help">
+                                Leave empty to clear.
+                              </div>
+                              <div className="note-edit-actions">
+                                <button
+                                  className="btn-small btn-primary"
+                                  onClick={() => handleSaveDuration(journey)}
+                                  disabled={savingDuration}
+                                >
+                                  {savingDuration ? "Saving…" : "Save"}
+                                </button>
+                                <button
+                                  className="btn-small"
+                                  onClick={() => {
+                                    setEditingDuration(null);
+                                    setDurationError("");
+                                  }}
+                                  disabled={savingDuration}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {editingNote === journey.key && (
                             <div className="note-edit">
