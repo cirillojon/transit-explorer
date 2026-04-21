@@ -245,7 +245,9 @@ function TransitMap({
     if (!highlightedSegment) return null;
     const key = `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`;
     const seg = directionSegments.find((s) => s.key === key);
-    return seg ? seg.positions : null;
+    // Return a fresh array each time so FitHighlight's effect fires even
+    // when the user re-requests the same segment (e.g. "Recenter").
+    return seg ? [...seg.positions] : null;
   }, [highlightedSegment, directionSegments]);
 
   const completionStats = useMemo(() => {
