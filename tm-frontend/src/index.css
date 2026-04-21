@@ -1800,6 +1800,9 @@ button {
 .mobile-sidebar-toggle {
   display: none;
 }
+.mobile-current-route {
+  display: none;
+}
 .sidebar-backdrop {
   display: none;
 }
@@ -1869,13 +1872,13 @@ button {
   /* Selected-route badge next to hamburger so user sees what's loaded
      without opening the drawer */
   .mobile-current-route {
+    display: flex;
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 12px);
     left: calc(env(safe-area-inset-left, 0px) + 72px);
     right: calc(env(safe-area-inset-right, 0px) + 12px);
     height: 48px;
     z-index: 949;
-    display: flex;
     align-items: center;
     gap: 10px;
     padding: 0 14px;
