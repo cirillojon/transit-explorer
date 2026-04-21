@@ -136,6 +136,10 @@ class UserSegment(db.Model):
     to_stop_id = db.Column(db.String(50), db.ForeignKey('stops.id'), nullable=False)
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
+    # Optional measured trip duration in milliseconds. Captured client-side
+    # between the boarding and alighting taps; only ever set on the first
+    # row of a multi-segment run. Editable later via the API.
+    duration_ms = db.Column(db.Integer, nullable=True)
 
     route = db.relationship('Route', lazy='joined')
     from_stop = db.relationship('Stop', foreign_keys=[from_stop_id], lazy='joined')
@@ -158,4 +162,5 @@ class UserSegment(db.Model):
             'to_stop_name': self.to_stop.name if self.to_stop else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'notes': self.notes,
+            'duration_ms': self.duration_ms,
         }

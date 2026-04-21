@@ -340,4 +340,10 @@ wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -a transit-explorer"
 sqlite3 -header -column /app/tm-instance/data.db
 # now you have a full sqlite3 REPL — type any SQL, .quit to exit
 
+# Manually run pytests:
+
+C:\Users\Jonat\projects\tm-project-folder\transit-explorer\tm-frontend> wsl bash -c "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && source .venv/bin/activate && pytest tests/ -q 2>&1 | tail -50"
+..............                                                           [100%]
+14 passed in 9.91s
+
 ```

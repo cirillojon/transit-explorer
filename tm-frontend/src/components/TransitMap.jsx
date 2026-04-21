@@ -11,8 +11,64 @@ import {
 import L from "leaflet";
 import polyline from "@mapbox/polyline";
 import { fetchRouteDetail, markSegments } from "../services/api";
+import HelpModal from "./HelpModal";
 
 const SEATTLE_CENTER = [47.6062, -122.3321];
+
+const HELP_SEEN_KEY = "te-help-seen-v1";
+const TRIP_TIMES_KEY = "te-trip-times-v1";
+const TRIP_TIMES_MAX = 25; // keep at most N samples per route+direction
+
+function readTripTimes() {
+  try {
+    const raw = localStorage.getItem(TRIP_TIMES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function recordTripTime(routeId, directionId, ms) {
+  if (!routeId || ms == null || ms <= 0) return null;
+  const all = readTripTimes();
+  const key = `${routeId}|${directionId}`;
+  const list = Array.isArray(all[key]) ? all[key] : [];
+  list.push(Math.round(ms));
+  const trimmed = list.slice(-TRIP_TIMES_MAX);
+  all[key] = trimmed;
+  try {
+    localStorage.setItem(TRIP_TIMES_KEY, JSON.stringify(all));
+  } catch {
+    /* storage full / disabled — ignore */
+  }
+  return trimmed;
+}
+
+function getTripStats(routeId, directionId) {
+  const all = readTripTimes();
+  const list = all[`${routeId}|${directionId}`] || [];
+  if (!list.length) return null;
+  const total = list.reduce((a, b) => a + b, 0);
+  return {
+    count: list.length,
+    avgMs: total / list.length,
+    lastMs: list[list.length - 1],
+  };
+}
+
+function formatDuration(ms) {
+  if (!ms || ms <= 0) return null;
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  if (min < 60) return sec ? `${min}m ${sec}s` : `${min}m`;
+  const hr = Math.floor(min / 60);
+  const remMin = min % 60;
+  return remMin ? `${hr}h ${remMin}m` : `${hr}h`;
+}
 
 const ROUTE_TYPE_LABELS = {
   0: "Link",
@@ -98,8 +154,15 @@ function TransitMap({
   const [stopSearch, setStopSearch] = useState("");
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [optimisticDone, setOptimisticDone] = useState(() => new Set());
+  const [recentlyDone, setRecentlyDone] = useState(() => new Set());
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [tripStatsTick, setTripStatsTick] = useState(0); // bumps to refresh avg
+  const [liveTripMs, setLiveTripMs] = useState(0);
   const toastTimerRef = useRef(null);
   const completedTimerRef = useRef(null);
+  const recentTimerRef = useRef(null);
+  const liveTimerRef = useRef(null);
   const mapRef = useRef(null);
   const stopMarkerRefs = useRef({});
   const isMobile =
@@ -128,9 +191,45 @@ function TransitMap({
     () => () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       if (completedTimerRef.current) clearTimeout(completedTimerRef.current);
+      if (recentTimerRef.current) clearTimeout(recentTimerRef.current);
+      if (liveTimerRef.current) clearInterval(liveTimerRef.current);
     },
     [],
   );
+
+  // First-visit help: show the modal automatically until the user dismisses
+  // it once. After that they can re-open it with the "?" button on the map.
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem(HELP_SEEN_KEY);
+      if (!seen) setHelpOpen(true);
+    } catch {
+      /* localStorage disabled — skip auto-open */
+    }
+  }, []);
+
+  // Live "elapsed since boarding" counter that drives the on-bus timer
+  // shown in the pick overlay. Only runs while a boarding pick is active.
+  useEffect(() => {
+    if (liveTimerRef.current) {
+      clearInterval(liveTimerRef.current);
+      liveTimerRef.current = null;
+    }
+    if (pickState?.boardedAt) {
+      setLiveTripMs(Date.now() - pickState.boardedAt);
+      liveTimerRef.current = setInterval(() => {
+        setLiveTripMs(Date.now() - pickState.boardedAt);
+      }, 1000);
+    } else {
+      setLiveTripMs(0);
+    }
+    return () => {
+      if (liveTimerRef.current) {
+        clearInterval(liveTimerRef.current);
+        liveTimerRef.current = null;
+      }
+    };
+  }, [pickState]);
 
   // On phones, auto-collapse the legend when the user is mid-pick so the
   // bottom pick prompt doesn't fight with the legend's step list for space.
@@ -282,29 +381,128 @@ function TransitMap({
     return seg ? [...seg.positions] : null;
   }, [highlightedSegment, directionSegments]);
 
+  // Reset optimistic completion state whenever the selected route changes.
+  useEffect(() => {
+    setOptimisticDone(new Set());
+    setRecentlyDone(new Set());
+  }, [selectedRoute]);
+
+  // Drop optimistic keys once the server-confirmed prop set covers them.
+  useEffect(() => {
+    if (optimisticDone.size === 0) return;
+    let changed = false;
+    const next = new Set();
+    for (const key of optimisticDone) {
+      if (!completedSegments.has(key)) {
+        next.add(key);
+      } else {
+        changed = true;
+      }
+    }
+    if (changed) setOptimisticDone(next);
+  }, [completedSegments, optimisticDone]);
+
+  // The set the polylines actually paint against. Server truth ∪ optimistic.
+  const effectiveCompleted = useMemo(() => {
+    if (optimisticDone.size === 0) return completedSegments;
+    const merged = new Set(completedSegments);
+    for (const k of optimisticDone) merged.add(k);
+    return merged;
+  }, [completedSegments, optimisticDone]);
+
   const completionStats = useMemo(() => {
     if (!directionSegments.length) return null;
     const done = directionSegments.filter((s) =>
-      completedSegments.has(s.key),
+      effectiveCompleted.has(s.key),
     ).length;
     return { done, total: directionSegments.length };
-  }, [directionSegments, completedSegments]);
+  }, [directionSegments, effectiveCompleted]);
+
+  // Trip-time stats are stored client-side per (route, direction). We
+  // depend on tripStatsTick so the legend re-reads localStorage after
+  // each successful save.
+  const tripStats = useMemo(() => {
+    if (!routeDetail || activeDirection == null) return null;
+    return getTripStats(routeDetail.id, activeDirection);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeDetail, activeDirection, tripStatsTick]);
 
   const submitMark = async (directionId, fromStopId, toStopId) => {
     if (!routeDetail) return;
+
+    // Capture trip-time + boarding context BEFORE we clear pickState so we
+    // can record an accurate duration and pre-paint the segments green.
+    const boardedAt = pickState?.boardedAt || null;
+    const tripMs = boardedAt ? Date.now() - boardedAt : null;
+
+    // Build the list of optimistic keys for the entire run from -> to. The
+    // backend creates one segment per consecutive stop pair, so we mirror
+    // that here so the line turns green immediately on click.
+    const optimisticKeys = [];
+    const dir = (routeDetail.directions || []).find(
+      (d) => d.direction_id === directionId,
+    );
+    if (dir) {
+      const ids = dir.stop_ids || [];
+      const a = ids.indexOf(fromStopId);
+      const b = ids.indexOf(toStopId);
+      if (a !== -1 && b !== -1) {
+        const lo = Math.min(a, b);
+        const hi = Math.max(a, b);
+        for (let i = lo; i < hi; i++) {
+          optimisticKeys.push(
+            `${routeDetail.id}|${directionId}|${ids[i]}|${ids[i + 1]}`,
+          );
+        }
+      }
+    }
+    if (optimisticKeys.length) {
+      setOptimisticDone((prev) => {
+        const next = new Set(prev);
+        for (const k of optimisticKeys) next.add(k);
+        return next;
+      });
+      // Trigger the "just-turned-green" pulse animation.
+      setRecentlyDone((prev) => {
+        const next = new Set(prev);
+        for (const k of optimisticKeys) next.add(k);
+        return next;
+      });
+      if (recentTimerRef.current) clearTimeout(recentTimerRef.current);
+      recentTimerRef.current = setTimeout(() => {
+        setRecentlyDone(new Set());
+        recentTimerRef.current = null;
+      }, 1600);
+    }
+
     setMarking(true);
     try {
+      // Only send a duration to the server when we actually measured a
+      // live boarding -> alighting trip (>5s). After-the-fact taps leave
+      // duration_ms NULL on the new segment row.
+      const sendDuration = tripMs && tripMs > 5000 ? tripMs : null;
       const result = await markSegments(
         routeDetail.id,
         directionId,
         fromStopId,
         toStopId,
+        "",
+        sendDuration,
       );
       setPickState(null);
-      onSegmentsMarked();
+      onSegmentsMarked(result);
       const created = result.created ?? 0;
       const skipped = result.skipped ?? 0;
       if (created > 0) {
+        // Persist the trip duration if we measured one (boarding was
+        // tapped live, not after-the-fact).
+        let tripMsg = "";
+        if (tripMs && tripMs > 5000) {
+          recordTripTime(routeDetail.id, directionId, tripMs);
+          setTripStatsTick((t) => t + 1);
+          const f = formatDuration(tripMs);
+          if (f) tripMsg = ` · ${f} on bus`;
+        }
         // Briefly mark step 3 as complete so the user sees the full
         // 1-2-3 progression before the legend snaps back to step 1.
         if (completedTimerRef.current) clearTimeout(completedTimerRef.current);
@@ -315,7 +513,8 @@ function TransitMap({
         }, 1600);
         showToast(
           `✓ Marked ${created} segment${created > 1 ? "s" : ""}` +
-            (skipped ? ` · ${skipped} already done` : ""),
+            (skipped ? ` · ${skipped} already done` : "") +
+            tripMsg,
         );
       } else {
         showToast("All hops already marked", "info");
@@ -326,6 +525,19 @@ function TransitMap({
         );
       }
     } catch (err) {
+      // Roll back the optimistic paint if the server rejected the mark.
+      if (optimisticKeys.length) {
+        setOptimisticDone((prev) => {
+          const next = new Set(prev);
+          for (const k of optimisticKeys) next.delete(k);
+          return next;
+        });
+        setRecentlyDone((prev) => {
+          const next = new Set(prev);
+          for (const k of optimisticKeys) next.delete(k);
+          return next;
+        });
+      }
       showToast(err.message || "Could not save segment", "error");
     } finally {
       setMarking(false);
@@ -335,7 +547,12 @@ function TransitMap({
   const handleStopClick = (directionId, stopId, stopName) => {
     if (!routeDetail || marking) return;
     if (!pickState) {
-      setPickState({ directionId, fromStopId: stopId, fromName: stopName });
+      setPickState({
+        directionId,
+        fromStopId: stopId,
+        fromName: stopName,
+        boardedAt: Date.now(),
+      });
       return;
     }
 
@@ -362,7 +579,7 @@ function TransitMap({
   // Click a polyline directly to mark just that one hop.
   const handleSegmentClick = (seg) => {
     if (marking) return;
-    if (completedSegments.has(seg.key)) {
+    if (effectiveCompleted.has(seg.key)) {
       showToast("Already marked", "info");
       return;
     }
@@ -446,43 +663,61 @@ function TransitMap({
         {/* Two passes: faint background line, bold colored overlay.
              Lets completed hops glow on top of the route base. */}
         {directionSegments.map((seg) => {
-          const done = completedSegments.has(seg.key);
+          const done = effectiveCompleted.has(seg.key);
           const isHighlighted =
             highlightedSegment &&
             seg.key ===
               `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`;
           const isHovered = hoverSeg === seg.key;
+          const isFresh = recentlyDone.has(seg.key);
           return (
-            <Polyline
-              key={seg.key}
-              positions={seg.positions}
-              color={isHighlighted ? "#facc15" : done ? "#22c55e" : routeColor}
-              weight={isHighlighted ? 8 : done ? 6 : isHovered ? 6 : 4}
-              opacity={isHighlighted ? 1 : done ? 1 : isHovered ? 0.95 : 0.55}
-              eventHandlers={{
-                click: () => handleSegmentClick(seg),
-                mouseover: () => setHoverSeg(seg.key),
-                mouseout: () => setHoverSeg((h) => (h === seg.key ? null : h)),
-              }}
-            >
-              <Tooltip sticky direction="top" opacity={0.95}>
-                <div style={{ fontWeight: 600, fontSize: 12 }}>
-                  {seg.fromName} → {seg.toName}
-                </div>
-                <div
-                  style={{ fontSize: 11, color: done ? "#22c55e" : "#60a5fa" }}
-                >
-                  {done ? "✓ Already marked" : "Click to mark this hop"}
-                </div>
-              </Tooltip>
-            </Polyline>
+            <React.Fragment key={seg.key}>
+              <Polyline
+                positions={seg.positions}
+                color={
+                  isHighlighted ? "#facc15" : done ? "#22c55e" : routeColor
+                }
+                weight={isHighlighted ? 8 : done ? 6 : isHovered ? 6 : 4}
+                opacity={isHighlighted ? 1 : done ? 1 : isHovered ? 0.95 : 0.55}
+                eventHandlers={{
+                  click: () => handleSegmentClick(seg),
+                  mouseover: () => setHoverSeg(seg.key),
+                  mouseout: () =>
+                    setHoverSeg((h) => (h === seg.key ? null : h)),
+                }}
+              >
+                <Tooltip sticky direction="top" opacity={0.95}>
+                  <div style={{ fontWeight: 600, fontSize: 12 }}>
+                    {seg.fromName} → {seg.toName}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: done ? "#22c55e" : "#60a5fa",
+                    }}
+                  >
+                    {done ? "✓ Already marked" : "Click to mark this hop"}
+                  </div>
+                </Tooltip>
+              </Polyline>
+              {isFresh && (
+                <Polyline
+                  positions={seg.positions}
+                  color="#4ade80"
+                  weight={14}
+                  opacity={0.55}
+                  className="segment-pulse"
+                  interactive={false}
+                />
+              )}
+            </React.Fragment>
           );
         })}
 
         {visibleStops.map((stop) => {
           const isPicking = pickState?.directionId === stop.directionId;
           const isFrom = isPicking && pickState?.fromStopId === stop.id;
-          // A stop is a valid alighting candidate only if it sits *after* the
+          // A stop is a valid ending candidate only if it sits *after* the
           // boarding stop in the direction's stop order.
           const isValidCandidate =
             isPicking &&
@@ -516,7 +751,7 @@ function TransitMap({
                 <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
                   <span style={{ fontWeight: 600 }}>{stop.name}</span>
                   <br />
-                  <span style={{ fontSize: 11, color: "#facc15" }}>
+                  <span style={{ fontSize: 11, color: "#22c55e" }}>
                     Boarding stop — tap a stop ahead (toward{" "}
                     {activeDirectionMeta?.lastStopName || "destination"})
                   </span>
@@ -630,7 +865,7 @@ function TransitMap({
                   className="stop-search-input"
                   placeholder={
                     pickState
-                      ? "Find your alighting stop…"
+                      ? "Find your ending stop…"
                       : "Find a stop on this route…"
                   }
                   value={stopSearch}
@@ -667,7 +902,7 @@ function TransitMap({
                             isBoardingChoice
                               ? "This is your boarding stop"
                               : pickState
-                                ? "Mark as alighting stop"
+                                ? "Mark as ending stop"
                                 : "Board here"
                           }
                         >
@@ -815,7 +1050,7 @@ function TransitMap({
                     <span>
                       {justCompleted
                         ? "Trip logged — pick another or change direction"
-                        : "Tap your alighting stop in the same direction"}
+                        : "Tap your ending stop in the same direction"}
                     </span>
                   </div>
                 </div>
@@ -831,6 +1066,28 @@ function TransitMap({
                       style={{ background: routeColor }}
                     />{" "}
                     Pending
+                  </span>
+                </div>
+              )}
+              {!legendCollapsed && tripStats && (
+                <div
+                  className="map-legend-trip-stats"
+                  title="Average and most-recent ride time, measured between your boarding and ending taps. Stored locally on this device."
+                >
+                  <span className="map-legend-trip-icon" aria-hidden>
+                    ⏱
+                  </span>
+                  <span>
+                    <strong>{formatDuration(tripStats.avgMs)}</strong> avg
+                    {tripStats.count > 1 ? ` (${tripStats.count} trips)` : ""}
+                    {tripStats.lastMs ? (
+                      <>
+                        {" · "}
+                        <span className="map-legend-trip-last">
+                          last {formatDuration(tripStats.lastMs)}
+                        </span>
+                      </>
+                    ) : null}
                   </span>
                 </div>
               )}
@@ -859,7 +1116,15 @@ function TransitMap({
             </span>
           </div>
           <span className="pick-arrow">→</span>
-          <span className="pick-prompt">Now tap your alighting stop</span>
+          <span className="pick-prompt">Now tap your ending stop</span>
+          {pickState.boardedAt && (
+            <span
+              className="pick-timer"
+              title="Time since you tapped your boarding stop"
+            >
+              ⏱ {formatDuration(liveTripMs) || "0s"}
+            </span>
+          )}
           {activeDirectionMeta && (
             <span className="pick-direction-lock">
               Direction locked: {activeDirectionMeta.label}
@@ -900,6 +1165,28 @@ function TransitMap({
       {toast && (
         <div className={`map-toast map-toast-${toast.kind}`}>{toast.msg}</div>
       )}
+
+      <button
+        type="button"
+        className="map-help-button"
+        onClick={() => setHelpOpen(true)}
+        aria-label="How to use the map"
+        title="How to log a ride"
+      >
+        ?
+      </button>
+
+      <HelpModal
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        onDontShowAgain={() => {
+          try {
+            localStorage.setItem(HELP_SEEN_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+        }}
+      />
     </div>
   );
 }

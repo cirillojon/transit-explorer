@@ -12,6 +12,9 @@ _ID_RE = re.compile(r"^[A-Za-z0-9_\-\.:]{1,80}$")
 
 MAX_NOTES_LEN = 500
 MAX_BULK_IDS = 500
+# Cap measured trip duration at 24h to keep the int small and reject
+# obviously-bogus client clocks.
+MAX_DURATION_MS = 24 * 60 * 60 * 1000
 
 
 def validate_id(value, field):
@@ -44,6 +47,26 @@ def validate_notes(value, field="notes"):
     if len(v) > MAX_NOTES_LEN:
         raise ValueError(f"{field} exceeds {MAX_NOTES_LEN} characters")
     return v
+
+
+def validate_duration_ms(value, field="duration_ms", required=False):
+    """Optional measured trip duration in milliseconds.
+
+    Accepts None / missing (returns None) unless required=True. Rejects
+    negative, non-numeric, or absurdly large values.
+    """
+    if value is None:
+        if required:
+            raise ValueError(f"{field} is required")
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{field} must be a number")
+    iv = int(value)
+    if iv < 0:
+        raise ValueError(f"{field} must be >= 0")
+    if iv > MAX_DURATION_MS:
+        raise ValueError(f"{field} exceeds maximum of {MAX_DURATION_MS}")
+    return iv
 
 
 def validate_id_list(value, field, max_len=MAX_BULK_IDS):

@@ -156,6 +156,22 @@ function App() {
     if (user) loadUserData();
   }, [user, loadUserData]);
 
+  // The "📍 Viewing segment from progress" banner only makes sense while the
+  // user is still on the Progress tab looking at the highlighted route.
+  // Clear it as soon as they navigate to another tab or switch to a route
+  // other than the highlighted one — otherwise the banner sticks around
+  // forever even though the context is gone.
+  useEffect(() => {
+    if (!highlightedSegment) return;
+    if (activeTab !== "progress") {
+      setHighlightedSegment(null);
+      return;
+    }
+    if (selectedRoute && selectedRoute.id !== highlightedSegment.routeId) {
+      setHighlightedSegment(null);
+    }
+  }, [activeTab, selectedRoute, highlightedSegment]);
+
   if (authLoading || loading) {
     return (
       <div className="app">

@@ -91,6 +91,14 @@ def create_app():
     # Initialize Firebase Admin SDK
     _init_firebase(app)
 
+    # Run alembic migrations (idempotent; self-heals legacy DBs that
+    # predate alembic). Must happen BEFORE we query any user tables in
+    # the data-init block below, otherwise a stale schema raises
+    # OperationalError on missing columns.
+    if os.getenv("SKIP_DB_UPGRADE", "0") != "1":
+        with app.app_context():
+            _run_migrations(app)
+
     # Register blueprints
     from app.routes.api import api_blueprint
     app.register_blueprint(api_blueprint, url_prefix="/api")
@@ -186,6 +194,67 @@ def _start_background_backfill(app):
 
     t = threading.Thread(target=_run, daemon=True, name="oba-backfill")
     t.start()
+
+
+# Baseline alembic revision — represents the schema as-of when alembic
+# was first introduced. Used to stamp legacy DBs whose tables were
+# created via `db.create_all()` before migrations existed.
+_ALEMBIC_BASELINE_REV = "f838d5f10e83"
+
+
+def _run_migrations(app):
+    """Bring the database schema up to date.
+
+    Self-heals two common situations:
+      1. Brand-new DB — `flask db upgrade` creates everything.
+      2. Legacy DB whose tables exist but `alembic_version` does not
+         (created via db.create_all() before alembic was added). We
+         stamp the baseline first so `upgrade` only applies *new*
+         migrations instead of re-running CREATE TABLEs.
+
+    Any failure is logged but does NOT prevent the app from starting,
+    so health checks can still respond while you investigate.
+    """
+    # Tables that the baseline migration expects to create. If ANY of
+    # them already exist in a DB that has no alembic_version row, we
+    # treat the schema as legacy and stamp the baseline before
+    # running upgrade — otherwise alembic will try to re-CREATE them
+    # and SQLite will either error or lock.
+    BASELINE_TABLES = {
+        "routes",
+        "stops",
+        "users",
+        "route_directions",
+        "route_direction_stops",
+        "user_segments",
+    }
+    try:
+        from flask_migrate import stamp, upgrade
+
+        inspector = inspect(db.engine)
+        tables = set(inspector.get_table_names())
+        logger.info("[migrate] DB tables seen: %s", sorted(tables) or "<none>")
+
+        has_alembic = "alembic_version" in tables
+        legacy_tables = tables & BASELINE_TABLES
+        if legacy_tables and not has_alembic:
+            logger.info(
+                "[migrate] legacy DB detected (%d baseline tables, no "
+                "alembic_version) — stamping baseline %s",
+                len(legacy_tables),
+                _ALEMBIC_BASELINE_REV,
+            )
+            stamp(revision=_ALEMBIC_BASELINE_REV)
+        elif not tables:
+            logger.info("[migrate] empty database — running full upgrade")
+
+        logger.info("[migrate] running flask db upgrade …")
+        upgrade()
+        logger.info("[migrate] migrations done")
+    except Exception:
+        logger.exception(
+            "[migrate] migration step failed — schema may be out of date"
+        )
 
 
 def _init_firebase(app):

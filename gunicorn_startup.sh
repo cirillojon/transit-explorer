@@ -44,13 +44,28 @@ LOG_LEVEL=${LOG_LEVEL:-info}
 BIND_ADDR="0.0.0.0:${FLASK_PORT}"
 APP_MODULE="app:create_app()"
 
-# ─── Run database migrations ──────────────────────────────────
+# ─── Database migrations (synchronous, exclusive) ─────────────
+# Run schema migrations BEFORE anything else touches the DB. This
+# guarantees no other connection can hold a write lock during ALTER
+# TABLE. Skip with SKIP_DB_UPGRADE=1.
 if [ "${SKIP_DB_UPGRADE:-0}" != "1" ]; then
     echo "Running database migrations..."
-    if ! FLASK_APP=app.py flask db upgrade 2>/dev/null; then
-        echo "  (no migrations to run, or migrations not initialized — continuing)"
-    fi
+    SKIP_STARTUP_DATA_TASKS=1 SKIP_DB_UPGRADE=0 python3 - <<'PY'
+import logging
+logging.basicConfig(level=logging.INFO, format="  [migrate] %(message)s")
+from app import create_app
+# create_app() will invoke _run_migrations() once. SKIP_STARTUP_DATA_TASKS=1
+# prevents the data-init block from also touching the DB in the same process.
+create_app()
+PY
 fi
+
+# Tell create_app() in subsequent processes (preload script + gunicorn
+# master) NOT to run migrations again — we just did them.
+export SKIP_DB_UPGRADE=1
+
+# ─── Preload transit data ─────────────────────────────────────
+# Treat SKIP_DATA_LOAD and SKIP_STARTUP_DATA_TASKS as aliases.
 
 # ─── Preload transit data ─────────────────────────────────────
 # Treat SKIP_DATA_LOAD and SKIP_STARTUP_DATA_TASKS as aliases.
