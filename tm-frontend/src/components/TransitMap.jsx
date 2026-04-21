@@ -82,7 +82,6 @@ function FitHighlight({ positions }) {
 }
 
 function TransitMap({
-  routes,
   selectedRoute,
   completedSegments,
   onSegmentsMarked,
@@ -156,6 +155,30 @@ function TransitMap({
       setActiveDirection(highlightedSegment.directionId);
     }
   }, [highlightedSegment, routeDetail]);
+
+  const directionChoices = useMemo(() => {
+    if (!routeDetail?.directions?.length) return [];
+    const stopsMap = routeDetail.stops || {};
+    return routeDetail.directions.map((dir) => {
+      const ids = dir.stop_ids || [];
+      const firstStop = ids[0] ? stopsMap[ids[0]] : null;
+      const lastStop = ids.length ? stopsMap[ids[ids.length - 1]] : null;
+      return {
+        directionId: dir.direction_id,
+        label: dir.direction_name || `Direction ${dir.direction_id}`,
+        firstStopName: firstStop?.name || null,
+        lastStopName: lastStop?.name || null,
+      };
+    });
+  }, [routeDetail]);
+
+  const activeDirectionMeta = useMemo(
+    () =>
+      directionChoices.find((dir) => dir.directionId === activeDirection) ||
+      directionChoices[0] ||
+      null,
+    [directionChoices, activeDirection],
+  );
 
   const directionSegments = useMemo(() => {
     if (!routeDetail) return [];
@@ -273,14 +296,24 @@ function TransitMap({
       setPickState({ directionId, fromStopId: stopId, fromName: stopName });
       return;
     }
-    if (
-      pickState.directionId === directionId &&
-      pickState.fromStopId !== stopId
-    ) {
-      submitMark(directionId, pickState.fromStopId, stopId);
-    } else {
-      setPickState({ directionId, fromStopId: stopId, fromName: stopName });
+
+    if (pickState.directionId !== directionId) {
+      const lockedDirectionName =
+        directionChoices.find((dir) => dir.directionId === pickState.directionId)
+          ?.label || `Direction ${pickState.directionId}`;
+      showToast(
+        `Direction mismatch. Continue on ${lockedDirectionName} or cancel.`,
+        "info",
+      );
+      return;
     }
+
+    if (pickState.fromStopId === stopId) {
+      showToast("Pick a different stop to complete this segment.", "info");
+      return;
+    }
+
+    submitMark(directionId, pickState.fromStopId, stopId);
   };
 
   // Click a polyline directly to mark just that one hop.
@@ -425,19 +458,22 @@ function TransitMap({
       </MapContainer>
 
       {/* Direction tabs */}
-      {routeDetail && routeDetail.directions?.length > 1 && (
+      {directionChoices.length > 1 && (
         <div className="direction-tabs">
-          {routeDetail.directions.map((dir) => (
+          {directionChoices.map((dir) => (
             <button
-              key={dir.direction_id}
-              className={`direction-tab ${activeDirection === dir.direction_id ? "active" : ""}`}
+              key={dir.directionId}
+              className={`direction-tab ${activeDirection === dir.directionId ? "active" : ""}`}
               onClick={() => {
-                setActiveDirection(dir.direction_id);
+                setActiveDirection(dir.directionId);
                 setPickState(null);
                 onClearHighlight?.();
               }}
             >
-              {dir.direction_name || `Direction ${dir.direction_id}`}
+              <span className="direction-tab-label">{dir.label}</span>
+              <span className="direction-tab-sub" title={dir.lastStopName || ""}>
+                {dir.lastStopName ? `Toward ${dir.lastStopName}` : "Tap to follow this direction"}
+              </span>
             </button>
           ))}
         </div>
@@ -480,6 +516,36 @@ function TransitMap({
               </span>
             </div>
           )}
+          {activeDirectionMeta && (
+            <div className="map-legend-direction">
+              <span className="map-legend-direction-label">Logging direction</span>
+              <strong>{activeDirectionMeta.label}</strong>
+              {activeDirectionMeta.firstStopName && activeDirectionMeta.lastStopName && (
+                <span className="map-legend-direction-flow">
+                  {activeDirectionMeta.firstStopName} → {activeDirectionMeta.lastStopName}
+                </span>
+              )}
+            </div>
+          )}
+          <div className="map-legend-steps">
+            <div className={`map-legend-step ${activeDirectionMeta ? "is-complete" : "is-active"}`}>
+              <span className="map-legend-step-num">1</span>
+              <span>
+                Choose the correct direction
+                {activeDirectionMeta?.lastStopName ? ` (toward ${activeDirectionMeta.lastStopName})` : ""}
+              </span>
+            </div>
+            <div className={`map-legend-step ${pickState ? "is-complete" : "is-active"}`}>
+              <span className="map-legend-step-num">2</span>
+              <span>
+                {pickState ? `Boarded: ${pickState.fromName}` : "Tap your boarding stop"}
+              </span>
+            </div>
+            <div className={`map-legend-step ${pickState ? "is-active" : ""}`}>
+              <span className="map-legend-step-num">3</span>
+              <span>Tap your alighting stop in the same direction</span>
+            </div>
+          </div>
           <div className="map-legend-hints">
             <span>
               <i className="dot done" /> Completed
@@ -513,6 +579,14 @@ function TransitMap({
           </div>
           <span className="pick-arrow">→</span>
           <span className="pick-prompt">Now tap your alighting stop</span>
+          {activeDirectionMeta && (
+            <span className="pick-direction-lock">
+              Direction locked: {activeDirectionMeta.label}
+              {activeDirectionMeta.lastStopName
+                ? ` toward ${activeDirectionMeta.lastStopName}`
+                : ""}
+            </span>
+          )}
           <button className="pick-cancel" onClick={() => setPickState(null)}>
             ✕
           </button>

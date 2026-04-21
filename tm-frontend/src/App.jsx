@@ -322,7 +322,6 @@ function App() {
       </aside>
 
       <TransitMap
-        routes={routes}
         selectedRoute={selectedRoute}
         completedSegments={completedSegments}
         onSegmentsMarked={loadUserData}
