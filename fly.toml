@@ -31,10 +31,14 @@ primary_region = 'sjc'
   AUTO_SEED_ON_EMPTY = '0'
 
 [processes]
-  app = 'bin/start prod'
+  # These strings are appended as ARGS to the Dockerfile ENTRYPOINT
+  # (`/app/bin/start`). Do NOT prefix them with `bin/start` — Fly would
+  # then run `/app/bin/start bin/start prod` and the dispatcher would
+  # exit 2 with a usage message, putting the machine in a restart loop.
+  app = 'prod'
   # Worker shares the same volume; only one machine should run it.
   # `flyctl scale count app=1 worker=1 --region sjc`
-  worker = 'bin/start worker'
+  worker = 'worker'
 
 [[mounts]]
   source = 'tm_data'
