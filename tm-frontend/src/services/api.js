@@ -108,6 +108,9 @@ export const fetchLeaderboard = async ({
   return r.data;
 };
 
+export const fetchUserProfile = (userId) =>
+  api.get(`/api/users/${userId}/profile`).then((r) => r.data);
+
 /* ------------------------------------------------------------------
  * Authenticated endpoints (never cached; user-specific & mutable)
  * ------------------------------------------------------------------*/

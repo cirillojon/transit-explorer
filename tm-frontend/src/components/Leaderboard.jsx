@@ -14,7 +14,7 @@ function medal(rank) {
   return null;
 }
 
-function Leaderboard({ currentUserStats }) {
+function Leaderboard({ currentUserStats, onSelectUser }) {
   const [period, setPeriod] = useState("all");
   const [data, setData] = useState({ leaderboard: [] });
   const [loading, setLoading] = useState(true);
@@ -74,9 +74,12 @@ function Leaderboard({ currentUserStats }) {
       {!loading && !err && data.leaderboard.length > 0 && (
         <div className="leaderboard-list">
           {data.leaderboard.map((entry) => (
-            <div
+            <button
               key={entry.user_id}
-              className={`leaderboard-entry rank-${entry.rank}`}
+              type="button"
+              className={`leaderboard-entry rank-${entry.rank} leaderboard-entry-button`}
+              onClick={() => onSelectUser?.(entry)}
+              aria-label={`View ${entry.display_name}'s progress`}
             >
               <span className="lb-rank">
                 {medal(entry.rank) || `#${entry.rank}`}
@@ -102,7 +105,10 @@ function Leaderboard({ currentUserStats }) {
               <div className="lb-trophy">
                 {entry.total_segments >= 100 && "💯"}
               </div>
-            </div>
+              <span className="lb-chevron" aria-hidden>
+                ›
+              </span>
+            </button>
           ))}
         </div>
       )}

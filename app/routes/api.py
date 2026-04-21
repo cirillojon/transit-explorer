@@ -165,6 +165,103 @@ def get_leaderboard():
     })
 
 
+@api_blueprint.route('/users/<int:user_id>/profile')
+def get_user_profile(user_id):
+    """Public, read-only view of another explorer's progress.
+
+    Returns the same shape used by the in-app Progress / Achievements panels
+    so the frontend can reuse the same rendering. No auth required, but
+    nothing mutable is exposed.
+    """
+    user = User.query.get_or_404(user_id)
+    summary = _user_summary(user.id)
+    achievements = _evaluate_achievements(summary)
+
+    # Per-route progress (same logic as /me/progress, without the auth user)
+    segments = UserSegment.query.filter_by(user_id=user.id).all()
+    progress_list = []
+    if segments:
+        route_ids = list({s.route_id for s in segments})
+        routes_by_id = {
+            r.id: r for r in Route.query.filter(Route.id.in_(route_ids)).all()
+        }
+        dirs = RouteDirection.query.filter(
+            RouteDirection.route_id.in_(route_ids)
+        ).all()
+        dir_name_map = {}
+        totals_per_route = {rid: 0 for rid in route_ids}
+        dirs_per_route = {rid: [] for rid in route_ids}
+        for d in dirs:
+            dir_name_map[(d.route_id, d.direction_id)] = (
+                d.direction_name or d.direction_id
+            )
+            try:
+                stop_ids = json.loads(d.stop_ids_json or '[]')
+            except Exception:
+                stop_ids = []
+            count = max(0, len(stop_ids) - 1)
+            totals_per_route[d.route_id] = (
+                totals_per_route.get(d.route_id, 0) + count
+            )
+            dirs_per_route[d.route_id].append({
+                'direction_id': d.direction_id,
+                'direction_name': d.direction_name or d.direction_id,
+                'stop_ids': stop_ids,
+                'total_hops': count,
+            })
+
+        by_route = {}
+        for seg in segments:
+            rid = seg.route_id
+            if rid not in by_route:
+                r = routes_by_id.get(rid)
+                by_route[rid] = {
+                    'route_id': rid,
+                    'route_name': (r.short_name or r.long_name or rid) if r else rid,
+                    'route_color': r.color if r else None,
+                    'route_type': r.route_type if r else None,
+                    'total_segments': totals_per_route.get(rid, 0),
+                    'completed_segments': 0,
+                    'completion_pct': 0,
+                    'directions': dirs_per_route.get(rid, []),
+                    'segments': [],
+                }
+            by_route[rid]['completed_segments'] += 1
+            seg_dict = seg.to_dict()
+            seg_dict['direction_name'] = dir_name_map.get(
+                (rid, seg.direction_id), seg.direction_id
+            )
+            by_route[rid]['segments'].append(seg_dict)
+
+        for data in by_route.values():
+            total = data['total_segments']
+            completed = data['completed_segments']
+            data['completion_pct'] = (
+                round(completed / total * 100, 1) if total > 0 else 0
+            )
+
+        progress_list = sorted(
+            by_route.values(),
+            key=lambda x: (
+                x['completion_pct'] >= 100,
+                -x['completion_pct'],
+                -x['completed_segments'],
+            ),
+        )
+
+    return jsonify({
+        'user': {
+            'id': user.id,
+            'display_name': user.display_name or 'Anonymous',
+            'avatar_url': user.avatar_url,
+            'created_at': user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
+        },
+        **summary,
+        'achievements': achievements,
+        'progress': progress_list,
+    })
+
+
 # ─── Authenticated endpoints ─────────────────────────────────────────
 
 @api_blueprint.route('/me')

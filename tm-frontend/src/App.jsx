@@ -3,6 +3,7 @@ import TransitMap from "./components/TransitMap";
 import RouteList from "./components/RouteList";
 import UserProgress from "./components/UserProgress";
 import Leaderboard from "./components/Leaderboard";
+import PublicProfile from "./components/PublicProfile";
 import {
   fetchRoutes,
   fetchProgress,
@@ -62,6 +63,7 @@ function App() {
   const [highlightedSegment, setHighlightedSegment] = useState(null);
   const [popupToasts, setPopupToasts] = useState([]); // achievement-style stacked
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
+  const [viewingUser, setViewingUser] = useState(null); // public profile modal
 
   const pushToast = useCallback((msg) => {
     const id = Date.now() + Math.random();
@@ -362,7 +364,10 @@ function App() {
           )}
 
           {activeTab === "leaderboard" && (
-            <Leaderboard currentUserStats={stats} />
+            <Leaderboard
+              currentUserStats={stats}
+              onSelectUser={(entry) => setViewingUser(entry)}
+            />
           )}
         </div>
       </aside>
@@ -384,6 +389,14 @@ function App() {
           </div>
         ))}
       </div>
+
+      {viewingUser && (
+        <PublicProfile
+          userId={viewingUser.user_id}
+          fallbackEntry={viewingUser}
+          onClose={() => setViewingUser(null)}
+        />
+      )}
     </div>
   );
 }
