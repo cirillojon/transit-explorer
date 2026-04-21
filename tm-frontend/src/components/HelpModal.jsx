@@ -38,8 +38,7 @@ function HelpModal({ open, onClose, onDontShowAgain }) {
           🚌 How to log a ride
         </h2>
         <p className="help-modal-lead">
-          Three taps on the map turn the route line green. Watch for the glow —
-          that means the segment was just saved.
+          Welcome aboard! Here&apos;s how to log your trip on the map.
         </p>
 
         <ol className="help-modal-steps">
@@ -62,7 +61,7 @@ function HelpModal({ open, onClose, onDontShowAgain }) {
             <span className="help-modal-num">3</span>
             <div>
               <strong>Tap your boarding stop</strong>. It turns into a pulsing
-              yellow marker.
+              green marker.
             </div>
           </li>
           <li>
