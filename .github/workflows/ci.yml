@@ -26,12 +26,17 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
       - name: Schema drift check
         # Fails CI if models.py changed without a matching migration.
+        # NOTE: must use a file-backed sqlite, not :memory: — flask spins
+        # up a fresh connection per CLI invocation, and each :memory: URL
+        # gets its own private DB, so check-schema would see an empty DB
+        # and report every modelled table as "drift".
         env:
           FLASK_APP: app.py
           FLASK_ENV: development
           SKIP_STARTUP_DATA_TASKS: "1"
-          SQLALCHEMY_DATABASE_URI: "sqlite:///:memory:"
+          SQLALCHEMY_DATABASE_URI: "sqlite:////tmp/ci-schema-check.db"
         run: |
+          rm -f /tmp/ci-schema-check.db
           flask db upgrade
           flask data check-schema
       - name: Run pytest
