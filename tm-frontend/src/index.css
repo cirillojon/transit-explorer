@@ -2132,7 +2132,8 @@ button {
   }
 
   /* Direction tabs: move OUT of top so the hamburger area is clean.
-     Pin them above the legend at the bottom for thumb reach. */
+     Pin them above the legend at the bottom for thumb reach.
+     Use z-index 1001 so they always render above the map-legend. */
   .direction-tabs {
     top: auto;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 130px);
@@ -2140,6 +2141,7 @@ button {
     right: 12px;
     transform: none;
     max-width: none;
+    z-index: 1001;
   }
   .direction-tab {
     min-width: 130px;
@@ -2149,7 +2151,8 @@ button {
     max-width: 170px;
   }
 
-  /* Legend — wider and bottom anchored, with safe-area */
+  /* Legend — wider and bottom anchored, with safe-area.
+     Cap height so it never grows into the direction-tabs above it. */
   .map-legend {
     top: auto;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
@@ -2159,6 +2162,8 @@ button {
     max-width: none;
     font-size: 12px;
     padding: 10px 12px;
+    max-height: calc(100dvh - env(safe-area-inset-bottom, 0px) - 200px);
+    overflow-y: auto;
   }
 
   .map-hero-hint {
@@ -2233,9 +2238,15 @@ button {
     min-height: 40px;
   }
 
-  /* When the sidebar drawer is open on mobile, hide the map-side
-     overlays so they don't peek through the backdrop or compete with
-     the route details for attention. */
+  /* When the sidebar drawer is open on mobile, disable all map
+     interaction so the Leaflet map cannot be scrolled/panned while
+     the drawer is visible. */
+  .app.sidebar-open .map-wrapper {
+    pointer-events: none;
+  }
+
+  /* Hide the map-side overlays so they don't peek through the
+     backdrop or compete with the route details for attention. */
   .app.sidebar-open .direction-tabs,
   .app.sidebar-open .map-legend,
   .app.sidebar-open .map-hero-hint,
