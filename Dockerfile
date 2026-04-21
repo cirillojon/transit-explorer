@@ -30,6 +30,11 @@ ENV FLASK_APP=app.py \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# Strip CRLF line endings that sneak in from Windows checkouts — without
+# this, `#!/usr/bin/env bash\r` makes the container exit immediately with
+# `env: 'bash\r': No such file or directory`.
+RUN sed -i 's/\r$//' /app/gunicorn_startup.sh /app/bin/start /app/bin/check-schema
+
 # Persistent data dir (mount a volume here in production)
 RUN mkdir -p /app/tm-instance \
     && chmod +x /app/gunicorn_startup.sh /app/bin/start /app/bin/check-schema

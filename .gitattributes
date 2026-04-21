@@ -1,0 +1,6 @@
+# Force LF endings for shell scripts and anything the container executes,
+# regardless of host OS (Windows checkouts otherwise produce CRLF, which
+# breaks shebangs inside the Linux Docker image).
+*.sh        text eol=lf
+bin/*       text eol=lf
+Dockerfile  text eol=lf
