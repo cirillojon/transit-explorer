@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Thin wrapper around `flask data check-schema`. Exits 1 on drift.
+# Used in CI so PRs that mutate models.py without committing a
+# migration fail the build.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export FLASK_APP="${FLASK_APP:-app.py}"
+exec flask data check-schema

@@ -16,7 +16,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # App source
 COPY app/ ./app/
+COPY bin/ ./bin/
 COPY app.py gunicorn_startup.sh ./
+
+# Build deps for flock used by bin/start (already in slim, but be explicit
+# in case a future base image drops it).
+RUN apt-get update && apt-get install -y --no-install-recommends util-linux \
+    && rm -rf /var/lib/apt/lists/*
 
 # Environment
 ENV FLASK_APP=app.py \
@@ -24,8 +30,14 @@ ENV FLASK_APP=app.py \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
+# Strip CRLF line endings that sneak in from Windows checkouts — without
+# this, `#!/usr/bin/env bash\r` makes the container exit immediately with
+# `env: 'bash\r': No such file or directory`.
+RUN sed -i 's/\r$//' /app/gunicorn_startup.sh /app/bin/start /app/bin/check-schema
+
 # Persistent data dir (mount a volume here in production)
-RUN mkdir -p /app/tm-instance && chmod +x /app/gunicorn_startup.sh
+RUN mkdir -p /app/tm-instance \
+    && chmod +x /app/gunicorn_startup.sh /app/bin/start /app/bin/check-schema
 
 # Drop privileges
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
@@ -36,4 +48,5 @@ EXPOSE 8880
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -fsS "http://localhost:${FLASK_PORT}/api/health" || exit 1
 
-ENTRYPOINT ["/app/gunicorn_startup.sh"]
+ENTRYPOINT ["/app/bin/start"]
+CMD ["prod"]

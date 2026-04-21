@@ -31,7 +31,7 @@ cp .env.example .env                      # then fill in values
 python -m venv .venv
 source .venv/bin/activate                 # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-FLASK_APP=app.py flask db upgrade
+# `bin/start dev` handles migrations + auto-seed for you (see Daily loop).
 
 # Frontend
 cd tm-frontend
@@ -54,7 +54,7 @@ cd transit-explorer
 # Terminal 1 alternative — backend without Docker
 cd transit-explorer
 source .venv/bin/activate
-FLASK_APP=app.py FLASK_DEBUG=1 flask run --port 8880
+./bin/start dev     # runs migrations, seeds OBA data if DB is empty, starts flask run
 ```
 
 ```bash
@@ -66,21 +66,35 @@ npm run dev
 - Backend: http://localhost:8880
 - Frontend: http://localhost:5173 (Vite proxies `/api` to backend via `VITE_PROXY_URL`)
 
-On a fresh local DB, `/api/health` returns before the OneBusAway import is done. Give `/api/routes` and route detail 1-3 minutes to fully populate while the background loader/backfill catches up.
+On a fresh local DB, `bin/start dev` kicks off a background OBA load. `/api/health` reports per-agency progress (`agencies[].route_count`, `last_data_load_at`); give `/api/routes` and route detail 1-3 minutes to fully populate. Re-running `bin/start dev` is safe — it skips the seed when the `routes` table is non-empty.
+
+`bin/start` modes:
+
+| Mode        | Purpose                                                                          |
+| ----------- | -------------------------------------------------------------------------------- |
+| `dev`       | migrate + auto-seed (background) + `flask run --debug` on `PORT` (default 8880). |
+| `prod`      | migrate + `gunicorn` (Fly's `app` process).                                      |
+| `worker`    | `flask data load --loop` — refreshes OBA data every `OBA_REFRESH_TTL_HOURS`.     |
+| `migrate`   | `flask db upgrade && flask data check-schema`. Exits 0 on success.               |
+| `load-data` | One-shot `flask data load` (add `--force` to ignore TTL).                        |
+
+A file lock at `$DATA_DIR/.boot.lock` (default `tm-instance/.boot.lock`) serializes the migrate step so concurrent boots don't race.
 
 If you use `./dev_container_update.sh`, it rebuilds the image and replaces the existing local backend container for the current git branch. On Windows, run it from WSL or Git Bash.
 
 ### Common tasks
 
-| Task                                    | Command                                                     |
-| --------------------------------------- | ----------------------------------------------------------- |
-| Rebuild/restart local backend container | `./dev_container_update.sh 8880`                            |
-| Reset local DB                          | `rm -rf tm-instance/*.db && flask db upgrade`               |
-| Re-run OBA data load                    | Delete the DB, restart backend. Loader runs in background.  |
-| Add a model field → migration           | `flask db migrate -m "describe change" && flask db upgrade` |
-| Run backend tests                       | `pytest tests/`                                             |
-| Frontend lint                           | `cd tm-frontend && npm run lint`                            |
-| Frontend production-build smoke test    | `cd tm-frontend && npm run build && npm run preview`        |
+| Task                                    | Command                                                                       |
+| --------------------------------------- | ----------------------------------------------------------------------------- |
+| Rebuild/restart local backend container | `./dev_container_update.sh 8880`                                              |
+| Reset local DB                          | `rm -rf tm-instance/*.db && ./bin/start dev` (auto-migrates + auto-seeds)     |
+| Re-run OBA data load                    | `flask data load --force` (or `./bin/start load-data --force`)                |
+| Inspect data-load state                 | `flask data status` — JSON of per-agency last attempt/success/route count     |
+| Detect model ↔ migration drift          | `flask data check-schema` (also runs in CI and on every boot via `bin/start`) |
+| Add a model field → migration           | `flask db migrate -m "describe change"` then commit; boot applies it          |
+| Run backend tests                       | `pytest tests/`                                                               |
+| Frontend lint                           | `cd tm-frontend && npm run lint`                                              |
+| Frontend production-build smoke test    | `cd tm-frontend && npm run build && npm run preview`                          |
 
 ---
 
@@ -170,11 +184,20 @@ flyctl tokens revoke <old-token-id>     # optional cleanup; list with `flyctl to
 
 ### What happens on boot
 
-1. `gunicorn_startup.sh` runs and materializes `GOOGLE_APPLICATION_CREDENTIALS_JSON` to `/app/service-account.json` when that secret is present.
-2. `flask db upgrade` applies any pending migrations (skip with `SKIP_DB_UPGRADE=1`).
-3. In local Docker, `gunicorn_startup.sh` can run a foreground OBA load unless `SKIP_DATA_LOAD=1` is set.
-4. Gunicorn boots with `--preload`.
-5. `create_app()` checks whether tables, directions, or routes are missing and starts a background load/backfill when needed. On Fly, this is the only loader path because `fly.toml` sets `SKIP_DATA_LOAD=1`.
+Fly runs two processes from `fly.toml` (`[processes]`), both invoking `bin/start`:
+
+- **`app` = `bin/start prod`** → materializes `GOOGLE_APPLICATION_CREDENTIALS_JSON` if present, takes the `$DATA_DIR/.boot.lock` (`flock`), runs `flask db upgrade` + `flask data check-schema`, then exec's gunicorn with `--preload`. Fails fast if migrations or schema-drift fail. The web process **never** kicks off OBA loads — it only serves traffic.
+- **`worker` = `bin/start worker`** → `flask data load --loop`, sleeping `OBA_REFRESH_TTL_HOURS` (default 24h) between iterations. Per-agency state lives in the `data_loads` table; refreshes are TTL-gated and only fetch routes whose direction list is missing/incomplete (or everything if `--force`).
+
+Scale them like:
+
+```bash
+flyctl scale count app=1 worker=1 --region sjc -a transit-explorer
+```
+
+Keep `worker=1`. Both processes share the same SQLite volume; multiple workers would just collide on the boot lock and waste OBA quota.
+
+Escape hatch: `AUTO_UPGRADE_ON_BOOT=1` lets `create_app()` re-run `flask db upgrade` from inside gunicorn (off by default; useful only if you ever bypass `bin/start`).
 
 ### Common backend tasks
 
@@ -188,6 +211,8 @@ flyctl tokens revoke <old-token-id>     # optional cleanup; list with `flyctl to
 | Manually restart                      | `flyctl machine restart <machine-id> -a transit-explorer`                                                                         |
 | Bump RAM (e.g. OOM)                   | `flyctl scale memory 2048 -a transit-explorer`                                                                                    |
 | Inspect SQLite on the volume          | `flyctl ssh console -C "sqlite3 /app/tm-instance/data.db .tables" -a transit-explorer`                                            |
+| Force OBA refresh on the worker       | `flyctl ssh console -p worker -C "flask data load --force" -a transit-explorer`                                                   |
+| Inspect data-load state in prod       | `flyctl ssh console -C "flask data status" -a transit-explorer`                                                                   |
 | Roll back a deploy                    | Find prior image: `flyctl releases -a transit-explorer`; redeploy: `flyctl deploy --image registry.fly.io/transit-explorer:<tag>` |
 
 > **First-time SSH setup (Windows + WSL gotcha):** `flyctl ssh console` needs a personal SSH cert in your ssh-agent. PowerShell's `ssh-agent` service is disabled by default, so run the cert step **inside WSL** once per shell:
@@ -363,5 +388,17 @@ PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer\tm-frontend> npm t
       Tests  9 passed (9)
    Start at  17:13:45
    Duration  5.74s (transform 421ms, setup 1.74s, collect 1.32s, tests 1.25s, environment 7.65s, prepare 1.41s)
+
+# Snapshot production DB:
+
+PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
+>> #!/bin/bash
+>> cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer
+>> /home/jon/.fly/bin/flyctl ssh console -a transit-explorer -C 'sqlite3 /app/tm-instance/data.db ".backup /tmp/prod-snapshot.db"' 2>&1
+>> echo EXIT=`$?
+>> "@ | Out-File -Encoding ascii .\_snap.sh; wsl bash ./_snap.sh
+Connecting... complete
+EXIT=0
+PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
 
 ```

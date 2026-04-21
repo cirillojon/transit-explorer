@@ -53,6 +53,10 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        # Autogen flags (compare_type / compare_server_default / render_as_batch)
+        # are configured via Migrate(...) in app/__init__.py and arrive here
+        # through configure_args. Don't redeclare them — alembic raises
+        # "multiple values for keyword argument" if you do.
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

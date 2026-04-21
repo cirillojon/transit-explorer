@@ -1,0 +1,257 @@
+#!/usr/bin/env bash
+# Canonical entrypoint for the Transit Explorer backend.
+#
+# Modes:
+#   bin/start              # auto: prod if FLASK_ENV=production else dev
+#   bin/start dev          # flask run with debug
+#   bin/start prod         # gunicorn
+#   bin/start migrate      # flask db upgrade only (under flock)
+#   bin/start load-data    # one-shot OBA refresh (TTL-aware)
+#                          # add --loop to run forever, sleeping between cycles
+#                          # add --force to ignore the TTL
+#   bin/start worker       # alias of `load-data --loop` for fly processes
+#
+# Env knobs:
+#   FLASK_PORT              port to bind (default 8880)
+#   WEB_CONCURRENCY         gunicorn worker count (default 2)
+#   GUNICORN_TIMEOUT        per-request timeout seconds (default 30)
+#   LOG_LEVEL               default INFO
+#   SKIP_DB_UPGRADE=1       skip the migrate step (escape hatch only)
+#   SKIP_DATA_LOAD=1        skip the dev-mode auto-seed
+#   OBA_REFRESH_TTL_HOURS   per-agency refresh interval (default 24)
+#   AUTO_SEED_ON_EMPTY=1    in dev or prod mode, run a background
+#                            `flask data load` once if the routes table
+#                            is empty (default 1). Set to 0 on Fly app
+#                            process so only the worker fetches data.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+export FLASK_APP="${FLASK_APP:-app.py}"
+DATA_DIR="${DATA_DIR:-$(pwd)/tm-instance}"
+mkdir -p "$DATA_DIR"
+LOCK_FILE="${LOCK_FILE:-$DATA_DIR/.boot.lock}"
+
+log() { printf '[start] %s\n' "$*" >&2; }
+
+# ─── Materialize Firebase service-account JSON from a secret ──
+# Mirrors the historical gunicorn_startup.sh behaviour so existing
+# Fly secrets keep working.
+materialize_firebase_creds() {
+  if [ -n "${GOOGLE_APPLICATION_CREDENTIALS_JSON:-}" ]; then
+    : "${GOOGLE_APPLICATION_CREDENTIALS:=/app/service-account.json}"
+    export GOOGLE_APPLICATION_CREDENTIALS
+    if [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+      printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_JSON" \
+        > "$GOOGLE_APPLICATION_CREDENTIALS"
+      chmod 600 "$GOOGLE_APPLICATION_CREDENTIALS" || true
+      log "wrote Firebase credentials to $GOOGLE_APPLICATION_CREDENTIALS"
+    fi
+  fi
+}
+
+# ─── flock helper (no-op on systems without flock, e.g. macOS) ──
+with_lock() {
+  if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCK_FILE"
+    if ! flock -w 120 9; then
+      log "ERROR: failed to acquire boot lock at $LOCK_FILE within 120s"
+      exit 1
+    fi
+    "$@"
+    flock -u 9
+    exec 9>&-
+  else
+    log "flock unavailable — running without boot lock"
+    "$@"
+  fi
+}
+
+# ─── Adopt a pre-existing DB into alembic ──
+# Production was originally created via SQLAlchemy `db.create_all()` and
+# never stamped, so `alembic_version` is empty even though every modeled
+# table exists. Running `flask db upgrade` from base would error with
+# "table routes already exists" on the very first migration.
+#
+# This helper inspects the live DB and, if it finds the schema present
+# but unstamped, stamps it at the latest revision whose schema matches
+# what's actually there. Idempotent: a no-op once `alembic_version` has
+# any row.
+adopt_existing_db_if_unstamped() {
+  local target
+  target=$(python3 - <<'PY'
+import sys
+from sqlalchemy import inspect, text
+from app import create_app, db
+
+app = create_app()
+with app.app_context():
+    insp = inspect(db.engine)
+    tables = set(insp.get_table_names())
+
+    # Already stamped → nothing to do.
+    if "alembic_version" in tables:
+        with db.engine.connect() as conn:
+            row = conn.execute(text("SELECT version_num FROM alembic_version")).first()
+        if row is not None:
+            sys.exit(0)
+
+    # Empty DB → let `flask db upgrade` build it from scratch.
+    if "routes" not in tables:
+        sys.exit(0)
+
+    # Pick the newest revision whose schema is already present in the DB.
+    target = "f838d5f10e83"  # baseline tables
+    user_segment_cols = (
+        {c["name"] for c in insp.get_columns("user_segments")}
+        if "user_segments" in tables else set()
+    )
+    if "duration_ms" in user_segment_cols:
+        target = "a1c2e4f9b701"
+    if "data_loads" in tables:
+        target = "b3d09f1e2c44"
+
+    print(target)
+PY
+  )
+  if [ -n "$target" ]; then
+    log "schema present but unstamped → stamping at $target"
+    flask db stamp "$target"
+  fi
+}
+
+# ─── Run alembic upgrade then drift check ──
+do_migrate() {
+  if [ "${SKIP_DB_UPGRADE:-0}" = "1" ]; then
+    log "SKIP_DB_UPGRADE=1 — skipping migrations"
+    return
+  fi
+  log "checking for unstamped pre-alembic DB"
+  adopt_existing_db_if_unstamped
+  log "running flask db upgrade"
+  flask db upgrade
+  log "running schema-drift check"
+  flask data check-schema
+}
+
+# ─── Background auto-seed (dev + local prod) ──
+maybe_auto_seed() {
+  if [ "${SKIP_DATA_LOAD:-0}" = "1" ]; then return; fi
+  if [ "${AUTO_SEED_ON_EMPTY:-1}" != "1" ]; then return; fi
+
+  local routes
+  routes=$(python3 - <<'PY'
+from app import create_app, db
+from app.models import Route
+app = create_app()
+with app.app_context():
+    print(db.session.query(Route.id).count())
+PY
+)
+  if [ "$routes" -gt 0 ]; then
+    log "DB already has $routes routes — skipping auto-seed"
+    return
+  fi
+  log "DB empty — kicking off background data load (flask data load)"
+  ( flask data load >/tmp/te-data-load.log 2>&1 & )
+}
+
+# ─── Mode dispatchers ──
+mode_migrate() {
+  materialize_firebase_creds
+  with_lock do_migrate
+}
+
+mode_load_data() {
+  materialize_firebase_creds
+  local args=()
+  local loop=0
+  for arg in "$@"; do
+    case "$arg" in
+      --loop)  loop=1 ;;
+      --force) args+=(--force) ;;
+      *)       args+=("$arg") ;;
+    esac
+  done
+
+  if [ "$loop" -eq 1 ]; then
+    local ttl="${OBA_REFRESH_TTL_HOURS:-24}"
+    while true; do
+      log "worker: running flask data load ${args[*]:-}"
+      flask data load "${args[@]:-}" || log "data load failed, will retry"
+      log "worker: sleeping ${ttl}h until next refresh"
+      sleep "$(python3 -c "print(int(float('${ttl}') * 3600))")"
+    done
+  else
+    flask data load "${args[@]:-}"
+  fi
+}
+
+mode_dev() {
+  materialize_firebase_creds
+  with_lock do_migrate
+  maybe_auto_seed
+  export FLASK_DEBUG="${FLASK_DEBUG:-1}"
+  exec flask run --host 0.0.0.0 --port "${FLASK_PORT:-8880}"
+}
+
+mode_prod() {
+  materialize_firebase_creds
+  with_lock do_migrate
+  # Idempotent + TTL-gated. On Fly, AUTO_SEED_ON_EMPTY=0 in fly.toml
+  # so only the dedicated `worker` process loads OBA data. Locally
+  # (no companion worker) this seeds an empty DB on first boot.
+  maybe_auto_seed
+
+  local port="${FLASK_PORT:-8880}"
+  local workers="${WEB_CONCURRENCY:-2}"
+  local timeout="${GUNICORN_TIMEOUT:-30}"
+  local keep_alive="${KEEP_ALIVE:-5}"
+  local max_requests="${MAX_REQUESTS:-1000}"
+  local max_requests_jitter="${MAX_REQUESTS_JITTER:-50}"
+  local log_level="${LOG_LEVEL:-info}"
+
+  cat <<EOF
+[start] Starting Gunicorn:
+  bind                 : 0.0.0.0:${port}
+  workers              : ${workers}
+  timeout              : ${timeout}s
+  keep-alive           : ${keep_alive}s
+  max-requests         : ${max_requests} (+/- ${max_requests_jitter})
+  log-level            : ${log_level}
+  preload              : on
+EOF
+
+  exec gunicorn \
+      --bind "0.0.0.0:${port}" \
+      --workers "${workers}" \
+      --timeout "${timeout}" \
+      --keep-alive "${keep_alive}" \
+      --max-requests "${max_requests}" \
+      --max-requests-jitter "${max_requests_jitter}" \
+      --log-level "${log_level}" \
+      --access-logfile - \
+      --error-logfile - \
+      --forwarded-allow-ips="*" \
+      --preload \
+      "app:create_app()"
+}
+
+# ─── Entrypoint ──
+mode="${1:-auto}"
+shift || true
+
+case "$mode" in
+  auto)
+    if [ "${FLASK_ENV:-}" = "production" ]; then mode_prod; else mode_dev; fi
+    ;;
+  dev)        mode_dev ;;
+  prod)       mode_prod ;;
+  migrate)    mode_migrate ;;
+  load-data)  mode_load_data "$@" ;;
+  worker)     mode_load_data --loop "$@" ;;
+  *)
+    echo "usage: bin/start [dev|prod|migrate|load-data|worker]" >&2
+    exit 2
+    ;;
+esac

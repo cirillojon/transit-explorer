@@ -39,18 +39,36 @@ ACHIEVEMENTS = [
 @api_blueprint.route('/health')
 @limiter.exempt
 def health():
-    """Liveness probe + DB connectivity + schema sanity check."""
+    """Liveness probe + DB connectivity + per-agency data-load status."""
     try:
         db.session.execute(db.text('SELECT 1'))
-        # Touch a real table to verify migrations have been applied.
         routes_loaded = db.session.query(func.count(Route.id)).scalar() or 0
-        last_load = getattr(current_app, 'last_data_load_at', None)
-        last_err = getattr(current_app, 'last_data_load_error', None)
+
+        # Pull per-agency status from the persistent DataLoad table so
+        # restarts don't lose state. Falls back gracefully if the table
+        # hasn't been migrated in yet.
+        agencies_payload = []
+        last_success_at = None
+        any_error = None
+        try:
+            from app.models import DataLoad
+            for row in DataLoad.query.order_by(DataLoad.agency_id).all():
+                agencies_payload.append(row.to_dict())
+                if row.last_success_at and (
+                    last_success_at is None or row.last_success_at > last_success_at
+                ):
+                    last_success_at = row.last_success_at
+                if row.last_error and not any_error:
+                    any_error = row.last_error
+        except Exception:
+            logger.exception("Health: DataLoad query failed (table missing?)")
+
         return jsonify({
             'status': 'ok',
             'routes_loaded': routes_loaded,
-            'last_data_load_at': last_load.isoformat() if last_load else None,
-            'last_data_load_error': last_err,
+            'last_data_load_at': last_success_at.isoformat() if last_success_at else None,
+            'last_data_load_error': any_error,
+            'agencies': agencies_payload,
             'time': datetime.utcnow().isoformat(),
         })
     except Exception:

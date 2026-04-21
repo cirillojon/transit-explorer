@@ -5,12 +5,12 @@ working production stack.
 
 ## Architecture recap
 
-| Component | Host       | Notes                                               |
-| --------- | ---------- | --------------------------------------------------- |
-| Backend   | Fly.io     | Single machine + mounted SQLite volume (`tm_data`). |
-| Frontend  | Vercel     | Static SPA from `tm-frontend/`.                     |
-| Auth      | Firebase   | Google sign-in only.                                |
-| Data      | OneBusAway | Pulled at startup + refreshed by background loader. |
+| Component | Host       | Notes                                                                       |
+| --------- | ---------- | --------------------------------------------------------------------------- |
+| Backend   | Fly.io     | Two processes (`app` + `worker`) sharing one mounted SQLite volume.         |
+| Frontend  | Vercel     | Static SPA from `tm-frontend/`.                                             |
+| Auth      | Firebase   | Google sign-in only.                                                        |
+| Data      | OneBusAway | TTL-refreshed by the `worker` process; state tracked in `data_loads` table. |
 
 ## 1. Backend: Fly.io
 
@@ -48,14 +48,16 @@ flyctl deploy --local-only --ha=false --strategy immediate
 
 ### Required secrets
 
-| Secret                                | Required | Purpose                                                      |
-| ------------------------------------- | -------- | ------------------------------------------------------------ |
-| `OBA_API_KEY`                         | yes      | OneBusAway data fetches.                                     |
-| `FIREBASE_PROJECT_ID`                 | yes      | Verifies Firebase ID tokens.                                 |
-| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | yes      | Firebase Admin SDK credentials (JSON content, not path).     |
-| `ALLOWED_ORIGINS`                     | yes      | Comma-separated CORS allowlist; **must be set** in prod.     |
-| `RATELIMIT_STORAGE_URI`               | no       | Redis URL for cross-worker rate limits. Default per-process. |
-| `SQLALCHEMY_DATABASE_URI`             | no       | Defaults to SQLite on the mounted volume.                    |
+| Secret                                | Required | Purpose                                                                                        |
+| ------------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `OBA_API_KEY`                         | yes      | OneBusAway data fetches.                                                                       |
+| `FIREBASE_PROJECT_ID`                 | yes      | Verifies Firebase ID tokens.                                                                   |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | yes      | Firebase Admin SDK credentials (JSON content, not path).                                       |
+| `ALLOWED_ORIGINS`                     | yes      | Comma-separated CORS allowlist; **must be set** in prod.                                       |
+| `RATELIMIT_STORAGE_URI`               | no       | Redis URL for cross-worker rate limits. Default per-process.                                   |
+| `SQLALCHEMY_DATABASE_URI`             | no       | Defaults to SQLite on the mounted volume.                                                      |
+| `OBA_REFRESH_TTL_HOURS`               | no       | Worker refresh cadence (default `24`). Set in `fly.toml [env]`.                                |
+| `AUTO_UPGRADE_ON_BOOT`                | no       | If `1`, `create_app()` re-runs `flask db upgrade`. Off; `bin/start migrate` already does this. |
 
 ### DNS / custom domain
 
@@ -70,13 +72,39 @@ flyctl certs check transit-explorer.org
 `.github/workflows/fly-deploy.yml` runs `pytest`, builds the image, deploys
 with `--strategy immediate --ha=false --detach`, then polls `/api/health`
 until it returns 200. Pushes to `main` that touch `app/`, `requirements.txt`,
-`Dockerfile`, `fly.toml`, or `gunicorn_startup.sh` trigger the workflow.
+`Dockerfile`, `fly.toml`, `bin/start`, or `gunicorn_startup.sh` trigger the workflow.
+
+CI also runs `flask db upgrade && flask data check-schema` against an
+in-memory SQLite to catch any model ↔ migration drift before deploy.
 
 You can also deploy manually:
 
 ```bash
 flyctl deploy --local-only --ha=false --strategy immediate
 ```
+
+### Process scaling
+
+`fly.toml` declares two processes:
+
+```toml
+[processes]
+  app    = "bin/start prod"
+  worker = "bin/start worker"
+```
+
+The `app` process serves HTTP (gunicorn `--preload`); the `worker` process
+refreshes OBA data on a TTL loop (`OBA_REFRESH_TTL_HOURS`, default 24h) and
+is excluded from the load balancer via `[http_service].processes = ['app']`.
+
+Keep both at exactly **one machine** — they share the same SQLite volume:
+
+```bash
+flyctl scale count app=1 worker=1 --region sjc -a transit-explorer
+```
+
+`bin/start` uses `flock` on `$DATA_DIR/.boot.lock` so the two processes
+serialize their migrate step on first boot.
 
 ## 2. Frontend: Vercel
 
@@ -121,7 +149,16 @@ instructions. Then add it to `ALLOWED_ORIGINS` on the backend.
 
 ```bash
 curl https://transit-explorer.fly.dev/api/health
-# {"status":"ok","routes_loaded":N,"last_data_load_at":"...","time":"..."}
+# {
+#   "status":"ok",
+#   "routes_loaded": N,
+#   "last_data_load_at":"...",
+#   "last_data_load_error": null,
+#   "agencies": [{"agency_id":"...","route_count":...,"last_success_at":"..."}, ...]
+# }
+#
+# Or, on the box:
+#   flyctl ssh console -C "flask data status" -a transit-explorer
 
 # Auth must be required on writes:
 curl -X POST https://transit-explorer.fly.dev/api/segments
