@@ -256,6 +256,54 @@ def _run_migrations(app):
             "[migrate] migration step failed — schema may be out of date"
         )
 
+    # Belt-and-suspenders: regardless of what alembic thinks happened,
+    # verify that columns the running code depends on actually exist.
+    # If they don't (e.g. alembic_version was stamped at the head but
+    # the ALTER TABLE never committed on a previous boot, or the
+    # upgrade() call above raised), patch the schema with a raw ALTER
+    # so the app doesn't 500 on every request.
+    _ensure_required_columns()
+
+
+# Columns the current code requires beyond the alembic baseline. Each
+# entry: (table, column, ALTER TABLE fragment, latest revision that
+# adds it). Keep this list short — it is a *safety net*, not a
+# replacement for migrations.
+_REQUIRED_COLUMNS = [
+    ("user_segments", "duration_ms", "INTEGER", "a1c2e4f9b701"),
+]
+
+
+def _ensure_required_columns():
+    try:
+        from flask_migrate import stamp
+
+        inspector = inspect(db.engine)
+        tables = set(inspector.get_table_names())
+        for table, column, sql_type, rev in _REQUIRED_COLUMNS:
+            if table not in tables:
+                continue
+            cols = {c["name"] for c in inspector.get_columns(table)}
+            if column in cols:
+                continue
+            logger.warning(
+                "[migrate] %s.%s missing after upgrade — applying "
+                "ALTER TABLE fallback and stamping %s",
+                table, column, rev,
+            )
+            with db.engine.begin() as conn:
+                conn.exec_driver_sql(
+                    f'ALTER TABLE {table} ADD COLUMN {column} {sql_type}'
+                )
+            try:
+                stamp(revision=rev)
+            except Exception:
+                # If stamp fails (already at this rev, etc.) the column
+                # is what matters — keep going.
+                logger.exception("[migrate] stamp(%s) after fallback failed", rev)
+    except Exception:
+        logger.exception("[migrate] required-column check failed")
+
 
 def _init_firebase(app):
     """Initialize Firebase Admin SDK for token verification."""

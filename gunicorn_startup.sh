@@ -51,12 +51,23 @@ APP_MODULE="app:create_app()"
 if [ "${SKIP_DB_UPGRADE:-0}" != "1" ]; then
     echo "Running database migrations..."
     SKIP_STARTUP_DATA_TASKS=1 SKIP_DB_UPGRADE=0 python3 - <<'PY'
-import logging
+import logging, sys
+from sqlalchemy import inspect
 logging.basicConfig(level=logging.INFO, format="  [migrate] %(message)s")
-from app import create_app
+from app import create_app, db
 # create_app() will invoke _run_migrations() once. SKIP_STARTUP_DATA_TASKS=1
 # prevents the data-init block from also touching the DB in the same process.
-create_app()
+app = create_app()
+# Hard post-condition: if any required column is still missing after
+# create_app(), abort the boot so Fly retries instead of serving 500s.
+with app.app_context():
+    insp = inspect(db.engine)
+    if 'user_segments' in insp.get_table_names():
+        cols = {c['name'] for c in insp.get_columns('user_segments')}
+        if 'duration_ms' not in cols:
+            print('  [migrate] FATAL: user_segments.duration_ms still missing after upgrade', file=sys.stderr)
+            sys.exit(1)
+print('  [migrate] schema OK')
 PY
 fi
 
