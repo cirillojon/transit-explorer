@@ -90,8 +90,7 @@ def create_app():
                 _start_background_data_load(app)
             else:
                 # Check if directions data is properly populated
-                from app.models import RouteDirection, Route
-                from app.oba_service import AGENCIES
+                from app.models import RouteDirection
                 dir_count = RouteDirection.query.count()
                 dirs_with_stops = RouteDirection.query.filter(
                     RouteDirection.stop_ids_json != None,
@@ -99,24 +98,16 @@ def create_app():
                     RouteDirection.stop_ids_json != '[]'
                 ).count()
 
-                # Detect agencies that are configured but absent from the DB
-                # (e.g. a previous load failed partway through for that agency).
-                present_agencies = {
-                    row[0] for row in db.session.query(Route.agency_id).distinct().all()
-                }
-                missing_agencies = [a for a in AGENCIES if a not in present_agencies]
-
                 if dirs_with_stops == 0:
                     logger.info(f"Found {dir_count} directions but none have stop_ids — reloading in background...")
                     _start_background_data_load(app)
-                elif missing_agencies:
-                    logger.info(
-                        f"Configured agencies {missing_agencies} have no routes in DB — "
-                        f"backfilling in background..."
-                    )
-                    _start_background_data_load(app, agency_ids=missing_agencies)
                 else:
-                    logger.info(f"Routes table found with {dirs_with_stops}/{dir_count} directions with stops, skipping data load.")
+                    # Always run a per-route backfill to pick up any routes
+                    # that are missing from the DB (e.g. a previous load
+                    # errored on individual route_ids). It's cheap when
+                    # everything is already present (one OBA call per agency).
+                    logger.info(f"Routes table OK ({dirs_with_stops}/{dir_count} directions with stops); running missing-route backfill in background.")
+                    _start_background_backfill(app)
         except Exception as e:
             logger.error(f"Error during initialization: {e}")
             db.create_all()
@@ -138,6 +129,22 @@ def _start_background_data_load(app, agency_ids=None):
                 logger.error(f"Background data load failed: {e}")
 
     t = threading.Thread(target=_load, daemon=True)
+    t.start()
+
+
+def _start_background_backfill(app):
+    """Run the per-route backfill in a background thread."""
+    import threading
+
+    def _run():
+        with app.app_context():
+            try:
+                from app.data_loader import backfill_missing_routes
+                backfill_missing_routes()
+            except Exception as e:
+                logger.error(f"Background backfill failed: {e}")
+
+    t = threading.Thread(target=_run, daemon=True)
     t.start()
 
 

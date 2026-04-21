@@ -77,6 +77,76 @@ def load_transit_data(agency_ids=None):
     logger.info(f"Transit data load complete: {total_routes} routes, {total_stops} stops")
 
 
+def backfill_missing_routes():
+    """For each configured agency, fetch its route list from OBA and load any
+    routes that aren't already in the DB. Also re-fetches routes that exist
+    but have no directions (i.e. stops-for-route failed previously).
+
+    Cheap to run on every boot: one routes-for-agency call per agency, plus
+    real work only for routes that are actually missing.
+    """
+    logger.info("Checking for missing routes per agency...")
+    backfilled = 0
+
+    for agency_id in AGENCIES:
+        try:
+            oba_routes = _call_with_backoff(
+                fetch_routes_for_agency, agency_id,
+                label=f"routes-for-agency/{agency_id}",
+            )
+        except Exception as e:
+            logger.error(f"Backfill: failed to fetch routes for agency {agency_id}: {e}")
+            continue
+
+        existing_ids = {
+            row[0] for row in db.session.query(Route.id)
+            .filter(Route.agency_id == agency_id).all()
+        }
+        # Routes whose stops-for-route load failed leave them with zero
+        # directions; treat those as "needs reload" too.
+        routes_with_dirs = {
+            row[0] for row in db.session.query(RouteDirection.route_id)
+            .join(Route, Route.id == RouteDirection.route_id)
+            .filter(Route.agency_id == agency_id).distinct().all()
+        }
+
+        to_load = [
+            r for r in oba_routes
+            if r['id'] not in existing_ids or r['id'] not in routes_with_dirs
+        ]
+        if not to_load:
+            logger.info(f"Agency {agency_id}: all {len(oba_routes)} routes present.")
+            continue
+
+        logger.info(
+            f"Agency {agency_id}: backfilling {len(to_load)}/{len(oba_routes)} routes"
+        )
+
+        for i, route_data in enumerate(to_load):
+            route_id = route_data['id']
+            try:
+                _upsert_route(route_data)
+                time.sleep(REQUEST_DELAY)
+                stops_data = _call_with_backoff(
+                    fetch_stops_for_route, route_id,
+                    label=f"stops-for-route/{route_id}",
+                )
+                _process_route_stops(route_id, stops_data)
+                backfilled += 1
+                if (i + 1) % 10 == 0:
+                    db.session.commit()
+            except Exception as e:
+                logger.error(f"Backfill: error processing route {route_id}: {e}")
+                db.session.rollback()
+                continue
+
+        db.session.commit()
+
+    db.session.commit()
+    logger.info(f"Backfill complete: {backfilled} routes added/repaired.")
+    return backfilled
+
+
 def _upsert_route(route_data):
     """Insert or update a route record."""
     route = Route.query.get(route_data['id'])
