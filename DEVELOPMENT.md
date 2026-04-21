@@ -306,4 +306,17 @@ wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explor
 
 # View releases from powershell:
 wsl -e bash -lc "/home/jon/.fly/bin/flyctl releases -a transit-explorer"
+
+# View tables in the SQLite DB from powershell:
+PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -a transit-explorer -C 'sqlite3 /app/tm-instance/data.db .tables'"
+Connecting ... complete
+alembic_version   route_stops       stops             users
+route_directions  routes            user_segments
+
+# To enter interactive sqlite shell:
+wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -a transit-explorer"
+# then inside the VM:
+sqlite3 -header -column /app/tm-instance/data.db
+# now you have a full sqlite3 REPL — type any SQL, .quit to exit
+
 ```
