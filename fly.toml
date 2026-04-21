@@ -25,6 +25,10 @@ primary_region = 'sjc'
   # Per-agency OBA refresh interval. The worker process below loops on
   # this cadence; the web process never touches OBA at boot.
   OBA_REFRESH_TTL_HOURS = '24'
+  # The dedicated `worker` process owns OBA loads in production. Disable
+  # the bin/start auto-seed on the `app` process to avoid two machines
+  # racing on the same DataLoad row.
+  AUTO_SEED_ON_EMPTY = '0'
 
 [processes]
   app = 'bin/start prod'

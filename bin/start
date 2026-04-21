@@ -19,8 +19,10 @@
 #   SKIP_DB_UPGRADE=1       skip the migrate step (escape hatch only)
 #   SKIP_DATA_LOAD=1        skip the dev-mode auto-seed
 #   OBA_REFRESH_TTL_HOURS   per-agency refresh interval (default 24)
-#   AUTO_SEED_ON_EMPTY=1    in dev mode, run a background `flask data load`
-#                            once if the routes table is empty (default 1)
+#   AUTO_SEED_ON_EMPTY=1    in dev or prod mode, run a background
+#                            `flask data load` once if the routes table
+#                            is empty (default 1). Set to 0 on Fly app
+#                            process so only the worker fetches data.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -77,7 +79,7 @@ do_migrate() {
   flask data check-schema
 }
 
-# ─── Dev-mode background seed ──
+# ─── Background auto-seed (dev + local prod) ──
 maybe_auto_seed() {
   if [ "${SKIP_DATA_LOAD:-0}" = "1" ]; then return; fi
   if [ "${AUTO_SEED_ON_EMPTY:-1}" != "1" ]; then return; fi
@@ -141,6 +143,10 @@ mode_dev() {
 mode_prod() {
   materialize_firebase_creds
   with_lock do_migrate
+  # Idempotent + TTL-gated. On Fly, AUTO_SEED_ON_EMPTY=0 in fly.toml
+  # so only the dedicated `worker` process loads OBA data. Locally
+  # (no companion worker) this seeds an empty DB on first boot.
+  maybe_auto_seed
 
   local port="${FLASK_PORT:-8880}"
   local workers="${WEB_CONCURRENCY:-2}"
