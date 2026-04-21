@@ -460,121 +460,130 @@ function TransitMap({
         })}
       </MapContainer>
 
-      {/* Direction tabs */}
-      {directionChoices.length > 1 && (
-        <div className="direction-tabs">
-          {directionChoices.map((dir) => (
-            <button
-              key={dir.directionId}
-              className={`direction-tab ${activeDirection === dir.directionId ? "active" : ""}`}
-              onClick={() => {
-                setActiveDirection(dir.directionId);
-                setPickState(null);
-                onClearHighlight?.();
-              }}
-            >
-              <span className="direction-tab-label">{dir.label}</span>
-              <span
-                className="direction-tab-sub"
-                title={dir.lastStopName || ""}
-              >
-                {dir.lastStopName
-                  ? `Toward ${dir.lastStopName}`
-                  : "Tap to follow this direction"}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Map legend + per-route progress */}
-      {selectedRoute && (
-        <div className="map-legend">
-          <div className="map-legend-title">
-            <span
-              className="map-legend-swatch"
-              style={{ background: routeColor }}
-            />
-            <span className="map-legend-mode">
-              {ROUTE_TYPE_ICONS[selectedRoute.route_type] || "🚌"}{" "}
-              {ROUTE_TYPE_LABELS[selectedRoute.route_type] || "Transit"}
-            </span>
-            <span className="map-legend-name">
-              {selectedRoute.short_name || selectedRoute.long_name}
-              {selectedRoute.short_name && selectedRoute.long_name ? (
-                <span className="map-legend-sub">
-                  {" "}
-                  · {selectedRoute.long_name}
-                </span>
-              ) : null}
-            </span>
-          </div>
-          {completionStats && (
-            <div className="map-legend-progress">
-              <div className="map-legend-bar">
-                <div
-                  className="map-legend-fill"
-                  style={{
-                    width: `${(completionStats.done / completionStats.total) * 100}%`,
+      {/* Stacked overlay: direction tabs sit directly above the legend so they never overlap */}
+      {(directionChoices.length > 1 || selectedRoute) && (
+        <div className="map-overlay-stack">
+          {directionChoices.length > 1 && (
+            <div className="direction-tabs">
+              {directionChoices.map((dir) => (
+                <button
+                  key={dir.directionId}
+                  className={`direction-tab ${activeDirection === dir.directionId ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveDirection(dir.directionId);
+                    setPickState(null);
+                    onClearHighlight?.();
                   }}
-                />
-              </div>
-              <span>
-                {completionStats.done}/{completionStats.total} done
-              </span>
-            </div>
-          )}
-          {activeDirectionMeta && (
-            <div className="map-legend-direction">
-              <span className="map-legend-direction-label">
-                Logging direction
-              </span>
-              <strong>{activeDirectionMeta.label}</strong>
-              {activeDirectionMeta.firstStopName &&
-                activeDirectionMeta.lastStopName && (
-                  <span className="map-legend-direction-flow">
-                    {activeDirectionMeta.firstStopName} →{" "}
-                    {activeDirectionMeta.lastStopName}
+                >
+                  <span className="direction-tab-label">{dir.label}</span>
+                  <span
+                    className="direction-tab-sub"
+                    title={dir.lastStopName || ""}
+                  >
+                    {dir.lastStopName
+                      ? `Toward ${dir.lastStopName}`
+                      : "Tap to follow this direction"}
                   </span>
-                )}
+                </button>
+              ))}
             </div>
           )}
-          <div className="map-legend-steps">
-            <div
-              className={`map-legend-step ${activeDirectionMeta ? "is-complete" : "is-active"}`}
-            >
-              <span className="map-legend-step-num">1</span>
-              <span>
-                Choose the correct direction
-                {activeDirectionMeta?.lastStopName
-                  ? ` (toward ${activeDirectionMeta.lastStopName})`
-                  : ""}
-              </span>
+
+          {/* Map legend + per-route progress */}
+          {selectedRoute && (
+            <div className="map-legend">
+              <div className="map-legend-title">
+                <span
+                  className="map-legend-swatch"
+                  style={{ background: routeColor }}
+                />
+                <span className="map-legend-mode">
+                  {ROUTE_TYPE_ICONS[selectedRoute.route_type] || "🚌"}{" "}
+                  {ROUTE_TYPE_LABELS[selectedRoute.route_type] || "Transit"}
+                </span>
+                <span className="map-legend-name">
+                  {selectedRoute.short_name || selectedRoute.long_name}
+                  {selectedRoute.short_name && selectedRoute.long_name ? (
+                    <span className="map-legend-sub">
+                      {" "}
+                      · {selectedRoute.long_name}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+              {completionStats && (
+                <div className="map-legend-progress">
+                  <div className="map-legend-bar">
+                    <div
+                      className="map-legend-fill"
+                      style={{
+                        width: `${(completionStats.done / completionStats.total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <span>
+                    {completionStats.done}/{completionStats.total} done
+                  </span>
+                </div>
+              )}
+              {activeDirectionMeta && (
+                <div className="map-legend-direction">
+                  <span className="map-legend-direction-label">
+                    Logging direction
+                  </span>
+                  <strong>{activeDirectionMeta.label}</strong>
+                  {activeDirectionMeta.firstStopName &&
+                    activeDirectionMeta.lastStopName && (
+                      <span className="map-legend-direction-flow">
+                        {activeDirectionMeta.firstStopName} →{" "}
+                        {activeDirectionMeta.lastStopName}
+                      </span>
+                    )}
+                </div>
+              )}
+              <div className="map-legend-steps">
+                <div
+                  className={`map-legend-step ${activeDirectionMeta ? "is-complete" : "is-active"}`}
+                >
+                  <span className="map-legend-step-num">1</span>
+                  <span>
+                    Choose the correct direction
+                    {activeDirectionMeta?.lastStopName
+                      ? ` (toward ${activeDirectionMeta.lastStopName})`
+                      : ""}
+                  </span>
+                </div>
+                <div
+                  className={`map-legend-step ${pickState ? "is-complete" : "is-active"}`}
+                >
+                  <span className="map-legend-step-num">2</span>
+                  <span>
+                    {pickState
+                      ? `Boarded: ${pickState.fromName}`
+                      : "Tap your boarding stop"}
+                  </span>
+                </div>
+                <div
+                  className={`map-legend-step ${pickState ? "is-active" : ""}`}
+                >
+                  <span className="map-legend-step-num">3</span>
+                  <span>Tap your alighting stop in the same direction</span>
+                </div>
+              </div>
+              <div className="map-legend-hints">
+                <span>
+                  <i className="dot done" /> Completed
+                </span>
+                <span>
+                  <i
+                    className="dot pending"
+                    style={{ background: routeColor }}
+                  />{" "}
+                  Pending
+                </span>
+              </div>
             </div>
-            <div
-              className={`map-legend-step ${pickState ? "is-complete" : "is-active"}`}
-            >
-              <span className="map-legend-step-num">2</span>
-              <span>
-                {pickState
-                  ? `Boarded: ${pickState.fromName}`
-                  : "Tap your boarding stop"}
-              </span>
-            </div>
-            <div className={`map-legend-step ${pickState ? "is-active" : ""}`}>
-              <span className="map-legend-step-num">3</span>
-              <span>Tap your alighting stop in the same direction</span>
-            </div>
-          </div>
-          <div className="map-legend-hints">
-            <span>
-              <i className="dot done" /> Completed
-            </span>
-            <span>
-              <i className="dot pending" style={{ background: routeColor }} />{" "}
-              Pending
-            </span>
-          </div>
+          )}
         </div>
       )}
 

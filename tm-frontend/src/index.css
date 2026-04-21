@@ -779,13 +779,28 @@ button {
   color: var(--red);
 }
 
-/* ── Direction tabs ─────────────────────────────────────── */
-.direction-tabs {
+/* ── Stacked overlay (direction tabs + legend) ──────────── */
+.map-overlay-stack {
   position: absolute;
   top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 16px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 280px;
+  max-width: calc(100% - 32px);
+  max-height: calc(100% - 32px);
+  pointer-events: none;
+}
+.map-overlay-stack > * {
+  pointer-events: auto;
+}
+
+/* ── Direction tabs ─────────────────────────────────────── */
+.direction-tabs {
+  position: relative;
   display: flex;
   gap: 4px;
   background: rgba(15, 23, 42, 0.92);
@@ -794,8 +809,8 @@ button {
   border-radius: 10px;
   padding: 4px;
   box-shadow: var(--shadow-md);
-  max-width: calc(100% - 32px);
   overflow-x: auto;
+  flex-shrink: 0;
 }
 .direction-tabs::-webkit-scrollbar {
   display: none;
@@ -842,10 +857,7 @@ button {
 
 /* ── Map legend ─────────────────────────────────────────── */
 .map-legend {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 1000;
+  position: relative;
   background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border);
@@ -853,8 +865,10 @@ button {
   padding: 10px 14px;
   font-size: 12px;
   color: var(--text-muted);
-  min-width: 180px;
   box-shadow: var(--shadow-md);
+  overflow-y: auto;
+  flex: 0 1 auto;
+  min-height: 0;
 }
 .map-legend-title {
   display: flex;
@@ -2131,16 +2145,21 @@ button {
     font-size: 20px !important;
   }
 
-  /* Direction tabs: move OUT of top so the hamburger area is clean.
-     Pin them above the legend at the bottom for thumb reach.
-     Use z-index 1001 so they always render above the map-legend. */
-  .direction-tabs {
+  /* Stack overlay anchored to bottom on mobile (above zoom controls).
+     Tabs sit on top, legend below — both inside the same flex column,
+     so they can never overlap each other. */
+  .map-overlay-stack {
     top: auto;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 130px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
     left: 12px;
-    right: 12px;
-    transform: none;
+    right: 64px; /* leave room for zoom controls */
+    width: auto;
     max-width: none;
+    max-height: calc(100dvh - env(safe-area-inset-bottom, 0px) - 96px);
+    gap: 6px;
+  }
+
+  .direction-tabs {
     z-index: 1001;
   }
   .direction-tab {
@@ -2151,19 +2170,11 @@ button {
     max-width: 170px;
   }
 
-  /* Legend — wider and bottom anchored, with safe-area.
-     Cap height so it never grows into the direction-tabs above it. */
+  /* Legend grows to fit but scrolls internally if it would push the tabs
+     above the viewport. */
   .map-legend {
-    top: auto;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
-    right: 64px; /* leave room for zoom controls on right */
-    left: 12px;
-    min-width: 0;
-    max-width: none;
     font-size: 12px;
     padding: 10px 12px;
-    max-height: calc(100dvh - env(safe-area-inset-bottom, 0px) - 200px);
-    overflow-y: auto;
   }
 
   .map-hero-hint {
