@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   updateSegmentNotes,
   deleteSegment,
@@ -64,6 +64,8 @@ function UserProgress({
   activity,
   onRefresh,
   onViewSegment,
+  highlightedSegment,
+  onClearHighlight,
 }) {
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [expandedJourney, setExpandedJourney] = useState(null);
@@ -71,6 +73,63 @@ function UserProgress({
   const [noteText, setNoteText] = useState("");
   const [confirm, setConfirm] = useState(null); // { title, message, onConfirm, danger }
   const [view, setView] = useState("overview"); // overview | routes | achievements
+  const routeRefs = useRef({});
+  const journeyRefs = useRef({});
+
+  // Build journeys per route once so we can locate the highlighted ride.
+  const journeysByRoute = useMemo(() => {
+    const map = {};
+    for (const rp of progress) {
+      map[rp.route_id] = groupIntoJourneys(rp.segments);
+    }
+    return map;
+  }, [progress]);
+
+  // Find the journey that contains the highlighted segment (if any).
+  const highlightedJourney = useMemo(() => {
+    if (!highlightedSegment) return null;
+    const list = journeysByRoute[highlightedSegment.routeId];
+    if (!list) return null;
+    return (
+      list.find((j) =>
+        j.segments.some(
+          (s) =>
+            String(s.direction_id) === String(highlightedSegment.directionId) &&
+            s.from_stop_id === highlightedSegment.fromStopId &&
+            s.to_stop_id === highlightedSegment.toStopId,
+        ),
+      ) || null
+    );
+  }, [highlightedSegment, journeysByRoute]);
+
+  const highlightedRoute = useMemo(() => {
+    if (!highlightedSegment) return null;
+    return (
+      progress.find((rp) => rp.route_id === highlightedSegment.routeId) || null
+    );
+  }, [highlightedSegment, progress]);
+
+  // When the user arrives on Progress with a highlight, jump to Routes view
+  // and auto-expand the matching route + journey, then scroll into view.
+  const lastAutoKey = useRef(null);
+  useEffect(() => {
+    if (!highlightedSegment || !highlightedRoute) return;
+    const key = `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`;
+    if (lastAutoKey.current === key) return;
+    lastAutoKey.current = key;
+    setView("routes");
+    setExpandedRoute(highlightedRoute.route_id);
+    if (highlightedJourney) setExpandedJourney(highlightedJourney.key);
+    // Defer scroll until after the expansion renders.
+    requestAnimationFrame(() => {
+      const target =
+        (highlightedJourney && journeyRefs.current[highlightedJourney.key]) ||
+        routeRefs.current[highlightedRoute.route_id];
+      if (target?.scrollIntoView) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  }, [highlightedSegment, highlightedRoute, highlightedJourney]);
 
   const handleSaveNote = async (segId) => {
     await updateSegmentNotes(segId, noteText);
@@ -110,6 +169,64 @@ function UserProgress({
     <div className="user-progress">
       <StatsCard stats={stats} profile={profile} />
 
+      {highlightedSegment && highlightedRoute && (
+        <div
+          className="last-viewed-pill"
+          role="status"
+          aria-live="polite"
+        >
+          <span
+            className="last-viewed-color"
+            style={{
+              background: highlightedRoute.route_color
+                ? `#${highlightedRoute.route_color}`
+                : "var(--accent)",
+            }}
+          />
+          <div className="last-viewed-text">
+            <div className="last-viewed-label">Showing on map</div>
+            <div className="last-viewed-name">
+              {highlightedRoute.route_name}
+              {highlightedJourney && (
+                <>
+                  {" · "}
+                  <span className="last-viewed-stops">
+                    {highlightedJourney.boardStop} →{" "}
+                    {highlightedJourney.alightStop}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="last-viewed-actions">
+            {highlightedJourney && (
+              <button
+                type="button"
+                className="btn-small"
+                onClick={() =>
+                  onViewSegment?.(
+                    highlightedRoute.route_id,
+                    highlightedJourney.segments[0],
+                  )
+                }
+                title="Recenter the map on this ride"
+              >
+                Recenter
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-small last-viewed-clear"
+              onClick={() => onClearHighlight?.()}
+              title="Clear highlight"
+              aria-label="Clear highlight"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="seg-tabs">
         <button
           className={`seg-tab ${view === "overview" ? "active" : ""}`}
@@ -142,13 +259,20 @@ function UserProgress({
       {view === "routes" && (
         <div className="progress-routes">
           {progress.map((rp) => {
-            const journeys = groupIntoJourneys(rp.segments);
+            const journeys = journeysByRoute[rp.route_id] || [];
             const isExpanded = expandedRoute === rp.route_id;
             const pct = Math.round(rp.completion_pct || 0);
+            const isHighlightedRoute =
+              highlightedSegment?.routeId === rp.route_id;
             return (
               <div
                 key={rp.route_id}
-                className={`progress-route ${isExpanded ? "expanded" : ""}`}
+                ref={(el) => {
+                  routeRefs.current[rp.route_id] = el;
+                }}
+                className={`progress-route ${isExpanded ? "expanded" : ""} ${
+                  isHighlightedRoute ? "is-highlighted" : ""
+                }`}
               >
                 <button
                   type="button"
@@ -195,18 +319,20 @@ function UserProgress({
 
                 {isExpanded && (
                   <div className="progress-segments">
-                    <div className="progress-route-tools">
-                      <button
-                        className="btn-small btn-danger"
-                        onClick={() => askWipeRoute(rp.route_id, rp.route_name)}
-                      >
-                        Reset route
-                      </button>
-                    </div>
                     {journeys.map((journey) => {
                       const isJExpanded = expandedJourney === journey.key;
+                      const isHighlightedJourney =
+                        highlightedJourney?.key === journey.key;
                       return (
-                        <div key={journey.key} className="journey-item">
+                        <div
+                          key={journey.key}
+                          ref={(el) => {
+                            journeyRefs.current[journey.key] = el;
+                          }}
+                          className={`journey-item ${
+                            isHighlightedJourney ? "is-highlighted" : ""
+                          }`}
+                        >
                           <button
                             type="button"
                             className="journey-header"
@@ -253,8 +379,9 @@ function UserProgress({
                                   journey.segments[0],
                                 )
                               }
+                              title="Show this ride on the map"
                             >
-                              🗺 Map
+                              🗺 Show on map
                             </button>
                             <button
                               className="btn-small"
@@ -318,6 +445,15 @@ function UserProgress({
                         </div>
                       );
                     })}
+                    <div className="progress-route-tools">
+                      <button
+                        className="btn-small btn-danger"
+                        onClick={() => askWipeRoute(rp.route_id, rp.route_name)}
+                        title="Delete every logged segment on this route"
+                      >
+                        Reset entire route
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

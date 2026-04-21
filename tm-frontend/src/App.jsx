@@ -73,8 +73,10 @@ function App() {
     (routeId, seg) => {
       const route = routes.find((r) => r.id === routeId);
       if (route) {
+        // Load the route on the map but DO NOT switch the sidebar tab —
+        // the user clicked from Progress (or Recent activity) and expects
+        // to stay there. The map is always visible anyway.
         setSelectedRoute(route);
-        setActiveTab("routes");
       }
       setHighlightedSegment({
         routeId,
@@ -82,6 +84,8 @@ function App() {
         fromStopId: seg.from_stop_id,
         toStopId: seg.to_stop_id,
       });
+      // On mobile the sidebar is a drawer over the map; close it so the
+      // highlighted segment is actually visible. No-op on desktop.
       setSidebarOpen(false);
     },
     [routes],
@@ -352,6 +356,8 @@ function App() {
               activity={activity}
               onRefresh={loadUserData}
               onViewSegment={handleViewSegment}
+              highlightedSegment={highlightedSegment}
+              onClearHighlight={() => setHighlightedSegment(null)}
             />
           )}
 

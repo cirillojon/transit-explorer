@@ -1381,6 +1381,66 @@ button {
   padding-top: 8px;
 }
 
+/* "Showing on map" pill at the top of the Progress tab. Lets the user
+   recenter the map on the highlighted ride or clear it without losing
+   their place in the Progress view. */
+.last-viewed-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  background: rgba(96, 165, 250, 0.08);
+  border-radius: 10px;
+}
+.last-viewed-color {
+  width: 6px;
+  align-self: stretch;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.last-viewed-text {
+  flex: 1;
+  min-width: 0;
+}
+.last-viewed-label {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.last-viewed-name {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.last-viewed-stops {
+  color: var(--text-dim);
+}
+.last-viewed-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.last-viewed-clear {
+  padding: 4px 8px;
+}
+
+/* Subtle emphasis for the route/journey that the map is currently
+   highlighting, so the user can find it after auto-expand + scroll. */
+.progress-route.is-highlighted > .progress-route-header {
+  background: rgba(96, 165, 250, 0.06);
+}
+.journey-item.is-highlighted {
+  outline: 1px solid rgba(96, 165, 250, 0.5);
+  outline-offset: -1px;
+  border-radius: 8px;
+  background: rgba(96, 165, 250, 0.05);
+}
+
 /* Buttons */
 .btn-small {
   padding: 4px 10px;
