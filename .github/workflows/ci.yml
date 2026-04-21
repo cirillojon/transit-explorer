@@ -24,6 +24,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
+      - name: Schema drift check
+        # Fails CI if models.py changed without a matching migration.
+        env:
+          FLASK_APP: app.py
+          FLASK_ENV: development
+          SKIP_STARTUP_DATA_TASKS: "1"
+          SQLALCHEMY_DATABASE_URI: "sqlite:///:memory:"
+        run: |
+          flask db upgrade
+          flask data check-schema
       - name: Run pytest
         env:
           FLASK_ENV: development

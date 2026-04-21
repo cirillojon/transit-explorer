@@ -15,7 +15,9 @@ flyctl logs   -a transit-explorer | tail -200
 
 # 3. Has the data loader run lately?
 curl -s https://transit-explorer.fly.dev/api/health | jq
-# Look at last_data_load_at and last_data_load_error.
+# `last_data_load_at`, `last_data_load_error`, and `agencies[]` come from
+# the `data_loads` table. For the canonical view:
+#   flyctl ssh console -C "flask data status" -a transit-explorer
 ```
 
 ## Common errors
@@ -79,29 +81,52 @@ so limits are global instead of per-worker, then scale `WEB_CONCURRENCY`.
 
 ### `flask db upgrade` fails on first boot
 
-If migrations were generated against an older schema:
+`bin/start migrate` (run automatically by both Fly processes) executes
+`flask db upgrade` followed by `flask data check-schema`. If either step
+exits non-zero, the process exits and Fly restarts it — deploys do **not**
+silently fall back to `db.create_all()`. To investigate:
 
 ```bash
 flyctl ssh console -a transit-explorer
 cd /app
-sqlite3 /data/data.db ".schema" > /tmp/before.sql
-flask --app app db stamp head      # mark as up-to-date
-# or:
-flask --app app db upgrade
+flask db current                  # which revision are we at?
+flask db heads                    # which revision should we be at?
+flask db upgrade                  # apply pending migrations
+flask data check-schema           # surfaces model ↔ migration drift
 ```
 
 The baseline migration is `app/migrations/versions/f838d5f10e83_baseline_schema.py`.
+If the DB is ahead of the code (e.g. after a rollback), use
+`flask db stamp <rev>` to realign before retrying `upgrade`.
 
 ### Background data loader stops updating
 
-`/api/health.last_data_load_at` is hours old. The loader thread likely died.
-Restart the machine:
+`/api/health.last_data_load_at` is hours old. The `worker` process either
+crash-looped or is rate-limited. Check it directly:
 
 ```bash
-flyctl machine restart <machine-id> -a transit-explorer
+flyctl logs   -a transit-explorer -i worker
+flyctl status -a transit-explorer
+flyctl ssh console -p worker -C "flask data status" -a transit-explorer
 ```
 
-Or trigger a no-op deploy: `flyctl deploy --local-only --ha=false --strategy immediate`.
+Force an immediate refresh:
+
+```bash
+flyctl ssh console -p worker -C "flask data load --force" -a transit-explorer
+```
+
+If the worker machine itself is dead:
+
+```bash
+flyctl machine restart <worker-machine-id> -a transit-explorer
+# or rescale:
+flyctl scale count app=1 worker=1 --region sjc -a transit-explorer
+```
+
+Refresh cadence is controlled by `OBA_REFRESH_TTL_HOURS` (default `24`).
+Lowering it past a few hours will burn OBA quota with no benefit — their
+data changes on a schedule-board cadence.
 
 ## Inspecting logs
 

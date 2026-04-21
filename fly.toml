@@ -22,10 +22,15 @@ primary_region = 'sjc'
   GUNICORN_TIMEOUT = '30'
   LOG_LEVEL = 'INFO'
   WEB_CONCURRENCY = '4'
-  # create_app() already kicks off transit-data load in a background thread,
-  # so skip the foreground load in gunicorn_startup.sh to avoid SQLite lock
-  # contention from two concurrent loaders.
-  SKIP_DATA_LOAD = '1'
+  # Per-agency OBA refresh interval. The worker process below loops on
+  # this cadence; the web process never touches OBA at boot.
+  OBA_REFRESH_TTL_HOURS = '24'
+
+[processes]
+  app = 'bin/start prod'
+  # Worker shares the same volume; only one machine should run it.
+  # `flyctl scale count app=1 worker=1 --region sjc`
+  worker = 'bin/start worker'
 
 [[mounts]]
   source = 'tm_data'

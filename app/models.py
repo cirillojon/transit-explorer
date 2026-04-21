@@ -164,3 +164,29 @@ class UserSegment(db.Model):
             'notes': self.notes,
             'duration_ms': self.duration_ms,
         }
+
+
+class DataLoad(db.Model):
+    """Per-agency snapshot of the last OneBusAway data import.
+
+    One row per agency. Persisted across restarts so the loader can:
+      • short-circuit recent successful loads (TTL),
+      • surface real status on /api/health (no in-memory state),
+      • make load history visible to operators.
+    """
+    __tablename__ = 'data_loads'
+
+    agency_id = db.Column(db.String(50), primary_key=True)
+    last_attempt_at = db.Column(db.DateTime)
+    last_success_at = db.Column(db.DateTime)
+    route_count = db.Column(db.Integer, default=0)
+    last_error = db.Column(db.Text)
+
+    def to_dict(self):
+        return {
+            'agency_id': self.agency_id,
+            'last_attempt_at': self.last_attempt_at.isoformat() if self.last_attempt_at else None,
+            'last_success_at': self.last_success_at.isoformat() if self.last_success_at else None,
+            'route_count': self.route_count or 0,
+            'last_error': self.last_error,
+        }
