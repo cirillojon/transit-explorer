@@ -2044,6 +2044,27 @@ button {
   .type-chip {
     min-height: 40px;
   }
+
+  /* When the sidebar drawer is open on mobile, hide the map-side
+     overlays so they don't peek through the backdrop or compete with
+     the route details for attention. */
+  .app.sidebar-open .direction-tabs,
+  .app.sidebar-open .map-legend,
+  .app.sidebar-open .map-hero-hint,
+  .app.sidebar-open .pick-overlay,
+  .app.sidebar-open .highlight-banner,
+  .app.sidebar-open .map-toast,
+  .app.sidebar-open .popup-toast-stack,
+  .app.sidebar-open .leaflet-top.leaflet-left,
+  .app.sidebar-open .mobile-current-route {
+    display: none !important;
+  }
+
+  /* Tighten the top "current route" badge so the close (X) doesn't
+     crowd the long-name and the whole thing fits on small screens. */
+  .mobile-current-route .sub {
+    display: none;
+  }
 }
 
 @keyframes fade-in {
@@ -2056,23 +2077,7 @@ button {
 }
 
 /* ── Sidebar footer / source link ──────────────────────── */
-.sidebar-footer {
-  padding: 10px 18px 14px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
-.source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-muted);
-  font-size: 12px;
-  text-decoration: none;
-  transition: color 0.15s;
-}
-.source-link:hover {
-  color: var(--text);
-}
+/* (Source-on-GitHub link removed; styles intentionally left blank.) */
 
 /* ── Map legend mode label ─────────────────────────────── */
 .map-legend-mode {
