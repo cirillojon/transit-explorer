@@ -12,6 +12,42 @@ import {
 } from "./services/api";
 import { useAuth } from "./contexts/AuthContext";
 
+function cleanLabel(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getRouteDisplayText(route) {
+  const shortName = cleanLabel(route?.short_name);
+  const longName = cleanLabel(route?.long_name);
+  const description = cleanLabel(route?.description);
+
+  const shortNorm = shortName.toLowerCase();
+  const longNorm = longName.toLowerCase();
+  const descNorm = description.toLowerCase();
+
+  const hasLongDistinct = !!longName && longNorm !== shortNorm;
+  const hasDescDistinctFromShort = !!description && descNorm !== shortNorm;
+  const hasDescDistinctFromLong = !!description && descNorm !== longNorm;
+
+  const primary = hasLongDistinct
+    ? longName
+    : hasDescDistinctFromShort
+      ? description
+      : longName || shortName || "Route";
+
+  let secondary = "";
+  if (primary === longName && hasDescDistinctFromLong) secondary = description;
+  if (primary === description && hasLongDistinct) secondary = longName;
+
+  if (!secondary && shortName && primary.toLowerCase() !== shortNorm) {
+    secondary = `Route ${shortName}`;
+  }
+
+  return { primary, secondary };
+}
+
 function App() {
   const { user, loading: authLoading, signIn, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("routes");
@@ -176,6 +212,10 @@ function App() {
     }
   }
 
+  const selectedRouteDisplay = selectedRoute
+    ? getRouteDisplayText(selectedRoute)
+    : null;
+
   return (
     <div className={`app ${sidebarOpen ? "sidebar-open" : ""}`}>
       <button
@@ -202,12 +242,12 @@ function App() {
                 : "var(--accent)",
             }}
           />
-          <span className="name">
-            {selectedRoute.short_name || selectedRoute.long_name}
+          <span className="text">
+            <span className="name">{selectedRouteDisplay?.primary}</span>
+            {selectedRouteDisplay?.secondary && (
+              <span className="sub">{selectedRouteDisplay.secondary}</span>
+            )}
           </span>
-          {selectedRoute.short_name && selectedRoute.long_name && (
-            <span className="sub">{selectedRoute.long_name}</span>
-          )}
           <span
             className="clear"
             role="button"

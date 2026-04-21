@@ -1986,11 +1986,11 @@ button {
     top: calc(env(safe-area-inset-top, 0px) + 12px);
     left: calc(env(safe-area-inset-left, 0px) + 72px);
     right: calc(env(safe-area-inset-right, 0px) + 12px);
-    height: 48px;
+    height: 54px;
     z-index: 949;
     align-items: center;
     gap: 10px;
-    padding: 0 14px;
+    padding: 6px 14px;
     border-radius: 14px;
     border: 1px solid var(--border);
     background: rgba(19, 28, 48, 0.94);
@@ -2008,20 +2008,32 @@ button {
     border-radius: 50%;
     flex-shrink: 0;
   }
+  .mobile-current-route .text {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
   .mobile-current-route .name {
+    display: block;
     font-weight: 700;
-    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.15;
   }
   .mobile-current-route .sub {
+    display: block;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 11px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
+    line-height: 1.1;
   }
   .mobile-current-route .clear {
-    margin-left: auto;
+    margin-left: 8px;
     background: none;
     border: none;
     color: var(--text-muted);
@@ -2174,12 +2186,6 @@ button {
   .app.sidebar-open .leaflet-top.leaflet-left,
   .app.sidebar-open .mobile-current-route {
     display: none !important;
-  }
-
-  /* Tighten the top "current route" badge so the close (X) doesn't
-     crowd the long-name and the whole thing fits on small screens. */
-  .mobile-current-route .sub {
-    display: none;
   }
 }
 

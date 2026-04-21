@@ -299,8 +299,9 @@ function TransitMap({
 
     if (pickState.directionId !== directionId) {
       const lockedDirectionName =
-        directionChoices.find((dir) => dir.directionId === pickState.directionId)
-          ?.label || `Direction ${pickState.directionId}`;
+        directionChoices.find(
+          (dir) => dir.directionId === pickState.directionId,
+        )?.label || `Direction ${pickState.directionId}`;
       showToast(
         `Direction mismatch. Continue on ${lockedDirectionName} or cancel.`,
         "info",
@@ -471,8 +472,13 @@ function TransitMap({
               }}
             >
               <span className="direction-tab-label">{dir.label}</span>
-              <span className="direction-tab-sub" title={dir.lastStopName || ""}>
-                {dir.lastStopName ? `Toward ${dir.lastStopName}` : "Tap to follow this direction"}
+              <span
+                className="direction-tab-sub"
+                title={dir.lastStopName || ""}
+              >
+                {dir.lastStopName
+                  ? `Toward ${dir.lastStopName}`
+                  : "Tap to follow this direction"}
               </span>
             </button>
           ))}
@@ -518,27 +524,39 @@ function TransitMap({
           )}
           {activeDirectionMeta && (
             <div className="map-legend-direction">
-              <span className="map-legend-direction-label">Logging direction</span>
+              <span className="map-legend-direction-label">
+                Logging direction
+              </span>
               <strong>{activeDirectionMeta.label}</strong>
-              {activeDirectionMeta.firstStopName && activeDirectionMeta.lastStopName && (
-                <span className="map-legend-direction-flow">
-                  {activeDirectionMeta.firstStopName} → {activeDirectionMeta.lastStopName}
-                </span>
-              )}
+              {activeDirectionMeta.firstStopName &&
+                activeDirectionMeta.lastStopName && (
+                  <span className="map-legend-direction-flow">
+                    {activeDirectionMeta.firstStopName} →{" "}
+                    {activeDirectionMeta.lastStopName}
+                  </span>
+                )}
             </div>
           )}
           <div className="map-legend-steps">
-            <div className={`map-legend-step ${activeDirectionMeta ? "is-complete" : "is-active"}`}>
+            <div
+              className={`map-legend-step ${activeDirectionMeta ? "is-complete" : "is-active"}`}
+            >
               <span className="map-legend-step-num">1</span>
               <span>
                 Choose the correct direction
-                {activeDirectionMeta?.lastStopName ? ` (toward ${activeDirectionMeta.lastStopName})` : ""}
+                {activeDirectionMeta?.lastStopName
+                  ? ` (toward ${activeDirectionMeta.lastStopName})`
+                  : ""}
               </span>
             </div>
-            <div className={`map-legend-step ${pickState ? "is-complete" : "is-active"}`}>
+            <div
+              className={`map-legend-step ${pickState ? "is-complete" : "is-active"}`}
+            >
               <span className="map-legend-step-num">2</span>
               <span>
-                {pickState ? `Boarded: ${pickState.fromName}` : "Tap your boarding stop"}
+                {pickState
+                  ? `Boarded: ${pickState.fromName}`
+                  : "Tap your boarding stop"}
               </span>
             </div>
             <div className={`map-legend-step ${pickState ? "is-active" : ""}`}>

@@ -36,7 +36,9 @@ const SORT_BUTTONS = [
 ];
 
 function cleanLabel(value) {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function getRouteDisplayText(route) {
@@ -236,7 +238,11 @@ function RouteList({ routes, progress, selectedRoute, onSelectRoute }) {
               <div className="route-info">
                 <div
                   className="route-name"
-                  title={display.secondary ? `${display.primary} · ${display.secondary}` : display.primary}
+                  title={
+                    display.secondary
+                      ? `${display.primary} · ${display.secondary}`
+                      : display.primary
+                  }
                 >
                   {display.primary}
                 </div>
