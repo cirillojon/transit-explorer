@@ -332,13 +332,21 @@ def get_progress():
     dirs = RouteDirection.query.filter(RouteDirection.route_id.in_(route_ids)).all()
     dir_name_map = {}
     totals_per_route = {rid: 0 for rid in route_ids}
+    dirs_per_route = {rid: [] for rid in route_ids}
     for d in dirs:
         dir_name_map[(d.route_id, d.direction_id)] = d.direction_name or d.direction_id
         try:
-            count = max(0, len(json.loads(d.stop_ids_json or '[]')) - 1)
+            stop_ids = json.loads(d.stop_ids_json or '[]')
         except Exception:
-            count = 0
+            stop_ids = []
+        count = max(0, len(stop_ids) - 1)
         totals_per_route[d.route_id] = totals_per_route.get(d.route_id, 0) + count
+        dirs_per_route[d.route_id].append({
+            'direction_id': d.direction_id,
+            'direction_name': d.direction_name or d.direction_id,
+            'stop_ids': stop_ids,
+            'total_hops': count,
+        })
 
     by_route = {}
     for seg in segments:
@@ -353,6 +361,7 @@ def get_progress():
                 'total_segments': totals_per_route.get(rid, 0),
                 'completed_segments': 0,
                 'completion_pct': 0,
+                'directions': dirs_per_route.get(rid, []),
                 'segments': [],
             }
         by_route[rid]['completed_segments'] += 1

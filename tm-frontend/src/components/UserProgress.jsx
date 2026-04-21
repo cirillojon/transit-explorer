@@ -259,6 +259,30 @@ function UserProgress({
             const pct = Math.round(rp.completion_pct || 0);
             const isHighlightedRoute =
               highlightedSegment?.routeId === rp.route_id;
+            const routeColor = rp.route_color
+              ? `#${rp.route_color}`
+              : "var(--accent)";
+
+            // Build per-direction coverage: array of booleans, one per hop.
+            const directions = (rp.directions || []).map((dir) => {
+              // Set of completed "from|to" pairs for this direction.
+              const completed = new Set();
+              for (const seg of rp.segments) {
+                if (String(seg.direction_id) === String(dir.direction_id)) {
+                  completed.add(`${seg.from_stop_id}|${seg.to_stop_id}`);
+                }
+              }
+              const stops = dir.stop_ids || [];
+              const hops = [];
+              for (let i = 0; i < stops.length - 1; i++) {
+                hops.push(completed.has(`${stops[i]}|${stops[i + 1]}`));
+              }
+              return {
+                directionId: dir.direction_id,
+                directionName: dir.direction_name,
+                hops,
+              };
+            });
             return (
               <div
                 key={rp.route_id}
@@ -278,11 +302,7 @@ function UserProgress({
                 >
                   <span
                     className="route-color-bar"
-                    style={{
-                      background: rp.route_color
-                        ? `#${rp.route_color}`
-                        : "var(--accent)",
-                    }}
+                    style={{ background: routeColor }}
                   />
                   <div className="progress-route-main">
                     <div className="progress-route-name">
@@ -299,6 +319,33 @@ function UserProgress({
                         style={{ width: `${Math.min(pct, 100)}%` }}
                       />
                     </div>
+                    {directions.length > 0 &&
+                      directions.some((d) => d.hops.length > 0) && (
+                        <div className="route-coverage">
+                          {directions.map((d) => (
+                            <div
+                              key={d.directionId}
+                              className="route-coverage-row"
+                              title={`${d.directionName}: ${d.hops.filter(Boolean).length}/${d.hops.length} segments`}
+                            >
+                              <span className="route-coverage-label">
+                                {d.directionName}
+                              </span>
+                              <div className="route-coverage-strip">
+                                {d.hops.map((done, i) => (
+                                  <span
+                                    key={i}
+                                    className={`route-tick ${done ? "is-done" : ""}`}
+                                    style={
+                                      done ? { background: routeColor } : undefined
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     <div className="progress-route-meta">
                       <span>
                         {rp.completed_segments}/{rp.total_segments} segments

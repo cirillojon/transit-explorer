@@ -1370,6 +1370,50 @@ button {
 .progress-fill.is-complete {
   background: linear-gradient(90deg, var(--green), #4ade80);
 }
+
+/* Per-direction coverage strip — one tick per stop-to-stop hop */
+.route-coverage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+.route-coverage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.route-coverage-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 0 0 auto;
+  max-width: 35%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.route-coverage-strip {
+  flex: 1;
+  display: flex;
+  gap: 1px;
+  height: 8px;
+  min-width: 0;
+}
+.route-tick {
+  flex: 1 1 0;
+  min-width: 1px;
+  background: var(--surface-2);
+  border-radius: 1px;
+  transition: background 0.15s;
+}
+.route-tick.is-done {
+  background: var(--accent);
+}
+
 .progress-route-meta {
   font-size: 11px;
   color: var(--text-muted);
