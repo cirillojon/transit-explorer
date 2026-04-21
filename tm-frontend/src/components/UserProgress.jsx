@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   updateSegmentNotes,
-  deleteSegment,
   bulkDeleteSegments,
 } from "../services/api";
 import StatsCard from "./StatsCard";
@@ -68,7 +67,6 @@ function UserProgress({
   onClearHighlight,
 }) {
   const [expandedRoute, setExpandedRoute] = useState(null);
-  const [expandedJourney, setExpandedJourney] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [noteText, setNoteText] = useState("");
   const [confirm, setConfirm] = useState(null); // { title, message, onConfirm, danger }
@@ -119,7 +117,6 @@ function UserProgress({
     lastAutoKey.current = key;
     setView("routes");
     setExpandedRoute(highlightedRoute.route_id);
-    if (highlightedJourney) setExpandedJourney(highlightedJourney.key);
     // Defer scroll until after the expansion renders.
     requestAnimationFrame(() => {
       const target =
@@ -138,16 +135,18 @@ function UserProgress({
     onRefresh();
   };
 
-  const askDeleteHop = (segId) =>
+  const askDeleteRide = (journey) =>
     setConfirm({
-      title: "Remove this segment?",
+      title: "Remove this ride?",
       message:
-        "This single stop-to-stop hop will be removed from your progress.",
+        journey.stopCount > 2
+          ? `All ${journey.stopCount - 1} segments in this ride (${journey.boardStop} → ${journey.alightStop}) will be removed from your progress.`
+          : `This ride (${journey.boardStop} → ${journey.alightStop}) will be removed from your progress.`,
       danger: true,
-      confirmLabel: "Remove",
+      confirmLabel: "Remove ride",
       onConfirm: async () => {
         setConfirm(null);
-        await deleteSegment(segId);
+        await bulkDeleteSegments({ ids: journey.segments.map((s) => s.id) });
         onRefresh();
       },
     });
@@ -316,57 +315,85 @@ function UserProgress({
                 {isExpanded && (
                   <div className="progress-segments">
                     {journeys.map((journey) => {
-                      const isJExpanded = expandedJourney === journey.key;
                       const isHighlightedJourney =
                         highlightedJourney?.key === journey.key;
+                      const intermediate = Math.max(0, journey.stopCount - 2);
+                      // Render up to 5 dots for the strip; large rides
+                      // collapse the middle into a single "+N" pip.
+                      const dots = [];
+                      dots.push("board");
+                      const maxMiddle = 3;
+                      if (intermediate > 0) {
+                        if (intermediate <= maxMiddle) {
+                          for (let i = 0; i < intermediate; i++)
+                            dots.push("mid");
+                        } else {
+                          dots.push("mid");
+                          dots.push({ collapse: intermediate - 2 });
+                          dots.push("mid");
+                        }
+                      }
+                      dots.push("alight");
                       return (
                         <div
                           key={journey.key}
                           ref={(el) => {
                             journeyRefs.current[journey.key] = el;
                           }}
-                          className={`journey-item ${
+                          className={`ride-card ${
                             isHighlightedJourney ? "is-highlighted" : ""
                           }`}
                         >
-                          <button
-                            type="button"
-                            className="journey-header"
-                            onClick={() =>
-                              setExpandedJourney(
-                                isJExpanded ? null : journey.key,
-                              )
-                            }
-                          >
-                            <div className="journey-direction">
+                          <div className="ride-card-top">
+                            <span className="ride-direction-tag">
                               {journey.directionName}
-                            </div>
-                            <div className="journey-stops">
-                              <span className="journey-board">
-                                ● {journey.boardStop}
-                              </span>
-                              <span className="journey-arrow">→</span>
-                              <span className="journey-alight">
-                                ◆ {journey.alightStop}
-                              </span>
-                            </div>
-                            <div className="journey-meta">
-                              <span>{journey.stopCount} stops</span>
-                              <span className="journey-date">
-                                {journey.date}
-                              </span>
-                              <span className="journey-expand-icon">
-                                {isJExpanded ? "▲" : "▼"}
-                              </span>
-                            </div>
-                            {journey.notes && (
-                              <div className="journey-note">
-                                📝 {journey.notes}
-                              </div>
-                            )}
-                          </button>
+                            </span>
+                            <span className="ride-date">{journey.date}</span>
+                          </div>
 
-                          <div className="segment-actions journey-actions">
+                          <div className="ride-stops">
+                            <span className="ride-board" title={journey.boardStop}>
+                              {journey.boardStop}
+                            </span>
+                            <span className="ride-arrow">→</span>
+                            <span className="ride-alight" title={journey.alightStop}>
+                              {journey.alightStop}
+                            </span>
+                          </div>
+
+                          <div className="ride-strip" aria-hidden="true">
+                            {dots.map((d, i) => {
+                              if (typeof d === "object") {
+                                return (
+                                  <React.Fragment key={i}>
+                                    <span className="ride-dot ride-dot-collapse">
+                                      +{d.collapse}
+                                    </span>
+                                    {i < dots.length - 1 && (
+                                      <span className="ride-line" />
+                                    )}
+                                  </React.Fragment>
+                                );
+                              }
+                              return (
+                                <React.Fragment key={i}>
+                                  <span className={`ride-dot ride-dot-${d}`} />
+                                  {i < dots.length - 1 && (
+                                    <span className="ride-line" />
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                            <span className="ride-stop-count">
+                              {journey.stopCount} stops
+                            </span>
+                          </div>
+
+                          {journey.notes && (
+                            <div className="ride-note">📝 {journey.notes}</div>
+                          )}
+
+                          <div className="ride-actions">
                             <button
                               className="btn-small btn-view-map"
                               onClick={() =>
@@ -387,6 +414,14 @@ function UserProgress({
                               }}
                             >
                               {journey.notes ? "Edit note" : "Add note"}
+                            </button>
+                            <button
+                              className="btn-small btn-danger ride-delete"
+                              onClick={() => askDeleteRide(journey)}
+                              title="Remove this ride from your progress"
+                              aria-label="Remove ride"
+                            >
+                              ✕
                             </button>
                           </div>
 
@@ -415,27 +450,6 @@ function UserProgress({
                                   Cancel
                                 </button>
                               </div>
-                            </div>
-                          )}
-
-                          {isJExpanded && (
-                            <div className="hop-list">
-                              {journey.segments.map((seg) => (
-                                <div key={seg.id} className="hop-item">
-                                  <span className="hop-stops">
-                                    {seg.from_stop_name}
-                                    <span className="hop-arrow">→</span>
-                                    {seg.to_stop_name}
-                                  </span>
-                                  <button
-                                    className="btn-small btn-danger hop-remove"
-                                    onClick={() => askDeleteHop(seg.id)}
-                                    title="Remove this hop"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
                             </div>
                           )}
                         </div>
