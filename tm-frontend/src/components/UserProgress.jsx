@@ -1,8 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  updateSegmentNotes,
-  bulkDeleteSegments,
-} from "../services/api";
+import { updateSegmentNotes, bulkDeleteSegments } from "../services/api";
 import StatsCard from "./StatsCard";
 import Achievements from "./Achievements";
 import RecentActivity from "./RecentActivity";
@@ -337,7 +334,9 @@ function UserProgress({
                                     key={i}
                                     className={`route-tick ${done ? "is-done" : ""}`}
                                     style={
-                                      done ? { background: routeColor } : undefined
+                                      done
+                                        ? { background: routeColor }
+                                        : undefined
                                     }
                                   />
                                 ))}
@@ -399,11 +398,17 @@ function UserProgress({
                           </div>
 
                           <div className="ride-stops">
-                            <span className="ride-board" title={journey.boardStop}>
+                            <span
+                              className="ride-board"
+                              title={journey.boardStop}
+                            >
                               {journey.boardStop}
                             </span>
                             <span className="ride-arrow">→</span>
-                            <span className="ride-alight" title={journey.alightStop}>
+                            <span
+                              className="ride-alight"
+                              title={journey.alightStop}
+                            >
                               {journey.alightStop}
                             </span>
                           </div>

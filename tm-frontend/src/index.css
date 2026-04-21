@@ -778,6 +778,155 @@ button {
   border-color: var(--red);
   color: var(--red);
 }
+.pick-undo {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: all 0.15s;
+}
+.pick-undo:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: rgba(250, 204, 21, 0.08);
+}
+
+/* ── Stop search (overlay) ─────────────────────────────── */
+.stop-search {
+  position: relative;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.stop-search-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+}
+.stop-search-toggle {
+  background: none;
+  border: none;
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stop-search-toggle:hover {
+  background: var(--surface-2);
+}
+.stop-search.is-open .stop-search-toggle {
+  color: var(--accent);
+}
+.stop-search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 6px 4px;
+  outline: none;
+}
+.stop-search-input::placeholder {
+  color: var(--text-faint);
+}
+.stop-search-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stop-search-clear:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.stop-search-results {
+  border-top: 1px solid var(--border-soft);
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.stop-search-result {
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background 0.1s;
+}
+.stop-search-result:last-child {
+  border-bottom: none;
+}
+.stop-search-result:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--accent);
+}
+.stop-search-result:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.stop-search-result-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stop-search-result-tag {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-2);
+  padding: 2px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.stop-search-empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-faint);
+  text-align: center;
+}
 
 /* ── Stacked overlay (direction tabs + legend) ──────────── */
 .map-overlay-stack {

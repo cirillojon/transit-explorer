@@ -95,7 +95,11 @@ function TransitMap({
   const [activeDirection, setActiveDirection] = useState(null);
   const [toast, setToast] = useState(null);
   const [hoverSeg, setHoverSeg] = useState(null);
+  const [stopSearch, setStopSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const toastTimerRef = useRef(null);
+  const mapRef = useRef(null);
+  const stopMarkerRefs = useRef({});
 
   const boardingIcon = useMemo(
     () =>
@@ -329,6 +333,59 @@ function TransitMap({
     submitMark(seg.directionId, seg.fromStopId, seg.toStopId);
   };
 
+  // Undo the boarding pick (Escape key or button).
+  const undoBoarding = () => {
+    if (!pickState || marking) return;
+    setPickState(null);
+    showToast("Boarding undone", "info");
+  };
+
+  useEffect(() => {
+    if (!pickState) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") undoBoarding();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickState, marking]);
+
+  // Filtered stop list for the on-map search box.
+  const stopSearchResults = useMemo(() => {
+    const q = stopSearch.trim().toLowerCase();
+    if (!q || !visibleStops.length) return [];
+    const out = [];
+    for (const s of visibleStops) {
+      if (s.name && s.name.toLowerCase().includes(q)) {
+        out.push(s);
+        if (out.length >= 20) break;
+      }
+    }
+    return out;
+  }, [stopSearch, visibleStops]);
+
+  const focusStop = (stop) => {
+    const map = mapRef.current;
+    if (map) {
+      map.flyTo([stop.lat, stop.lon], Math.max(map.getZoom(), 16), {
+        duration: 0.6,
+      });
+    }
+    // Open the marker tooltip after the pan settles so the user sees the name.
+    setTimeout(() => {
+      const m = stopMarkerRefs.current[`${stop.directionId}-${stop.id}`];
+      if (m && m.openTooltip) m.openTooltip();
+    }, 650);
+  };
+
+  const handleSearchPick = (stop) => {
+    focusStop(stop);
+    setStopSearch("");
+    setSearchOpen(false);
+    // Mirror a tap on the stop: board if no pick, alight if one is in flight.
+    handleStopClick(stop.directionId, stop.id, stop.name);
+  };
+
   const routeColor = selectedRoute?.color
     ? `#${selectedRoute.color}`
     : "#60a5fa";
@@ -336,6 +393,7 @@ function TransitMap({
   return (
     <div className="map-wrapper">
       <MapContainer
+        ref={mapRef}
         center={SEATTLE_CENTER}
         zoom={12}
         style={{ height: "100%", width: "100%" }}
@@ -397,6 +455,11 @@ function TransitMap({
                 key={`${stop.directionId}-${stop.id}`}
                 position={[stop.lat, stop.lon]}
                 icon={boardingIcon}
+                ref={(el) => {
+                  if (el)
+                    stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] =
+                      el;
+                }}
                 eventHandlers={{
                   click: () =>
                     handleStopClick(stop.directionId, stop.id, stop.name),
@@ -425,6 +488,10 @@ function TransitMap({
               weight={isCandidate ? 3 : 2}
               opacity={1}
               fillOpacity={1}
+              ref={(el) => {
+                if (el)
+                  stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] = el;
+              }}
               eventHandlers={{
                 click: () =>
                   handleStopClick(stop.directionId, stop.id, stop.name),
@@ -463,6 +530,84 @@ function TransitMap({
       {/* Stacked overlay: direction tabs sit directly above the legend so they never overlap */}
       {(directionChoices.length > 1 || selectedRoute) && (
         <div className="map-overlay-stack">
+          {selectedRoute && visibleStops.length > 0 && (
+            <div className={`stop-search ${searchOpen ? "is-open" : ""}`}>
+              <div className="stop-search-row">
+                <button
+                  type="button"
+                  className="stop-search-toggle"
+                  onClick={() => setSearchOpen((v) => !v)}
+                  title="Search stops on this route"
+                  aria-label="Search stops"
+                >
+                  🔍
+                </button>
+                {searchOpen && (
+                  <>
+                    <input
+                      type="text"
+                      className="stop-search-input"
+                      placeholder={
+                        pickState
+                          ? "Find your alighting stop…"
+                          : "Find a stop on this route…"
+                      }
+                      value={stopSearch}
+                      onChange={(e) => setStopSearch(e.target.value)}
+                      autoFocus
+                    />
+                    {stopSearch && (
+                      <button
+                        type="button"
+                        className="stop-search-clear"
+                        onClick={() => setStopSearch("")}
+                        aria-label="Clear search"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+              {searchOpen && stopSearch && (
+                <div className="stop-search-results">
+                  {stopSearchResults.length === 0 ? (
+                    <div className="stop-search-empty">No matching stops</div>
+                  ) : (
+                    stopSearchResults.map((s) => {
+                      const isBoardingChoice =
+                        pickState && pickState.fromStopId === s.id;
+                      return (
+                        <button
+                          type="button"
+                          key={`${s.directionId}-${s.id}`}
+                          className="stop-search-result"
+                          onClick={() => handleSearchPick(s)}
+                          disabled={isBoardingChoice}
+                          title={
+                            isBoardingChoice
+                              ? "This is your boarding stop"
+                              : pickState
+                                ? "Mark as alighting stop"
+                                : "Board here"
+                          }
+                        >
+                          <span className="stop-search-result-name">
+                            {s.name}
+                          </span>
+                          {s.isTerminus && (
+                            <span className="stop-search-result-tag">
+                              Terminus
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {directionChoices.length > 1 && (
             <div className="direction-tabs">
               {directionChoices.map((dir) => (
@@ -616,8 +761,12 @@ function TransitMap({
                 : ""}
             </span>
           )}
-          <button className="pick-cancel" onClick={() => setPickState(null)}>
-            ✕
+          <button
+            className="pick-undo"
+            onClick={undoBoarding}
+            title="Undo boarding (Esc)"
+          >
+            ↶ Undo boarding
           </button>
         </div>
       )}
