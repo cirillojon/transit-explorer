@@ -559,7 +559,11 @@ def mark_segments():
 
     created = []
     now = datetime.utcnow()
-    for i, (a, b) in enumerate(pair_keys):
+    # Attach the measured trip duration + notes to the first row we actually
+    # create (not the first pair_key), so duration isn't silently dropped
+    # when pair_keys[0] was already marked on an earlier ride.
+    first_new = True
+    for (a, b) in pair_keys:
         if (a, b) in existing:
             continue
         segment = UserSegment(
@@ -569,14 +573,12 @@ def mark_segments():
             from_stop_id=a,
             to_stop_id=b,
             completed_at=now,
-            notes=notes if i == 0 else '',
-            # Attach the measured trip duration to the first row of the run.
-            # Subsequent rows keep duration_ms=NULL so we don't double-count
-            # in aggregates.
-            duration_ms=duration_ms if i == 0 else None,
+            notes=notes if first_new else '',
+            duration_ms=duration_ms if first_new else None,
         )
         db.session.add(segment)
         created.append(segment)
+        first_new = False
 
     db.session.commit()
 
