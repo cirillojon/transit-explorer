@@ -389,4 +389,16 @@ PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer\tm-frontend> npm t
    Start at  17:13:45
    Duration  5.74s (transform 421ms, setup 1.74s, collect 1.32s, tests 1.25s, environment 7.65s, prepare 1.41s)
 
+# Snapshot production DB:
+
+PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
+>> #!/bin/bash
+>> cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer
+>> /home/jon/.fly/bin/flyctl ssh console -a transit-explorer -C 'sqlite3 /app/tm-instance/data.db ".backup /tmp/prod-snapshot.db"' 2>&1
+>> echo EXIT=`$?
+>> "@ | Out-File -Encoding ascii .\_snap.sh; wsl bash ./_snap.sh
+Connecting... complete
+EXIT=0
+PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
+
 ```

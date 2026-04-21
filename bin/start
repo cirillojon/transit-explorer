@@ -67,12 +67,67 @@ with_lock() {
   fi
 }
 
+# ─── Adopt a pre-existing DB into alembic ──
+# Production was originally created via SQLAlchemy `db.create_all()` and
+# never stamped, so `alembic_version` is empty even though every modeled
+# table exists. Running `flask db upgrade` from base would error with
+# "table routes already exists" on the very first migration.
+#
+# This helper inspects the live DB and, if it finds the schema present
+# but unstamped, stamps it at the latest revision whose schema matches
+# what's actually there. Idempotent: a no-op once `alembic_version` has
+# any row.
+adopt_existing_db_if_unstamped() {
+  local target
+  target=$(python3 - <<'PY'
+import sys
+from sqlalchemy import inspect, text
+from app import create_app, db
+
+app = create_app()
+with app.app_context():
+    insp = inspect(db.engine)
+    tables = set(insp.get_table_names())
+
+    # Already stamped → nothing to do.
+    if "alembic_version" in tables:
+        with db.engine.connect() as conn:
+            row = conn.execute(text("SELECT version_num FROM alembic_version")).first()
+        if row is not None:
+            sys.exit(0)
+
+    # Empty DB → let `flask db upgrade` build it from scratch.
+    if "routes" not in tables:
+        sys.exit(0)
+
+    # Pick the newest revision whose schema is already present in the DB.
+    target = "f838d5f10e83"  # baseline tables
+    user_segment_cols = (
+        {c["name"] for c in insp.get_columns("user_segments")}
+        if "user_segments" in tables else set()
+    )
+    if "duration_ms" in user_segment_cols:
+        target = "a1c2e4f9b701"
+    if "data_loads" in tables:
+        target = "b3d09f1e2c44"
+
+    print(target)
+PY
+  )
+  if [ -n "$target" ]; then
+    log "schema present but unstamped → stamping at $target"
+    flask db stamp "$target"
+  fi
+}
+
 # ─── Run alembic upgrade then drift check ──
 do_migrate() {
   if [ "${SKIP_DB_UPGRADE:-0}" = "1" ]; then
     log "SKIP_DB_UPGRADE=1 — skipping migrations"
     return
   fi
+  log "checking for unstamped pre-alembic DB"
+  adopt_existing_db_if_unstamped
   log "running flask db upgrade"
   flask db upgrade
   log "running schema-drift check"
