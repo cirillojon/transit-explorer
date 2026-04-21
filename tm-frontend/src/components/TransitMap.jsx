@@ -381,23 +381,6 @@ function TransitMap({
     return seg ? [...seg.positions] : null;
   }, [highlightedSegment, directionSegments]);
 
-  const completionStats = useMemo(() => {
-    if (!directionSegments.length) return null;
-    const done = directionSegments.filter((s) =>
-      effectiveCompleted.has(s.key),
-    ).length;
-    return { done, total: directionSegments.length };
-  }, [directionSegments, effectiveCompleted]);
-
-  // Trip-time stats are stored client-side per (route, direction). We
-  // depend on tripStatsTick so the legend re-reads localStorage after
-  // each successful save.
-  const tripStats = useMemo(() => {
-    if (!routeDetail || activeDirection == null) return null;
-    return getTripStats(routeDetail.id, activeDirection);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeDetail, activeDirection, tripStatsTick]);
-
   // Reset optimistic completion state whenever the selected route changes.
   useEffect(() => {
     setOptimisticDone(new Set());
@@ -426,6 +409,23 @@ function TransitMap({
     for (const k of optimisticDone) merged.add(k);
     return merged;
   }, [completedSegments, optimisticDone]);
+
+  const completionStats = useMemo(() => {
+    if (!directionSegments.length) return null;
+    const done = directionSegments.filter((s) =>
+      effectiveCompleted.has(s.key),
+    ).length;
+    return { done, total: directionSegments.length };
+  }, [directionSegments, effectiveCompleted]);
+
+  // Trip-time stats are stored client-side per (route, direction). We
+  // depend on tripStatsTick so the legend re-reads localStorage after
+  // each successful save.
+  const tripStats = useMemo(() => {
+    if (!routeDetail || activeDirection == null) return null;
+    return getTripStats(routeDetail.id, activeDirection);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeDetail, activeDirection, tripStatsTick]);
 
   const submitMark = async (directionId, fromStopId, toStopId) => {
     if (!routeDetail) return;
@@ -668,7 +668,9 @@ function TransitMap({
             <React.Fragment key={seg.key}>
               <Polyline
                 positions={seg.positions}
-                color={isHighlighted ? "#facc15" : done ? "#22c55e" : routeColor}
+                color={
+                  isHighlighted ? "#facc15" : done ? "#22c55e" : routeColor
+                }
                 weight={isHighlighted ? 8 : done ? 6 : isHovered ? 6 : 4}
                 opacity={isHighlighted ? 1 : done ? 1 : isHovered ? 0.95 : 0.55}
                 eventHandlers={{
