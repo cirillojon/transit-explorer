@@ -53,6 +53,8 @@ npm run dev
 - Backend: http://localhost:8880
 - Frontend: http://localhost:5173 (Vite proxies `/api` to backend via `VITE_PROXY_URL`)
 
+On a fresh local DB, `/api/health` returns before the OneBusAway import is done. Give `/api/routes` and route detail 1-3 minutes to fully populate while the background loader/backfill catches up.
+
 ### Common tasks
 
 | Task                                 | Command                                                     |
@@ -121,7 +123,7 @@ git push -u origin feature/my-thing
 
 ## 4. Deploying backend changes (Fly.io)
 
-**Backend deploys are automatic via GitHub Actions.** Pushing to `main` with changes under `app/`, `requirements.txt`, `Dockerfile`, `fly.toml`, or `gunicorn_startup.sh` triggers [.github/workflows/fly-deploy.yml](.github/workflows/fly-deploy.yml), which runs `flyctl deploy --remote-only --ha=false` against the app. Frontend-only commits skip the workflow (path filter).
+**Backend deploys are automatic via GitHub Actions.** Pushing to `main` with changes under `app/`, `requirements.txt`, `Dockerfile`, `fly.toml`, `gunicorn_startup.sh`, or `.dockerignore` triggers [.github/workflows/fly-deploy.yml](.github/workflows/fly-deploy.yml). The workflow runs `flyctl deploy --local-only --ha=false --strategy immediate --detach`, then polls `/api/health` until the app is back.
 
 Watch a run: https://github.com/cirillojon/transit-explorer/actions
 
@@ -131,13 +133,14 @@ You can also trigger a deploy manually:
 - **From your laptop** (e.g. testing an unmerged branch):
   ```bash
   cd transit-explorer
-  flyctl deploy --remote-only --ha=false
+  flyctl deploy --remote-only --ha=false --strategy immediate
   ```
 
 `--remote-only` builds on Fly's Depot builder so you don't need local Docker.
 `--ha=false` keeps the single-machine cost-saving setup; remove it later if you scale to >1 machine.
+`--strategy immediate` matches the live app's single-volume deployment model.
 
-Deploy is rolling: Fly stops the old machine, starts the new one, runs the healthcheck on `/api/health`, and only routes traffic when it passes. Total downtime: ~5–10 seconds.
+Deploy is **not** rolling. The live app uses one machine plus one mounted volume, so Fly has to stop the old machine before starting the new one. Expect a short hard cutover, then a warm-up period where `/api/health` comes back first and route data continues loading/backfilling in the background.
 
 ### Rotating the deploy token
 
@@ -151,10 +154,11 @@ flyctl tokens revoke <old-token-id>     # optional cleanup; list with `flyctl to
 
 ### What happens on boot
 
-1. `gunicorn_startup.sh` runs, materializes `GOOGLE_APPLICATION_CREDENTIALS_JSON` to `/app/service-account.json`.
+1. `gunicorn_startup.sh` runs and materializes `GOOGLE_APPLICATION_CREDENTIALS_JSON` to `/app/service-account.json` when that secret is present.
 2. `flask db upgrade` applies any pending migrations (skip with `SKIP_DB_UPGRADE=1`).
-3. Gunicorn forks `WEB_CONCURRENCY` workers with `--preload`.
-4. App factory kicks off OBA data load in a **background thread** — `/api/health` responds immediately, but `/api/routes` returns increasing data over the next ~60s.
+3. In local Docker, `gunicorn_startup.sh` can run a foreground OBA load unless `SKIP_DATA_LOAD=1` is set.
+4. Gunicorn boots with `--preload`.
+5. `create_app()` checks whether tables, directions, or routes are missing and starts a background load/backfill when needed. On Fly, this is the only loader path because `fly.toml` sets `SKIP_DATA_LOAD=1`.
 
 ### Common backend tasks
 
@@ -183,10 +187,10 @@ flyctl tokens revoke <old-token-id>     # optional cleanup; list with `flyctl to
 
 ### When something goes wrong
 
-- **Healthcheck failing after deploy:** `flyctl logs` and look for the error. If the OBA load is the culprit, give it more time (`grace_period` in `fly.toml`) or set `SKIP_DATA_LOAD=1` and run the loader manually via `flyctl ssh console`.
+- **Healthcheck failing after deploy:** `flyctl logs` and look for the error. The live app already sets `SKIP_DATA_LOAD=1`; if the app is simply warming the dataset, remember `fly.toml` gives it a 3-minute healthcheck grace period and the GitHub workflow polls `/api/health` for up to 10 minutes.
 - **OOM (Out Of Memory):** `flyctl scale memory 2048 -a transit-explorer`.
 - **DB locked / migration errors:** SSH in, run `sqlite3 /app/tm-instance/data.db ".timeout 5000"` to diagnose. Worst case, restore from backup (see §6).
-- **Need to rebuild image without code changes:** `flyctl deploy --remote-only --ha=false --no-cache`.
+- **Need to rebuild image without code changes:** `flyctl deploy --remote-only --ha=false --strategy immediate --no-cache`.
 
 ### Adding a new env var or secret
 
@@ -219,7 +223,7 @@ git add app/migrations/versions/ app/models.py
 git commit -m "Add foo column to users"
 git push
 # 6. Deploy backend (gunicorn_startup.sh runs `flask db upgrade` on boot):
-flyctl deploy --remote-only --ha=false
+flyctl deploy --remote-only --ha=false --strategy immediate
 ```
 
 **Rollback a migration:**
@@ -285,8 +289,8 @@ flask run --port 8880          # backend
 npm --prefix tm-frontend run dev   # frontend
 
 # Deploy
-git push origin main           # auto-deploys backend (if app/ changed) AND frontend
-flyctl deploy --remote-only --ha=false   # manual backend deploy from a branch
+git push origin main           # auto-deploys backend (if backend paths changed) and frontend
+flyctl deploy --remote-only --ha=false --strategy immediate   # manual backend deploy from a branch
 
 # Logs / debugging
 flyctl logs -a transit-explorer
@@ -295,8 +299,8 @@ flyctl ssh console -a transit-explorer
 # Update prod env / secret
 flyctl secrets set KEY=value -a transit-explorer
 
-# Example local deploy comand from powershell:
-wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl deploy --remote-only --ha=false"
+# Example local deploy command from powershell:
+wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl deploy --remote-only --ha=false --strategy immediate"
 
 # Example console connect from powershell:
 wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl ssh console -a transit-explorer"

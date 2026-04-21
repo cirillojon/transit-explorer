@@ -20,7 +20,7 @@ A gamified transit map for Seattle. Ride a bus or train, mark the segment you tr
    Google Sign-in            Firebase Admin (token verify)
 ```
 
-- **Backend** preloads OBA route/stop data into SQLite at startup, then serves a small REST API. Workers share the loaded dataset via gunicorn's `--preload` (fork COW) so memory stays bounded.
+- **Backend** boots through `create_app()`, ensures the schema exists, and then loads or backfills OneBusAway data as needed. Local Docker can do a foreground preload via `gunicorn_startup.sh`; Fly sets `SKIP_DATA_LOAD=1` so only the app factory's background loader runs.
 - **Frontend** is a single-page React app. Tile layer from CARTO, polylines from Google encoded polyline format, auth via Firebase Google sign-in.
 - **Persistence:** SQLite on a mounted volume. The schema is small enough that this works comfortably for a single-instance deployment; switch to Postgres only if you outgrow it.
 
@@ -50,15 +50,14 @@ python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# 3. (One-time) generate the initial DB migration
-FLASK_APP=app.py flask db migrate -m "initial schema"
+# 3. Apply the checked-in migrations
 FLASK_APP=app.py flask db upgrade
 
 # 4. Run
-FLASK_APP=app.py flask run --port 8880
+FLASK_APP=app.py FLASK_DEBUG=1 flask run --port 8880
 ```
 
-The first run downloads route + stop data from OneBusAway (~30s).
+On a fresh DB, `/api/health` comes up before the OneBusAway import finishes. Expect `/api/routes` and per-route detail to fill in over the next 1-3 minutes while the background loader/backfill runs.
 
 ### Frontend
 
@@ -79,18 +78,22 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 
 ### Backend (`.env`)
 
-| Variable                         | Required | Default                         | Notes                                                                 |
-| -------------------------------- | -------- | ------------------------------- | --------------------------------------------------------------------- |
-| `OBA_API_KEY`                    | yes      | —                               | OneBusAway API key                                                    |
-| `GOOGLE_APPLICATION_CREDENTIALS` | local    | —                               | Path to Firebase service-account JSON                                 |
-| `FIREBASE_PROJECT_ID`            | prod     | —                               | Used when running on GCP with workload identity                       |
-| `SQLALCHEMY_DATABASE_URI`        | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                         |
-| `ALLOWED_ORIGINS`                | prod     | `""` (deny in prod, `*` in dev) | Comma-separated origin allow-list for `/api/*`                        |
-| `FLASK_PORT`                     | no       | `5000` (dev) / `8880` (Docker)  | Port the server binds                                                 |
-| `FLASK_DEBUG`                    | no       | `0`                             | Set `1` to enable Flask debugger (never in prod)                      |
-| `LOG_LEVEL`                      | no       | `INFO`                          | `DEBUG` / `INFO` / `WARNING` / `ERROR`                                |
-| `WEB_CONCURRENCY`                | no       | `2`                             | Gunicorn workers — keep low; `--preload` shares OBA data via fork COW |
-| `GUNICORN_TIMEOUT`               | no       | `120`                           | Per-request timeout                                                   |
+| Variable                            | Required | Default                         | Notes                                                                                         |
+| ----------------------------------- | -------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
+| `OBA_API_KEY`                       | yes      | —                               | OneBusAway API key                                                                            |
+| `GOOGLE_APPLICATION_CREDENTIALS`    | local    | —                               | Path to a Firebase service-account JSON file                                                  |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | prod   | —                               | Optional JSON secret materialized to disk by `gunicorn_startup.sh`                            |
+| `FIREBASE_PROJECT_ID`               | fallback | `""`                            | Used when no service-account file is mounted                                                  |
+| `SQLALCHEMY_DATABASE_URI`           | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                                                 |
+| `ALLOWED_ORIGINS`                   | prod     | `""`                            | Comma-separated origin allow-list for `/api/*`; blank denies browser origins outside dev      |
+| `FLASK_ENV`                         | no       | `production`                    | If set to `development` and `ALLOWED_ORIGINS` is blank, CORS falls back to `*`               |
+| `FLASK_PORT`                        | no       | `5000` / `8880` in Docker       | Port the server binds                                                                         |
+| `FLASK_DEBUG`                       | no       | `0`                             | Used by `flask run` in local development                                                      |
+| `LOG_LEVEL`                         | no       | `INFO`                          | `DEBUG` / `INFO` / `WARNING` / `ERROR`                                                        |
+| `WEB_CONCURRENCY`                   | no       | `2`                             | Gunicorn workers; keep low because the app is memory- and SQLite-bound                        |
+| `GUNICORN_TIMEOUT`                  | no       | `120`                           | Per-request timeout for gunicorn                                                              |
+| `SKIP_DB_UPGRADE`                   | no       | `0`                             | Set `1` to skip boot-time `flask db upgrade` in Docker                                        |
+| `SKIP_DATA_LOAD`                    | no       | `0` locally / `1` on Fly        | Fly disables the foreground loader because `create_app()` already triggers background loading |
 
 ### Frontend (`tm-frontend/.env`)
 
@@ -113,19 +116,22 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 
 All endpoints under `/api`. Endpoints marked 🔒 require a `Authorization: Bearer <Firebase ID token>` header.
 
-| Method    | Path                                       | Description                                               |
-| --------- | ------------------------------------------ | --------------------------------------------------------- |
-| GET       | `/api/health`                              | Liveness + DB check                                       |
-| GET       | `/api/routes`                              | All routes (cached 5min)                                  |
-| GET       | `/api/routes/<route_id>`                   | Route detail with directions and decoded polylines        |
-| GET       | `/api/stops?route_id=...`                  | Stops for a route                                         |
-| GET       | `/api/leaderboard?period=all\|week\|month` | Top users with pagination                                 |
-| 🔒 GET    | `/api/me`                                  | Current user profile                                      |
-| 🔒 GET    | `/api/me/progress`                         | Per-route segment counts                                  |
-| 🔒 GET    | `/api/me/stats`                            | Rank, sparkline, top routes, achievements                 |
-| 🔒 GET    | `/api/me/activity`                         | Recent journeys (adjacent hops collapsed)                 |
-| 🔒 POST   | `/api/me/segments`                         | Mark hops; returns `{created, skipped, new_achievements}` |
-| 🔒 DELETE | `/api/me/segments/bulk`                    | Bulk-delete segments                                      |
+| Method    | Path                                         | Description                                                                          |
+| --------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| GET       | `/api/health`                                | Liveness probe plus DB connectivity and route count                                  |
+| GET       | `/api/debug/directions`                      | Debug-only summary of route-direction/polyline coverage                              |
+| GET       | `/api/routes`                                | All routes with computed `total_segments` (cached 5 minutes)                         |
+| GET       | `/api/routes/<route_id>`                     | Route detail with directions, encoded polylines, stop map, and `total_segments`      |
+| GET       | `/api/stops`                                 | All loaded stops                                                                     |
+| GET       | `/api/leaderboard?period=all\|week\|month`   | Top users with pagination via `limit` and `offset`                                   |
+| 🔒 GET    | `/api/me`                                    | Current user profile plus summary totals                                             |
+| 🔒 GET    | `/api/me/progress`                           | Per-route completion summary with segment detail                                     |
+| 🔒 GET    | `/api/me/stats`                              | Rank, 14-day sparkline, top routes, and achievements                                 |
+| 🔒 GET    | `/api/me/activity`                           | Recent journeys collapsed across adjacent hops in the same direction                  |
+| 🔒 POST   | `/api/me/segments`                           | Mark a contiguous run of hops; returns `created`, `skipped`, `segments`, and totals  |
+| 🔒 PUT    | `/api/me/segments/<segment_id>/notes`        | Update notes on a previously logged segment                                          |
+| 🔒 DELETE | `/api/me/segments/<segment_id>`              | Delete a single logged segment                                                       |
+| 🔒 DELETE | `/api/me/segments/bulk`                      | Bulk-delete by `ids[]`, or wipe an entire route with `route_id` + `confirm=true`     |
 
 ---
 
@@ -150,11 +156,11 @@ To switch to Postgres in production, set `SQLALCHEMY_DATABASE_URI=postgresql+psy
 
 ## Backup & restore
 
-`backup.sh` takes an online (consistent) snapshot of the SQLite database from a running container, gzips it, and rotates old backups.
+`backup.sh` takes an online SQLite snapshot from a running Docker container, gzips it, and rotates old backups. If your container name does not start with `tm-`, pass it explicitly with `CONTAINER=<name>`.
 
 ```bash
 # One-off
-./backup.sh
+CONTAINER=transit-explorer-backend-1 ./backup.sh
 
 # Cron — daily at 03:00, retain 30 days, write to /var/backups/tm
 0 3 * * *   cd /opt/transit-explorer && BACKUP_DIR=/var/backups/tm RETAIN=30 ./backup.sh >> /var/log/tm-backup.log 2>&1
@@ -163,10 +169,11 @@ To switch to Postgres in production, set `SQLALCHEMY_DATABASE_URI=postgresql+psy
 **Restore:**
 
 ```bash
-docker stop tm-blue
+CONTAINER=transit-explorer-backend-1
+docker stop "$CONTAINER"
 gunzip -c backups/data-20260420-030000.db.gz > /tmp/restore.db
-docker cp /tmp/restore.db tm-blue:/app/tm-instance/data.db
-docker start tm-blue
+docker cp /tmp/restore.db "$CONTAINER":/app/tm-instance/data.db
+docker start "$CONTAINER"
 ```
 
 ---
@@ -209,7 +216,7 @@ flyctl secrets set \
 flyctl deploy --remote-only --ha=false
 ```
 
-`fly.toml` already pins `WEB_CONCURRENCY=2`, `SKIP_DATA_LOAD=1` (the app factory loads OBA data in a background thread, so the foreground loader in `gunicorn_startup.sh` is disabled to avoid SQLite lock contention), and a 60-second healthcheck grace period.
+`fly.toml` already pins `WEB_CONCURRENCY=2`, `SKIP_DATA_LOAD=1` (the app factory already triggers background load/backfill, so Fly skips the foreground loader in `gunicorn_startup.sh`), and a 3-minute healthcheck grace period.
 
 #### Frontend on Vercel
 
@@ -229,7 +236,6 @@ flyctl deploy --remote-only --ha=false
    | `VITE_FIREBASE_STORAGE_BUCKET`      | `transit-explorer-55b66.firebasestorage.app` |
    | `VITE_FIREBASE_MESSAGING_SENDER_ID` | from Firebase console                        |
    | `VITE_FIREBASE_APP_ID`              | from Firebase console                        |
-   | `VITE_FIREBASE_MEASUREMENT_ID`      | from Firebase console (optional)             |
 
 4. Deploy → note the URL Vercel assigns.
 
@@ -249,9 +255,11 @@ docker compose up --build
 
 ```
 transit-explorer/
-├── app.py                     # Entrypoint
+├── .github/workflows/
+│   └── fly-deploy.yml         # Backend auto-deploy on pushes to main
+├── app.py                     # Entrypoint for local `flask run`
 ├── app/
-│   ├── __init__.py            # Flask app factory: CORS, Firebase, migrations
+│   ├── __init__.py            # Flask app factory: CORS, Firebase, migrations, OBA boot/backfill
 │   ├── auth.py                # Firebase token verification, require_auth decorator
 │   ├── config.py
 │   ├── data_loader.py         # OneBusAway → SQLite ingester
@@ -259,8 +267,10 @@ transit-explorer/
 │   ├── oba_service.py         # OneBusAway API client wrapper
 │   ├── routes/api.py          # All HTTP endpoints
 │   └── migrations/            # Alembic
+├── .env.example               # Backend env template
 ├── tests/                     # pytest tests
 ├── tm-frontend/               # React + Vite SPA
+│   ├── .env.example           # Frontend env template
 │   ├── src/
 │   │   ├── App.jsx
 │   │   ├── components/        # Map, RouteList, Leaderboard, …
@@ -272,9 +282,7 @@ transit-explorer/
 ├── nginx.conf                 # Used by docker-compose
 ├── fly.toml                   # Fly.io deploy config
 ├── gunicorn_startup.sh        # Entrypoint inside Docker
-├── backup.sh                  # Online SQLite snapshot + rotation
-├── prod_container_update.sh   # GCP VM blue/green deploy
-└── dev_container_update.sh    # Local one-shot rebuild + run
+└── backup.sh                  # Online SQLite snapshot + rotation
 ```
 
 ---

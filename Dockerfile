@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # App source
 COPY app/ ./app/
-COPY app.py data_loader.py gunicorn_startup.sh ./
+COPY app.py gunicorn_startup.sh ./
 
 # Environment
 ENV FLASK_APP=app.py \
