@@ -346,4 +346,22 @@ C:\Users\Jonat\projects\tm-project-folder\transit-explorer\tm-frontend> wsl bash
 ..............                                                           [100%]
 14 passed in 9.91s
 
+# Manually run npm tests:
+
+PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer\tm-frontend> npm test -- --run
+
+> transit-explorer-frontend@1.0.0 test
+> vitest run --run
+
+ RUN  v2.1.9 C:/Users/Jonat/projects/tm-project-folder/transit-explorer/tm-frontend
+
+ ✓ src/test/api.test.js (4)
+ ✓ src/test/ErrorBoundary.test.jsx (2) 344ms
+ ✓ src/test/RouteList.test.jsx (3) 828ms
+
+ Test Files  3 passed (3)
+      Tests  9 passed (9)
+   Start at  17:13:45
+   Duration  5.74s (transform 421ms, setup 1.74s, collect 1.32s, tests 1.25s, environment 7.65s, prepare 1.41s)
+
 ```
