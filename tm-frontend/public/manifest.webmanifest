@@ -1,0 +1,17 @@
+{
+  "name": "Transit Explorer",
+  "short_name": "Transit",
+  "description": "Track Seattle Metro and Sound Transit rides, unlock segments, and climb the leaderboard.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "/src/assets/favicon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

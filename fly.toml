@@ -1,0 +1,60 @@
+# fly.toml app configuration file generated for transit-explorer on 2026-04-20T17:52:18-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'transit-explorer'
+primary_region = 'sjc'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[deploy]
+  # Single machine + mounted volume can't do a rolling swap (volume can't be
+  # mounted twice). `immediate` stops the old machine, starts the new one,
+  # accepts ~30-60s of downtime during the OBA preload.
+  strategy = 'immediate'
+
+[env]
+  FLASK_ENV = 'production'
+  FLASK_PORT = '8880'
+  GOOGLE_APPLICATION_CREDENTIALS = '/app/service-account.json'
+  GUNICORN_TIMEOUT = '30'
+  LOG_LEVEL = 'INFO'
+  WEB_CONCURRENCY = '4'
+  # create_app() already kicks off transit-data load in a background thread,
+  # so skip the foreground load in gunicorn_startup.sh to avoid SQLite lock
+  # contention from two concurrent loaders.
+  SKIP_DATA_LOAD = '1'
+
+[[mounts]]
+  source = 'tm_data'
+  destination = '/app/tm-instance'
+
+[http_service]
+  internal_port = 8880
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [http_service.concurrency]
+    type = 'requests'
+    hard_limit = 200
+    soft_limit = 100
+
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    # OBA preloads ~90 routes from the upstream API on boot; give it room
+    # before we start probing /api/health, otherwise CI deploys flap.
+    grace_period = '3m0s'
+    method = 'GET'
+    path = '/api/health'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024

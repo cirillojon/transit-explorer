@@ -1,0 +1,72 @@
+name: Fly Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "requirements.txt"
+      - "Dockerfile"
+      - "fly.toml"
+      - "gunicorn_startup.sh"
+      - ".dockerignore"
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+concurrency:
+  # If a new deploy comes in while one is running, cancel the in-flight one.
+  # Prevents the "4 stuck releases all holding leases" mess.
+  group: fly-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Fly.io
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run backend tests (gate deploy)
+        env:
+          FLASK_ENV: development
+          SKIP_STARTUP_DATA_TASKS: "1"
+        run: pytest tests/ -q
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy to Fly.io
+        # Single-machine + mounted volume: a rolling deploy is impossible
+        # (Fly can't mount one volume on two machines), so use immediate.
+        # --detach: don't wait for healthcheck handoff in CI; the OBA preload
+        # makes the first healthcheck flap and CI just sits there.
+        # We verify health out-of-band via the /api/health probe step below.
+        run: |
+          flyctl deploy \
+            --local-only \
+            --ha=false \
+            --strategy immediate \
+            --detach
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Wait for /api/health to come back online
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" \
+              https://transit-explorer.fly.dev/api/health || echo "000")
+            body=$(curl -s https://transit-explorer.fly.dev/api/health || echo "")
+            echo "[$i/60] HTTP $code  body=$body"
+            if [ "$code" = "200" ] && echo "$body" | grep -q '"status":"ok"'; then
+              echo "::notice::Backend is healthy."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Backend did not return 200 from /api/health within 10 minutes."
+          exit 1

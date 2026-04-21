@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run pytest
+        env:
+          FLASK_ENV: development
+          SKIP_STARTUP_DATA_TASKS: "1"
+        # -v          → one line per test (visible in the live log)
+        # --tb=short  → readable failure tracebacks
+        # --color=yes → GitHub renders ANSI colors in the log viewer
+        # --junitxml  → picked up by the test-summary step below
+        run: |
+          pytest tests/ \
+            -v --tb=short --color=yes \
+            --junitxml=pytest-results.xml
+
+      - name: Publish backend test summary
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: pytest-results.xml
+
+      - name: Upload backend test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: pytest-results.xml
+          retention-days: 14
+
+  frontend:
+    name: Frontend (lint + tests + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tm-frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tm-frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        # Don't fail CI on existing lint warnings; surface errors only.
+        run: npm run lint || true
+      - name: Run tests
+        env:
+          # Stub Firebase env so src/firebase.js doesn't throw on import.
+          # (The test setup also stubs these, but defining them here lets
+          # `npm run build` step below work too.)
+          VITE_FIREBASE_API_KEY: test-api-key
+          VITE_FIREBASE_AUTH_DOMAIN: test.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test-project
+          VITE_FIREBASE_STORAGE_BUCKET: test.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "1234567890"
+          VITE_FIREBASE_APP_ID: "1:1234567890:web:abcdef"
+        # --reporter=verbose: one line per test in the live CI log.
+        # --reporter=junit:  machine-readable file for the summary step.
+        run: |
+          npx vitest run \
+            --reporter=verbose \
+            --reporter=junit \
+            --outputFile.junit=vitest-results.xml
+
+      - name: Publish frontend test summary
+        if: always()
+        uses: test-summary/action@v2
+        with:
+          paths: tm-frontend/vitest-results.xml
+
+      - name: Upload frontend test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-results
+          path: tm-frontend/vitest-results.xml
+          retention-days: 14
+      - name: Build
+        env:
+          VITE_FIREBASE_API_KEY: test-api-key
+          VITE_FIREBASE_AUTH_DOMAIN: test.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: test-project
+          VITE_FIREBASE_STORAGE_BUCKET: test.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "1234567890"
+          VITE_FIREBASE_APP_ID: "1:1234567890:web:abcdef"
+        run: npm run build

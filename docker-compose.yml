@@ -1,0 +1,52 @@
+# Local "production-like" stack: backend container + nginx serving the
+# built frontend. Run with:
+#
+#   cd tm-frontend && npm install && npm run build && cd ..
+#   docker compose up --build
+#
+# Then open http://localhost:8080
+#
+# The backend is reachable via nginx at /api/* (proxied) so the frontend
+# uses the same origin — matches a typical single-domain deployment.
+
+services:
+  backend:
+    build: .
+    image: transit-explorer-backend:local
+    environment:
+      FLASK_PORT: "8880"
+      FLASK_ENV: "production"
+      LOG_LEVEL: "INFO"
+      WEB_CONCURRENCY: "2"
+      ALLOWED_ORIGINS: "http://localhost:8080"
+      OBA_API_KEY: "${OBA_API_KEY:?set OBA_API_KEY in your shell or .env}"
+      FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID:-}"
+      GOOGLE_APPLICATION_CREDENTIALS: "/run/secrets/firebase.json"
+    volumes:
+      - tm_data:/app/tm-instance
+      - ./service-account.json:/run/secrets/firebase.json:ro
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request,sys; urllib.request.urlopen('http://localhost:8880/api/health',timeout=3); sys.exit(0)"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./tm-frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+volumes:
+  tm_data:

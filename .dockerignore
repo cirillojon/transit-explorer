@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Frontend (built and served separately)
+tm-frontend/
+
+# Tests
+tests/
+
+# Local artifacts
+local_data.db
+*.db
+*.db-journal
+backups/
+nginx/
+
+# Secrets — pass at runtime via env / volume mount
+.env
+.env.*
+service-account*.json
+
+# Docs
+README.md
+docs/
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Coverage
+htmlcov/
+.tox/
+.coverage
+.cache
+
+# Logs
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+myenv/
+
+# Editors
+.idea/
+.vscode/
+**/*.swp
+.DS_Store
+
+# Docker / deploy (host-side only)
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+.dockerignore
+fly.toml
+nginx.conf
+*_container_update.sh
+backup.sh
