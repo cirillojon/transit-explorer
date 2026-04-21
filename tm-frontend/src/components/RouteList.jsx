@@ -35,6 +35,40 @@ const SORT_BUTTONS = [
   { key: "size", label: "Size" },
 ];
 
+function cleanLabel(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function getRouteDisplayText(route) {
+  const shortName = cleanLabel(route.short_name);
+  const longName = cleanLabel(route.long_name);
+  const description = cleanLabel(route.description);
+
+  const shortNorm = shortName.toLowerCase();
+  const longNorm = longName.toLowerCase();
+  const descNorm = description.toLowerCase();
+
+  const hasLongDistinct = !!longName && longNorm !== shortNorm;
+  const hasDescDistinctFromShort = !!description && descNorm !== shortNorm;
+  const hasDescDistinctFromLong = !!description && descNorm !== longNorm;
+
+  const primary = hasLongDistinct
+    ? longName
+    : hasDescDistinctFromShort
+      ? description
+      : longName || shortName || "Route";
+
+  let secondary = "";
+  if (primary === longName && hasDescDistinctFromLong) secondary = description;
+  if (primary === description && hasLongDistinct) secondary = longName;
+
+  if (!secondary && shortName && primary.toLowerCase() !== shortNorm) {
+    secondary = `Route ${shortName}`;
+  }
+
+  return { primary, secondary };
+}
+
 function RouteList({ routes, progress, selectedRoute, onSelectRoute }) {
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState("all");
@@ -180,6 +214,7 @@ function RouteList({ routes, progress, selectedRoute, onSelectRoute }) {
           const pct = c?.pct ?? 0;
           const isSelected = selectedRoute?.id === route.id;
           const isComplete = pct >= 100;
+          const display = getRouteDisplayText(route);
           return (
             <button
               key={route.id}
@@ -199,9 +234,17 @@ function RouteList({ routes, progress, selectedRoute, onSelectRoute }) {
                 {route.short_name || "#"}
               </div>
               <div className="route-info">
-                <div className="route-name" title={route.long_name}>
-                  {route.long_name || route.short_name}
+                <div
+                  className="route-name"
+                  title={display.secondary ? `${display.primary} · ${display.secondary}` : display.primary}
+                >
+                  {display.primary}
                 </div>
+                {display.secondary && (
+                  <div className="route-subname" title={display.secondary}>
+                    {display.secondary}
+                  </div>
+                )}
                 <div className="route-meta-line">
                   <span className="route-type">
                     {ROUTE_TYPE_ICONS[route.route_type] || "🚌"}{" "}
