@@ -15,7 +15,7 @@ import { fetchRouteDetail, markSegments } from "../services/api";
 const SEATTLE_CENTER = [47.6062, -122.3321];
 
 const ROUTE_TYPE_LABELS = {
-  0: "Tram",
+  0: "Link",
   1: "Subway",
   2: "Rail",
   3: "Bus",

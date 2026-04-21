@@ -12,7 +12,7 @@ const ROUTE_TYPE_ICONS = {
 };
 
 const ROUTE_TYPE_NAMES = {
-  0: "Tram",
+  0: "Link",
   1: "Subway",
   2: "Rail",
   3: "Bus",
