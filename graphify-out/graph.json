@@ -77,7 +77,7 @@
       "source_file": "app.py",
       "source_location": "L1",
       "id": "app_py",
-      "community": 24,
+      "community": 25,
       "norm_label": "app.py"
     },
     {
@@ -86,7 +86,7 @@
       "source_file": "app/auth.py",
       "source_location": "L1",
       "id": "app_auth_py",
-      "community": 7,
+      "community": 8,
       "norm_label": "auth.py"
     },
     {
@@ -95,7 +95,7 @@
       "source_file": "app/auth.py",
       "source_location": "L10",
       "id": "auth_verify_firebase_token",
-      "community": 7,
+      "community": 8,
       "norm_label": "verify_firebase_token()"
     },
     {
@@ -104,7 +104,7 @@
       "source_file": "app/auth.py",
       "source_location": "L24",
       "id": "auth_require_auth",
-      "community": 7,
+      "community": 8,
       "norm_label": "require_auth()"
     },
     {
@@ -112,7 +112,7 @@
       "file_type": "rationale",
       "source_file": "app/auth.py",
       "source_location": "L11",
-      "community": 7,
+      "community": 8,
       "norm_label": "verify a firebase id token and return the decoded claims.",
       "id": "auth_rationale_11"
     },
@@ -121,7 +121,7 @@
       "file_type": "rationale",
       "source_file": "app/auth.py",
       "source_location": "L25",
-      "community": 7,
+      "community": 8,
       "norm_label": "decorator that requires a valid firebase auth token.      sets g.current_user to",
       "id": "auth_rationale_25"
     },
@@ -131,7 +131,7 @@
       "source_file": "app/cli.py",
       "source_location": "L1",
       "id": "app_cli_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "cli.py"
     },
     {
@@ -140,7 +140,7 @@
       "source_file": "app/cli.py",
       "source_location": "L37",
       "id": "cli_data_load",
-      "community": 4,
+      "community": 3,
       "norm_label": "data_load()"
     },
     {
@@ -149,7 +149,7 @@
       "source_file": "app/cli.py",
       "source_location": "L48",
       "id": "cli_data_status",
-      "community": 4,
+      "community": 3,
       "norm_label": "data_status()"
     },
     {
@@ -158,7 +158,7 @@
       "source_file": "app/cli.py",
       "source_location": "L55",
       "id": "cli_data_check_schema",
-      "community": 4,
+      "community": 3,
       "norm_label": "data_check_schema()"
     },
     {
@@ -175,7 +175,7 @@
       "file_type": "rationale",
       "source_file": "app/cli.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 3,
       "norm_label": "flask cli commands for transit explorer.  registered in app/__init__.py via ap",
       "id": "cli_rationale_1"
     },
@@ -184,7 +184,7 @@
       "file_type": "rationale",
       "source_file": "app/cli.py",
       "source_location": "L38",
-      "community": 4,
+      "community": 3,
       "norm_label": "refresh transit routes/stops/directions from onebusaway.",
       "id": "cli_rationale_38"
     },
@@ -193,7 +193,7 @@
       "file_type": "rationale",
       "source_file": "app/cli.py",
       "source_location": "L49",
-      "community": 4,
+      "community": 3,
       "norm_label": "print the per-agency dataload state as json.",
       "id": "cli_rationale_49"
     },
@@ -202,7 +202,7 @@
       "file_type": "rationale",
       "source_file": "app/cli.py",
       "source_location": "L56",
-      "community": 4,
+      "community": 3,
       "norm_label": "exit 1 if sqlalchemy models drift from alembic head.      used by `bin/check-s",
       "id": "cli_rationale_56"
     },
@@ -212,7 +212,7 @@
       "source_file": "app/config.py",
       "source_location": "L1",
       "id": "app_config_py",
-      "community": 17,
+      "community": 18,
       "norm_label": "config.py"
     },
     {
@@ -221,7 +221,7 @@
       "source_file": "app/config.py",
       "source_location": "L4",
       "id": "config_config",
-      "community": 17,
+      "community": 18,
       "norm_label": "config"
     },
     {
@@ -229,7 +229,7 @@
       "file_type": "rationale",
       "source_file": "app/config.py",
       "source_location": "L5",
-      "community": 17,
+      "community": 18,
       "norm_label": "static fallback config. the flask app factory reads env vars directly,     so th",
       "id": "config_rationale_5"
     },
@@ -239,7 +239,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L1",
       "id": "app_data_loader_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "data_loader.py"
     },
     {
@@ -248,7 +248,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L27",
       "id": "data_loader_utcnow",
-      "community": 4,
+      "community": 3,
       "norm_label": "_utcnow()"
     },
     {
@@ -257,7 +257,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L31",
       "id": "data_loader_call_with_backoff",
-      "community": 4,
+      "community": 3,
       "norm_label": "_call_with_backoff()"
     },
     {
@@ -266,7 +266,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L57",
       "id": "data_loader_load_transit_data",
-      "community": 4,
+      "community": 3,
       "norm_label": "load_transit_data()"
     },
     {
@@ -275,7 +275,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L72",
       "id": "data_loader_status",
-      "community": 4,
+      "community": 3,
       "norm_label": "status()"
     },
     {
@@ -284,7 +284,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L76",
       "id": "data_loader_refresh_agency",
-      "community": 4,
+      "community": 3,
       "norm_label": "_refresh_agency()"
     },
     {
@@ -293,7 +293,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L159",
       "id": "data_loader_get_or_create_state",
-      "community": 4,
+      "community": 3,
       "norm_label": "_get_or_create_state()"
     },
     {
@@ -302,7 +302,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L168",
       "id": "data_loader_upsert_route",
-      "community": 4,
+      "community": 3,
       "norm_label": "_upsert_route()"
     },
     {
@@ -311,7 +311,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L179",
       "id": "data_loader_process_route_stops",
-      "community": 4,
+      "community": 3,
       "norm_label": "_process_route_stops()"
     },
     {
@@ -320,7 +320,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L191",
       "id": "data_loader_upsert_stop",
-      "community": 4,
+      "community": 3,
       "norm_label": "_upsert_stop()"
     },
     {
@@ -329,7 +329,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L208",
       "id": "data_loader_upsert_direction",
-      "community": 4,
+      "community": 3,
       "norm_label": "_upsert_direction()"
     },
     {
@@ -338,7 +338,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L225",
       "id": "data_loader_upsert_route_stop",
-      "community": 4,
+      "community": 3,
       "norm_label": "_upsert_route_stop()"
     },
     {
@@ -347,7 +347,7 @@
       "source_file": "app/data_loader.py",
       "source_location": "L236",
       "id": "data_loader_create_user",
-      "community": 4,
+      "community": 3,
       "norm_label": "create_user()"
     },
     {
@@ -509,7 +509,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L1",
       "id": "app_oba_service_py",
-      "community": 12,
+      "community": 13,
       "norm_label": "oba_service.py"
     },
     {
@@ -518,7 +518,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L14",
       "id": "oba_service_get_client",
-      "community": 12,
+      "community": 13,
       "norm_label": "get_client()"
     },
     {
@@ -527,7 +527,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L24",
       "id": "oba_service_fetch_routes_for_agency",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch_routes_for_agency()"
     },
     {
@@ -536,7 +536,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L48",
       "id": "oba_service_fetch_stops_for_route",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch_stops_for_route()"
     },
     {
@@ -544,7 +544,7 @@
       "file_type": "rationale",
       "source_file": "app/oba_service.py",
       "source_location": "L25",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch all routes for a given agency.",
       "id": "oba_service_rationale_25"
     },
@@ -553,7 +553,7 @@
       "file_type": "rationale",
       "source_file": "app/oba_service.py",
       "source_location": "L49",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch stops grouped by direction with polylines for a route.      uses raw http",
       "id": "oba_service_rationale_49"
     },
@@ -644,7 +644,7 @@
       "source_file": "app/__init__.py",
       "source_location": "L1",
       "id": "app_init_py",
-      "community": 3,
+      "community": 5,
       "norm_label": "__init__.py"
     },
     {
@@ -653,7 +653,7 @@
       "source_file": "app/__init__.py",
       "source_location": "L56",
       "id": "init_create_app",
-      "community": 3,
+      "community": 5,
       "norm_label": "create_app()"
     },
     {
@@ -662,7 +662,7 @@
       "source_file": "app/__init__.py",
       "source_location": "L137",
       "id": "init_init_firebase",
-      "community": 3,
+      "community": 5,
       "norm_label": "_init_firebase()"
     },
     {
@@ -670,7 +670,7 @@
       "file_type": "rationale",
       "source_file": "app/__init__.py",
       "source_location": "L1",
-      "community": 3,
+      "community": 5,
       "norm_label": "flask app factory for transit explorer.  boot model (kept deliberately simple)",
       "id": "init_rationale_1"
     },
@@ -679,7 +679,7 @@
       "file_type": "rationale",
       "source_file": "app/__init__.py",
       "source_location": "L138",
-      "community": 3,
+      "community": 5,
       "norm_label": "initialize firebase admin sdk for token verification.",
       "id": "init_rationale_138"
     },
@@ -689,7 +689,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L1",
       "id": "app_migrations_env_py",
-      "community": 7,
+      "community": 8,
       "norm_label": "env.py"
     },
     {
@@ -698,7 +698,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L16",
       "id": "env_get_engine",
-      "community": 7,
+      "community": 8,
       "norm_label": "get_engine()"
     },
     {
@@ -707,7 +707,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L26",
       "id": "env_get_engine_url",
-      "community": 7,
+      "community": 8,
       "norm_label": "get_engine_url()"
     },
     {
@@ -716,7 +716,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L36",
       "id": "env_run_migrations_offline",
-      "community": 7,
+      "community": 8,
       "norm_label": "run_migrations_offline()"
     },
     {
@@ -725,7 +725,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L45",
       "id": "env_run_migrations_online",
-      "community": 7,
+      "community": 8,
       "norm_label": "run_migrations_online()"
     },
     {
@@ -734,7 +734,7 @@
       "source_file": "app/migrations/versions/a1c2e4f9b701_add_user_segments_duration_ms.py",
       "source_location": "L1",
       "id": "app_migrations_versions_a1c2e4f9b701_add_user_segments_duration_ms_py",
-      "community": 3,
+      "community": 7,
       "norm_label": "a1c2e4f9b701_add_user_segments_duration_ms.py"
     },
     {
@@ -743,7 +743,7 @@
       "source_file": "app/migrations/versions/a1c2e4f9b701_add_user_segments_duration_ms.py",
       "source_location": "L18",
       "id": "a1c2e4f9b701_add_user_segments_duration_ms_upgrade",
-      "community": 3,
+      "community": 7,
       "norm_label": "upgrade()"
     },
     {
@@ -752,7 +752,7 @@
       "source_file": "app/migrations/versions/a1c2e4f9b701_add_user_segments_duration_ms.py",
       "source_location": "L34",
       "id": "a1c2e4f9b701_add_user_segments_duration_ms_downgrade",
-      "community": 3,
+      "community": 7,
       "norm_label": "downgrade()"
     },
     {
@@ -760,7 +760,7 @@
       "file_type": "rationale",
       "source_file": "app/migrations/versions/a1c2e4f9b701_add_user_segments_duration_ms.py",
       "source_location": "L1",
-      "community": 3,
+      "community": 7,
       "norm_label": "add user_segments.duration_ms  revision id: a1c2e4f9b701 revises: f838d5f10e8",
       "id": "a1c2e4f9b701_add_user_segments_duration_ms_rationale_1"
     },
@@ -770,7 +770,7 @@
       "source_file": "app/migrations/versions/b3d09f1e2c44_add_data_loads.py",
       "source_location": "L1",
       "id": "app_migrations_versions_b3d09f1e2c44_add_data_loads_py",
-      "community": 3,
+      "community": 7,
       "norm_label": "b3d09f1e2c44_add_data_loads.py"
     },
     {
@@ -779,7 +779,7 @@
       "source_file": "app/migrations/versions/b3d09f1e2c44_add_data_loads.py",
       "source_location": "L18",
       "id": "b3d09f1e2c44_add_data_loads_upgrade",
-      "community": 3,
+      "community": 7,
       "norm_label": "upgrade()"
     },
     {
@@ -788,7 +788,7 @@
       "source_file": "app/migrations/versions/b3d09f1e2c44_add_data_loads.py",
       "source_location": "L34",
       "id": "b3d09f1e2c44_add_data_loads_downgrade",
-      "community": 3,
+      "community": 7,
       "norm_label": "downgrade()"
     },
     {
@@ -796,7 +796,7 @@
       "file_type": "rationale",
       "source_file": "app/migrations/versions/b3d09f1e2c44_add_data_loads.py",
       "source_location": "L1",
-      "community": 3,
+      "community": 7,
       "norm_label": "add data_loads table  revision id: b3d09f1e2c44 revises: a1c2e4f9b701 create",
       "id": "b3d09f1e2c44_add_data_loads_rationale_1"
     },
@@ -806,7 +806,7 @@
       "source_file": "app/migrations/versions/f838d5f10e83_baseline_schema.py",
       "source_location": "L1",
       "id": "app_migrations_versions_f838d5f10e83_baseline_schema_py",
-      "community": 3,
+      "community": 7,
       "norm_label": "f838d5f10e83_baseline_schema.py"
     },
     {
@@ -815,7 +815,7 @@
       "source_file": "app/migrations/versions/f838d5f10e83_baseline_schema.py",
       "source_location": "L19",
       "id": "f838d5f10e83_baseline_schema_upgrade",
-      "community": 3,
+      "community": 5,
       "norm_label": "upgrade()"
     },
     {
@@ -824,7 +824,7 @@
       "source_file": "app/migrations/versions/f838d5f10e83_baseline_schema.py",
       "source_location": "L96",
       "id": "f838d5f10e83_baseline_schema_downgrade",
-      "community": 3,
+      "community": 7,
       "norm_label": "downgrade()"
     },
     {
@@ -832,7 +832,7 @@
       "file_type": "rationale",
       "source_file": "app/migrations/versions/f838d5f10e83_baseline_schema.py",
       "source_location": "L1",
-      "community": 3,
+      "community": 7,
       "norm_label": "baseline schema  revision id: f838d5f10e83 revises:  create date: 2026-04-21 14:",
       "id": "f838d5f10e83_baseline_schema_rationale_1"
     },
@@ -1148,7 +1148,7 @@
       "source_file": "app/routes/__init__.py",
       "source_location": "L1",
       "id": "app_routes_init_py",
-      "community": 25,
+      "community": 26,
       "norm_label": "__init__.py"
     },
     {
@@ -1157,7 +1157,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L1",
       "id": "tests_conftest_py",
-      "community": 3,
+      "community": 5,
       "norm_label": "conftest.py"
     },
     {
@@ -1166,7 +1166,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L16",
       "id": "conftest_env",
-      "community": 3,
+      "community": 5,
       "norm_label": "_env()"
     },
     {
@@ -1175,7 +1175,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L25",
       "id": "conftest_app",
-      "community": 3,
+      "community": 5,
       "norm_label": "app()"
     },
     {
@@ -1184,7 +1184,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L43",
       "id": "conftest_client",
-      "community": 3,
+      "community": 5,
       "norm_label": "client()"
     },
     {
@@ -1193,7 +1193,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L48",
       "id": "conftest_fake_uid",
-      "community": 3,
+      "community": 5,
       "norm_label": "fake_uid()"
     },
     {
@@ -1202,7 +1202,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L53",
       "id": "conftest_auth_headers",
-      "community": 3,
+      "community": 5,
       "norm_label": "auth_headers()"
     },
     {
@@ -1247,7 +1247,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L1",
       "id": "tests_test_auth_py",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_auth.py"
     },
     {
@@ -1256,7 +1256,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L1",
       "id": "test_auth_test_me_requires_auth",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_me_requires_auth()"
     },
     {
@@ -1265,7 +1265,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L6",
       "id": "test_auth_test_me_rejects_malformed_header",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_me_rejects_malformed_header()"
     },
     {
@@ -1274,7 +1274,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L11",
       "id": "test_auth_test_me_accepts_mocked_token",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_me_accepts_mocked_token()"
     },
     {
@@ -1283,7 +1283,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L19",
       "id": "test_auth_test_invalid_token_claims_rejected",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_invalid_token_claims_rejected()"
     },
     {
@@ -1292,7 +1292,7 @@
       "source_file": "tests/test_health.py",
       "source_location": "L1",
       "id": "tests_test_health_py",
-      "community": 19,
+      "community": 20,
       "norm_label": "test_health.py"
     },
     {
@@ -1301,7 +1301,7 @@
       "source_file": "tests/test_health.py",
       "source_location": "L1",
       "id": "test_health_test_health_ok",
-      "community": 19,
+      "community": 20,
       "norm_label": "test_health_ok()"
     },
     {
@@ -1310,7 +1310,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L1",
       "id": "tests_test_leaderboard_py",
-      "community": 15,
+      "community": 16,
       "norm_label": "test_leaderboard.py"
     },
     {
@@ -1319,7 +1319,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L1",
       "id": "test_leaderboard_test_leaderboard_empty",
-      "community": 15,
+      "community": 16,
       "norm_label": "test_leaderboard_empty()"
     },
     {
@@ -1328,7 +1328,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L9",
       "id": "test_leaderboard_test_leaderboard_invalid_pagination",
-      "community": 15,
+      "community": 16,
       "norm_label": "test_leaderboard_invalid_pagination()"
     },
     {
@@ -1337,7 +1337,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L14",
       "id": "test_leaderboard_test_leaderboard_includes_user_after_marking",
-      "community": 15,
+      "community": 16,
       "norm_label": "test_leaderboard_includes_user_after_marking()"
     },
     {
@@ -1346,7 +1346,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L35",
       "id": "test_leaderboard_test_debug_directions_blocked_in_production",
-      "community": 15,
+      "community": 16,
       "norm_label": "test_debug_directions_blocked_in_production()"
     },
     {
@@ -1355,7 +1355,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L1",
       "id": "tests_test_segments_py",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_segments.py"
     },
     {
@@ -1364,7 +1364,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L1",
       "id": "test_segments_test_mark_segments_validates_required_fields",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_mark_segments_validates_required_fields()"
     },
     {
@@ -1373,7 +1373,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L6",
       "id": "test_segments_test_mark_segments_validates_id_format",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_mark_segments_validates_id_format()"
     },
     {
@@ -1382,7 +1382,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L20",
       "id": "test_segments_test_mark_segments_rejects_oversize_notes",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_mark_segments_rejects_oversize_notes()"
     },
     {
@@ -1391,7 +1391,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L35",
       "id": "test_segments_test_mark_then_list_then_delete_segments",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_mark_then_list_then_delete_segments()"
     },
     {
@@ -1400,7 +1400,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L72",
       "id": "test_segments_test_mark_segments_rejects_missing_stop",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_mark_segments_rejects_missing_stop()"
     },
     {
@@ -1409,7 +1409,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L86",
       "id": "test_segments_test_mark_segments_persists_duration_on_first_row",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_mark_segments_persists_duration_on_first_row()"
     },
     {
@@ -1418,7 +1418,7 @@
       "source_file": "tests/test_segments.py",
       "source_location": "L108",
       "id": "test_segments_test_mark_segments_attaches_duration_to_first_new_row",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_mark_segments_attaches_duration_to_first_new_row()"
     },
     {
@@ -1426,7 +1426,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_segments.py",
       "source_location": "L87",
-      "community": 8,
+      "community": 9,
       "norm_label": "duration_ms on a fresh multi-hop mark attaches to the first new row.",
       "id": "test_segments_rationale_87"
     },
@@ -1435,7 +1435,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_segments.py",
       "source_location": "L109",
-      "community": 8,
+      "community": 9,
       "norm_label": "if pair_keys[0] was already marked, duration_ms must still land on     the firs",
       "id": "test_segments_rationale_109"
     },
@@ -1445,7 +1445,7 @@
       "source_file": "tests/__init__.py",
       "source_location": "L1",
       "id": "tests_init_py",
-      "community": 26,
+      "community": 27,
       "norm_label": "__init__.py"
     },
     {
@@ -1454,7 +1454,7 @@
       "source_file": "tm-frontend/eslint.config.js",
       "source_location": "L1",
       "id": "tm_frontend_eslint_config_js",
-      "community": 27,
+      "community": 28,
       "norm_label": "eslint.config.js"
     },
     {
@@ -1463,7 +1463,7 @@
       "source_file": "tm-frontend/vite.config.js",
       "source_location": "L1",
       "id": "tm_frontend_vite_config_js",
-      "community": 20,
+      "community": 21,
       "norm_label": "vite.config.js"
     },
     {
@@ -1508,7 +1508,7 @@
       "source_file": "tm-frontend/src/firebase.js",
       "source_location": "L1",
       "id": "tm_frontend_src_firebase_js",
-      "community": 28,
+      "community": 29,
       "norm_label": "firebase.js"
     },
     {
@@ -1670,7 +1670,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L1",
       "id": "tm_frontend_src_components_publicprofile_jsx",
-      "community": 9,
+      "community": 10,
       "norm_label": "publicprofile.jsx"
     },
     {
@@ -1679,7 +1679,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L6",
       "id": "publicprofile_groupintojourneys",
-      "community": 9,
+      "community": 10,
       "norm_label": "groupintojourneys()"
     },
     {
@@ -1688,7 +1688,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L30",
       "id": "publicprofile_makejourney",
-      "community": 9,
+      "community": 10,
       "norm_label": "makejourney()"
     },
     {
@@ -1697,7 +1697,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L51",
       "id": "publicprofile_publicprofile",
-      "community": 9,
+      "community": 10,
       "norm_label": "publicprofile()"
     },
     {
@@ -1706,7 +1706,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L220",
       "id": "publicprofile_ppoverview",
-      "community": 9,
+      "community": 10,
       "norm_label": "ppoverview()"
     },
     {
@@ -1715,7 +1715,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L282",
       "id": "publicprofile_pproutes",
-      "community": 9,
+      "community": 10,
       "norm_label": "pproutes()"
     },
     {
@@ -1724,7 +1724,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L374",
       "id": "publicprofile_ppachievements",
-      "community": 9,
+      "community": 10,
       "norm_label": "ppachievements()"
     },
     {
@@ -1830,7 +1830,7 @@
       "label": "readTripTimes()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L22",
+      "source_location": "L26",
       "id": "transitmap_readtriptimes",
       "community": 6,
       "norm_label": "readtriptimes()"
@@ -1839,7 +1839,7 @@
       "label": "recordTripTime()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L33",
+      "source_location": "L37",
       "id": "transitmap_recordtriptime",
       "community": 6,
       "norm_label": "recordtriptime()"
@@ -1848,7 +1848,7 @@
       "label": "getTripStats()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L49",
+      "source_location": "L53",
       "id": "transitmap_gettripstats",
       "community": 6,
       "norm_label": "gettripstats()"
@@ -1857,7 +1857,7 @@
       "label": "formatDuration()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L61",
+      "source_location": "L65",
       "id": "transitmap_formatduration",
       "community": 6,
       "norm_label": "formatduration()"
@@ -1866,16 +1866,25 @@
       "label": "decode()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L94",
+      "source_location": "L98",
       "id": "transitmap_decode",
       "community": 6,
       "norm_label": "decode()"
     },
     {
+      "label": "normalizeDirectionId()",
+      "file_type": "code",
+      "source_file": "tm-frontend/src/components/TransitMap.jsx",
+      "source_location": "L103",
+      "id": "transitmap_normalizedirectionid",
+      "community": 6,
+      "norm_label": "normalizedirectionid()"
+    },
+    {
       "label": "slicePolylineByStops()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L100",
+      "source_location": "L109",
       "id": "transitmap_slicepolylinebystops",
       "community": 6,
       "norm_label": "slicepolylinebystops()"
@@ -1884,7 +1893,7 @@
       "label": "FitBounds()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L123",
+      "source_location": "L132",
       "id": "transitmap_fitbounds",
       "community": 6,
       "norm_label": "fitbounds()"
@@ -1893,7 +1902,7 @@
       "label": "FitHighlight()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L131",
+      "source_location": "L140",
       "id": "transitmap_fithighlight",
       "community": 6,
       "norm_label": "fithighlight()"
@@ -1902,7 +1911,7 @@
       "label": "TransitMap()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L140",
+      "source_location": "L149",
       "id": "transitmap_transitmap",
       "community": 6,
       "norm_label": "transitmap()"
@@ -1913,7 +1922,7 @@
       "source_file": "tm-frontend/src/components/UserProgress.jsx",
       "source_location": "L1",
       "id": "tm_frontend_src_components_userprogress_jsx",
-      "community": 13,
+      "community": 14,
       "norm_label": "userprogress.jsx"
     },
     {
@@ -1922,7 +1931,7 @@
       "source_file": "tm-frontend/src/components/UserProgress.jsx",
       "source_location": "L12",
       "id": "userprogress_formatdurationms",
-      "community": 13,
+      "community": 14,
       "norm_label": "formatdurationms()"
     },
     {
@@ -1931,7 +1940,7 @@
       "source_file": "tm-frontend/src/components/UserProgress.jsx",
       "source_location": "L24",
       "id": "userprogress_parsedurationinput",
-      "community": 13,
+      "community": 14,
       "norm_label": "parsedurationinput()"
     },
     {
@@ -1940,7 +1949,7 @@
       "source_file": "tm-frontend/src/components/UserProgress.jsx",
       "source_location": "L58",
       "id": "userprogress_groupintojourneys",
-      "community": 13,
+      "community": 14,
       "norm_label": "groupintojourneys()"
     },
     {
@@ -1949,7 +1958,7 @@
       "source_file": "tm-frontend/src/components/UserProgress.jsx",
       "source_location": "L82",
       "id": "userprogress_makejourney",
-      "community": 13,
+      "community": 14,
       "norm_label": "makejourney()"
     },
     {
@@ -1958,7 +1967,7 @@
       "source_file": "tm-frontend/src/components/UserProgress.jsx",
       "source_location": "L111",
       "id": "userprogress_userprogress",
-      "community": 13,
+      "community": 14,
       "norm_label": "userprogress()"
     },
     {
@@ -1994,7 +2003,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L1",
       "id": "tm_frontend_src_services_api_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "api.js"
     },
     {
@@ -2003,7 +2012,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L48",
       "id": "api_cached",
-      "community": 5,
+      "community": 4,
       "norm_label": "cached()"
     },
     {
@@ -2012,7 +2021,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L67",
       "id": "api_invalidatecache",
-      "community": 5,
+      "community": 4,
       "norm_label": "invalidatecache()"
     },
     {
@@ -2021,7 +2030,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L80",
       "id": "api_fetchhealth",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchhealth()"
     },
     {
@@ -2030,7 +2039,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L82",
       "id": "api_fetchroutes",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchroutes()"
     },
     {
@@ -2039,7 +2048,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L88",
       "id": "api_fetchroutedetail",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchroutedetail()"
     },
     {
@@ -2048,7 +2057,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L94",
       "id": "api_fetchstops",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchstops()"
     },
     {
@@ -2057,7 +2066,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L100",
       "id": "api_fetchleaderboard",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchleaderboard()"
     },
     {
@@ -2066,7 +2075,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L111",
       "id": "api_fetchuserprofile",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchuserprofile()"
     },
     {
@@ -2075,7 +2084,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L117",
       "id": "api_fetchme",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchme()"
     },
     {
@@ -2084,7 +2093,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L118",
       "id": "api_fetchstats",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchstats()"
     },
     {
@@ -2093,7 +2102,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L119",
       "id": "api_fetchactivity",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchactivity()"
     },
     {
@@ -2102,7 +2111,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L124",
       "id": "api_fetchprogress",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchprogress()"
     },
     {
@@ -2111,7 +2120,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L127",
       "id": "api_marksegments",
-      "community": 5,
+      "community": 4,
       "norm_label": "marksegments()"
     },
     {
@@ -2120,7 +2129,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L147",
       "id": "api_updatesegmentnotes",
-      "community": 5,
+      "community": 4,
       "norm_label": "updatesegmentnotes()"
     },
     {
@@ -2129,7 +2138,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L150",
       "id": "api_updatesegmentduration",
-      "community": 5,
+      "community": 4,
       "norm_label": "updatesegmentduration()"
     },
     {
@@ -2138,7 +2147,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L155",
       "id": "api_deletesegment",
-      "community": 5,
+      "community": 4,
       "norm_label": "deletesegment()"
     },
     {
@@ -2147,7 +2156,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L158",
       "id": "api_bulkdeletesegments",
-      "community": 5,
+      "community": 4,
       "norm_label": "bulkdeletesegments()"
     },
     {
@@ -2156,7 +2165,7 @@
       "source_file": "tm-frontend/src/services/api.js",
       "source_location": "L162",
       "id": "api_retry",
-      "community": 5,
+      "community": 4,
       "norm_label": "retry()"
     },
     {
@@ -2165,7 +2174,7 @@
       "source_file": "tm-frontend/src/test/api.test.js",
       "source_location": "L1",
       "id": "tm_frontend_src_test_api_test_js",
-      "community": 21,
+      "community": 22,
       "norm_label": "api.test.js"
     },
     {
@@ -2174,7 +2183,7 @@
       "source_file": "tm-frontend/src/test/api.test.js",
       "source_location": "L10",
       "id": "api_test_currentuser",
-      "community": 21,
+      "community": 22,
       "norm_label": "currentuser()"
     },
     {
@@ -2210,7 +2219,7 @@
       "source_file": "tm-frontend/src/test/setup.js",
       "source_location": "L1",
       "id": "tm_frontend_src_test_setup_js",
-      "community": 29,
+      "community": 30,
       "norm_label": "setup.js"
     },
     {
@@ -2222,7 +2231,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "transit explorer",
       "id": "transit_explorer"
     },
@@ -2235,7 +2244,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 8,
       "norm_label": "flask framework",
       "id": "flask"
     },
@@ -2248,7 +2257,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 20,
+      "community": 21,
       "norm_label": "vite bundler",
       "id": "vite"
     },
@@ -2274,7 +2283,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "sqlite database",
       "id": "sqlite"
     },
@@ -2287,7 +2296,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 30,
+      "community": 31,
       "norm_label": "postgresql database",
       "id": "postgresql"
     },
@@ -2300,7 +2309,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 7,
       "norm_label": "sqlalchemy orm",
       "id": "sqlalchemy"
     },
@@ -2313,7 +2322,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 5,
       "norm_label": "flask-migrate",
       "id": "flask_migrate"
     },
@@ -2326,7 +2335,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 31,
+      "community": 32,
       "norm_label": "gunicorn wsgi server",
       "id": "gunicorn"
     },
@@ -2339,7 +2348,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 18,
+      "community": 19,
       "norm_label": "firebase auth",
       "id": "firebase_auth"
     },
@@ -2352,7 +2361,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 18,
+      "community": 19,
       "norm_label": "google sign-in",
       "id": "google_sign_in"
     },
@@ -2365,7 +2374,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 32,
+      "community": 33,
       "norm_label": "onebusaway api",
       "id": "onebusaway_api"
     },
@@ -2404,7 +2413,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 33,
+      "community": 34,
       "norm_label": "carto basemap tiles",
       "id": "carto"
     },
@@ -2417,7 +2426,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 17,
       "norm_label": "vercel (frontend hosting)",
       "id": "vercel"
     },
@@ -2430,7 +2439,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 17,
       "norm_label": "fly.io (backend hosting)",
       "id": "fly_io"
     },
@@ -2443,7 +2452,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 17,
       "norm_label": "github actions (ci/cd)",
       "id": "github_actions"
     },
@@ -2456,7 +2465,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 5,
       "norm_label": "flask-cors",
       "id": "flask_cors"
     },
@@ -2469,7 +2478,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 3,
+      "community": 5,
       "norm_label": "flask-limiter",
       "id": "flask_limiter"
     },
@@ -2482,7 +2491,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "gamification",
       "id": "gamification"
     },
@@ -2495,7 +2504,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "leaderboard system",
       "id": "leaderboard"
     },
@@ -2508,7 +2517,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "achievements & badges",
       "id": "achievements"
     },
@@ -2521,7 +2530,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "route tracking",
       "id": "route_tracking"
     },
@@ -2534,7 +2543,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "segment logging",
       "id": "segment_logging"
     },
@@ -2547,7 +2556,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "mobile-first ux",
       "id": "mobile_first_ux"
     },
@@ -2560,7 +2569,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 34,
+      "community": 35,
       "norm_label": "in-process loader design rationale",
       "id": "inprocess_loader_rationale"
     },
@@ -2573,7 +2582,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 16,
+      "community": 17,
       "norm_label": "single machine deployment rationale",
       "id": "single_machine_rationale"
     },
@@ -2586,7 +2595,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 22,
+      "community": 23,
       "norm_label": "sqlite for single-instance rationale",
       "id": "sqlite_single_instance_rationale"
     },
@@ -2599,7 +2608,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 18,
+      "community": 19,
       "norm_label": "firebase keys not secrets rationale",
       "id": "firebase_keys_rationale"
     },
@@ -2612,7 +2621,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "transit explorer app (ui)",
       "id": "hero_TransitExplorerApp"
     },
@@ -2625,7 +2634,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "transit routes list (ui)",
       "id": "hero_RoutesList"
     },
@@ -2638,7 +2647,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "interactive map view (ui)",
       "id": "hero_Map"
     },
@@ -2651,7 +2660,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "transit stop (ui)",
       "id": "hero_Stop"
     },
@@ -2664,7 +2673,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "route segment (ui)",
       "id": "hero_RouteSegment"
     },
@@ -2677,7 +2686,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 35,
+      "community": 36,
       "norm_label": "leaderboard ranking (ui)",
       "id": "hero_Leaderboard"
     },
@@ -2690,7 +2699,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "progress tracking (ui)",
       "id": "hero_Progress"
     },
@@ -2703,7 +2712,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "seattle map geography",
       "id": "hero_Seattle"
     },
@@ -2716,7 +2725,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "vite (logo)",
       "id": "vitesvg_vite"
     },
@@ -2729,7 +2738,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 24,
       "norm_label": "frontend favicon",
       "id": "asset_favicon"
     },
@@ -2742,7 +2751,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 24,
       "norm_label": "react logo (asset)",
       "id": "asset_react_logo"
     }
@@ -7060,7 +7069,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L22",
+      "source_location": "L26",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_readtriptimes",
@@ -7072,7 +7081,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L33",
+      "source_location": "L37",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_recordtriptime",
@@ -7084,7 +7093,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L49",
+      "source_location": "L53",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_gettripstats",
@@ -7096,7 +7105,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L61",
+      "source_location": "L65",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_formatduration",
@@ -7108,7 +7117,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L94",
+      "source_location": "L98",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_decode",
@@ -7120,7 +7129,19 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L100",
+      "source_location": "L103",
+      "weight": 1.0,
+      "_src": "tm_frontend_src_components_transitmap_jsx",
+      "_tgt": "transitmap_normalizedirectionid",
+      "source": "tm_frontend_src_components_transitmap_jsx",
+      "target": "transitmap_normalizedirectionid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tm-frontend/src/components/TransitMap.jsx",
+      "source_location": "L109",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_slicepolylinebystops",
@@ -7132,7 +7153,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L123",
+      "source_location": "L132",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_fitbounds",
@@ -7144,7 +7165,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L131",
+      "source_location": "L140",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_fithighlight",
@@ -7156,7 +7177,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L140",
+      "source_location": "L149",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_transitmap_jsx",
       "_tgt": "transitmap_transitmap",
@@ -7168,7 +7189,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L35",
+      "source_location": "L39",
       "weight": 1.0,
       "_src": "transitmap_recordtriptime",
       "_tgt": "transitmap_readtriptimes",
@@ -7180,7 +7201,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L50",
+      "source_location": "L54",
       "weight": 1.0,
       "_src": "transitmap_gettripstats",
       "_tgt": "transitmap_readtriptimes",
@@ -7192,7 +7213,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/TransitMap.jsx",
-      "source_location": "L1209",
+      "source_location": "L1277",
       "weight": 1.0,
       "_src": "transitmap_transitmap",
       "_tgt": "transitmap_formatduration",
