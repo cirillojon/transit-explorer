@@ -1,5 +1,6 @@
 import React from "react";
 import { Marker, CircleMarker, Tooltip } from "react-leaflet";
+import { getStopPickStatus } from "./mapUtils";
 
 function StopMarkersLayer({
   visibleStops,
@@ -13,22 +14,10 @@ function StopMarkersLayer({
   showToast,
 }) {
   return visibleStops.map((stop) => {
-    const isPicking = pickState?.directionId === stop.directionId;
-    const isFrom = isPicking && pickState?.fromStopId === stop.id;
-    // A stop is a valid ending candidate only if it sits *after* the
-    // boarding stop in the direction's stop order.
-    const isValidCandidate =
-      isPicking &&
-      !isFrom &&
-      boardingOrderIndex !== null &&
-      stop.orderIndex > boardingOrderIndex;
-    // Same-direction stops that come *before* boarding are invalid —
-    // dim them and show an explanatory tooltip.
-    const isUpstreamInvalid =
-      isPicking &&
-      !isFrom &&
-      boardingOrderIndex !== null &&
-      stop.orderIndex <= boardingOrderIndex;
+    const status = getStopPickStatus(stop, pickState, boardingOrderIndex);
+    const isFrom = status === "boarding";
+    const isValidCandidate = status === "candidate";
+    const isUpstreamInvalid = status === "upstream";
 
     if (isFrom) {
       return (

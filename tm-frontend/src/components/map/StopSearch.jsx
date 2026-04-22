@@ -1,4 +1,5 @@
 import React from "react";
+import { getStopPickStatus } from "./mapUtils";
 
 function StopSearch({
   pickState,
@@ -45,13 +46,13 @@ function StopSearch({
             <div className="stop-search-empty">No matching stops</div>
           ) : (
             stopSearchResults.map((s) => {
-              const isBoardingChoice =
-                pickState && pickState.fromStopId === s.id;
-              const isUnavailableChoice =
-                pickState &&
-                pickState.directionId === s.directionId &&
-                boardingOrderIndex !== null &&
-                s.orderIndex <= boardingOrderIndex;
+              const status = getStopPickStatus(
+                s,
+                pickState,
+                boardingOrderIndex,
+              );
+              const isBoardingChoice = status === "boarding";
+              const isUnavailableChoice = status === "upstream";
               return (
                 <button
                   type="button"

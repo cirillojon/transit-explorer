@@ -89,6 +89,27 @@ export function normalizeDirectionId(value) {
   return String(value);
 }
 
+/**
+ * Shared eligibility rules for a stop given the current boarding pick.
+ * Used by both the map markers and the search results so they can't drift
+ * out of sync.
+ *
+ * Returns one of:
+ *   - "idle":      no active pick (stop is just selectable to board)
+ *   - "boarding":  this is the currently-boarded stop
+ *   - "candidate": same direction, downstream of boarding — valid alight
+ *   - "upstream":  same direction, at-or-before boarding — invalid alight
+ *   - "other":     pick is active but this stop is in a different direction
+ */
+export function getStopPickStatus(stop, pickState, boardingOrderIndex) {
+  if (!pickState) return "idle";
+  const samePick = pickState.directionId === stop.directionId;
+  if (samePick && pickState.fromStopId === stop.id) return "boarding";
+  if (!samePick) return "other";
+  if (boardingOrderIndex === null) return "other";
+  return stop.orderIndex > boardingOrderIndex ? "candidate" : "upstream";
+}
+
 /* Snap each stop to the nearest index on the polyline, then slice. */
 export function slicePolylineByStops(line, stopPositions) {
   if (line.length === 0 || stopPositions.length < 2) return [];
