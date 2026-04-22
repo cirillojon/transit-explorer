@@ -456,6 +456,35 @@ function TransitMap({
     [allRouteSegments],
   );
 
+  // Per-route completion stats for the "view all routes" legend.
+  const allRouteStats = useMemo(() => {
+    if (!allProgressDetails?.length) return [];
+    // Build per-route totals in one pass over allRouteSegments.
+    const totalsMap = new Map();
+    for (const seg of allRouteSegments) {
+      if (!totalsMap.has(seg.routeId)) {
+        totalsMap.set(seg.routeId, { total: 0, done: 0 });
+      }
+      const entry = totalsMap.get(seg.routeId);
+      entry.total += 1;
+      if (effectiveCompleted.has(seg.key)) entry.done += 1;
+    }
+    return allProgressDetails.map((detail) => {
+      const counts = totalsMap.get(detail.id) || { total: 0, done: 0 };
+      const pct =
+        counts.total > 0 ? Math.round((counts.done / counts.total) * 100) : 0;
+      const name = detail.short_name || detail.long_name || detail.id;
+      const color = detail.color ? `#${detail.color}` : "#60a5fa";
+      return { id: detail.id, name, color, pct };
+    });
+  }, [allProgressDetails, allRouteSegments, effectiveCompleted]);
+
+  // Build a lookup map for O(1) access in the segment render loop.
+  const allRouteStatsById = useMemo(
+    () => new Map(allRouteStats.map((r) => [r.id, r])),
+    [allRouteStats],
+  );
+
   const completionStats = useMemo(() => {
     if (!directionSegments.length) return null;
     const done = directionSegments.filter((s) =>
@@ -713,6 +742,7 @@ function TransitMap({
         {/* All in-progress routes overlay (no single route selected) */}
         {allRouteSegments.map((seg) => {
           const done = effectiveCompleted.has(seg.key);
+          const routeInfo = allRouteStatsById.get(seg.routeId);
           return (
             <Polyline
               key={seg.key}
@@ -720,8 +750,19 @@ function TransitMap({
               color={done ? "#22c55e" : seg.color}
               weight={done ? 5 : 3}
               opacity={done ? 0.85 : 0.45}
-              interactive={false}
-            />
+            >
+              {routeInfo && (
+                <Tooltip sticky pane="tooltipPane">
+                  <span style={{ fontWeight: 600 }}>{routeInfo.name}</span>
+                  {" · "}
+                  {done ? (
+                    <span style={{ color: "#22c55e" }}>Completed</span>
+                  ) : (
+                    <span>{routeInfo.pct}% done</span>
+                  )}
+                </Tooltip>
+              )}
+            </Polyline>
           );
         })}
 
@@ -1173,33 +1214,41 @@ function TransitMap({
 
       {!selectedRoute && allProgressDetails?.length > 0 && (
         <div className="all-routes-banner">
-          <span className="all-routes-banner-text">
-            🗺 Viewing all {allProgressDetails.length} in-progress route
-            {allProgressDetails.length !== 1 ? "s" : ""}
-            {" · "}
-            <span className="all-routes-legend">
+          <div className="all-routes-banner-header">
+            <span className="all-routes-banner-text">
+              🗺 Viewing all {allProgressDetails.length} in-progress route
+              {allProgressDetails.length !== 1 ? "s" : ""}
+            </span>
+            <button
+              type="button"
+              className="all-routes-banner-clear"
+              onClick={() => onClearAllProgress?.()}
+              aria-label="Close all-routes view"
+            >
+              ✕ Close
+            </button>
+          </div>
+          <div className="all-routes-legend-list">
+            <span className="all-routes-legend all-routes-legend-global">
               <i
                 aria-hidden="true"
                 className="all-routes-legend-dot"
                 style={{ background: "#22c55e" }}
               />{" "}
-              Completed{" "}
-              <i
-                aria-hidden="true"
-                className="all-routes-legend-dot"
-                style={{ background: "#60a5fa" }}
-              />{" "}
-              In progress
+              Completed
             </span>
-          </span>
-          <button
-            type="button"
-            className="all-routes-banner-clear"
-            onClick={() => onClearAllProgress?.()}
-            aria-label="Close all-routes view"
-          >
-            ✕ Close
-          </button>
+            {allRouteStats.map((r) => (
+              <span key={r.id} className="all-routes-route-chip">
+                <i
+                  aria-hidden="true"
+                  className="all-routes-legend-dot"
+                  style={{ background: r.color }}
+                />
+                {r.name}
+                <span className="all-routes-route-chip-pct">{r.pct}%</span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
