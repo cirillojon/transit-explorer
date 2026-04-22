@@ -15,7 +15,7 @@
 #
 # Env knobs:
 #   FLASK_PORT              port to bind (default 8880)
-#   WEB_CONCURRENCY         gunicorn worker count (default 2)
+#   WEB_CONCURRENCY         gunicorn worker count (default 4; matches fly.toml)
 #   GUNICORN_TIMEOUT        per-request timeout seconds (default 30)
 #   LOG_LEVEL               default INFO
 #   SKIP_DB_UPGRADE=1       skip the migrate step (escape hatch only)
@@ -230,7 +230,7 @@ mode_prod() {
   start_inproc_loader
 
   local port="${FLASK_PORT:-8880}"
-  local workers="${WEB_CONCURRENCY:-2}"
+  local workers="${WEB_CONCURRENCY:-4}"
   local timeout="${GUNICORN_TIMEOUT:-30}"
   local keep_alive="${KEEP_ALIVE:-5}"
   local max_requests="${MAX_REQUESTS:-1000}"

@@ -73,7 +73,7 @@ flyctl certs check transit-explorer.org
 `.github/workflows/fly-deploy.yml` runs `pytest`, builds the image, deploys
 with `--strategy immediate --ha=false --detach`, then polls `/api/health`
 until it returns 200. Pushes to `main` that touch `app/`, `requirements.txt`,
-`Dockerfile`, `fly.toml`, `bin/start`, or `gunicorn_startup.sh` trigger the workflow.
+`Dockerfile`, `fly.toml`, or `bin/start` trigger the workflow (`gunicorn_startup.sh` is also watched as a backwards-compat shim).
 
 CI also runs `flask db upgrade && flask data check-schema` against an
 in-memory SQLite to catch any model ↔ migration drift before deploy.

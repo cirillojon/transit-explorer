@@ -12,7 +12,9 @@ primary_region = 'sjc'
 [deploy]
   # Single machine + mounted volume can't do a rolling swap (volume can't be
   # mounted twice). `immediate` stops the old machine, starts the new one,
-  # accepts ~30-60s of downtime during the OBA preload.
+  # accepts a brief hard cutover (~10-30s) while migrations run and gunicorn
+  # boots. The in-process OBA loader (started by bin/start prod) runs in the
+  # background and does NOT block /api/health from coming up.
   strategy = 'immediate'
 
 [env]
@@ -59,8 +61,10 @@ primary_region = 'sjc'
   [[http_service.checks]]
     interval = '30s'
     timeout = '5s'
-    # OBA preloads ~90 routes from the upstream API on boot; give it room
-    # before we start probing /api/health, otherwise CI deploys flap.
+    # gunicorn comes up in seconds and /api/health responds immediately
+    # (the OBA loader runs in the background, not on the request path).
+    # Keep a generous grace period anyway as a safety margin for slow
+    # cold-starts after migrations.
     grace_period = '3m0s'
     method = 'GET'
     path = '/api/health'

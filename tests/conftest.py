@@ -2,8 +2,8 @@
 
 Strategy:
 - create_app() is invoked with FLASK_ENV=development so CORS doesn't fail-fast
-  on missing ALLOWED_ORIGINS, and SKIP_STARTUP_DATA_TASKS=1 so we don't try to
-  reach the OneBusAway API during tests.
+  on missing ALLOWED_ORIGINS. Tests never go through bin/start, so the
+  in-process loader / boot-time data-load paths aren't exercised here.
 - The DB is an in-memory SQLite per test session.
 - Firebase ID-token verification is monkeypatched to return a deterministic
   set of claims, so authed endpoints can be exercised without real Firebase.
@@ -15,7 +15,6 @@ import pytest
 @pytest.fixture(scope="session")
 def _env():
     os.environ["FLASK_ENV"] = "development"
-    os.environ["SKIP_STARTUP_DATA_TASKS"] = "1"
     os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     os.environ.setdefault("FIREBASE_PROJECT_ID", "test-project")
     # Disable Flask-Limiter rate enforcement during tests.

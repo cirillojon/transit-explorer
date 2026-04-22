@@ -37,7 +37,6 @@ jobs:
       - name: Run backend tests (gate deploy)
         env:
           FLASK_ENV: development
-          SKIP_STARTUP_DATA_TASKS: "1"
         run: pytest tests/ -q
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to Fly.io

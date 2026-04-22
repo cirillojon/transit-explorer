@@ -34,7 +34,7 @@ Technical reference for Transit Explorer. The product overview lives in
 | ------------------------------------- | -------- | ------------------------------- | ---------------------------------------------------------------------------------------- |
 | `OBA_API_KEY`                         | yes      | —                               | OneBusAway API key                                                                       |
 | `GOOGLE_APPLICATION_CREDENTIALS`      | local    | —                               | Path to a Firebase service-account JSON file                                             |
-| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | prod     | —                               | Optional JSON secret materialized to disk by `gunicorn_startup.sh`                       |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | prod     | —                               | Optional JSON secret materialized to disk by `bin/start` on boot                         |
 | `FIREBASE_PROJECT_ID`                 | fallback | `""`                            | Used when no service-account file is mounted                                             |
 | `SQLALCHEMY_DATABASE_URI`             | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                                            |
 | `ALLOWED_ORIGINS`                     | prod     | `""`                            | Comma-separated origin allow-list for `/api/*`; blank denies browser origins outside dev |
@@ -46,6 +46,7 @@ Technical reference for Transit Explorer. The product overview lives in
 | `GUNICORN_TIMEOUT`                    | no       | `30`                            | Per-request timeout for gunicorn (seconds)                                               |
 | `SKIP_DB_UPGRADE`                     | no       | `0`                             | Set `1` to skip the `bin/start` boot-time `flask db upgrade`                             |
 | `SKIP_DATA_LOAD`                      | no       | `0`                             | Skip the `bin/start dev`/`prod` first-boot auto-seed                                     |
+| `AUTO_SEED_ON_EMPTY`                  | no       | `1`                             | In `bin/start dev`/`prod`, kick off a one-shot `flask data load` if the DB is empty      |
 | `RUN_INPROC_LOADER`                   | no       | `1`                             | In `bin/start prod`, set `0` to disable the background `flask data load --loop`          |
 | `OBA_REFRESH_TTL_HOURS`               | no       | `24`                            | Per-agency refresh interval used by the in-process loader loop                           |
 | `AUTO_UPGRADE_ON_BOOT`                | no       | `0`                             | Escape hatch: re-run `flask db upgrade` from inside `create_app()`                       |
@@ -104,7 +105,7 @@ FLASK_APP=app.py flask db migrate -m "add foo"
 # Apply migrations
 FLASK_APP=app.py flask db upgrade
 
-# In Docker, gunicorn_startup.sh runs `flask db upgrade` automatically on boot.
+# In Docker, `bin/start prod` runs `flask db upgrade` automatically on boot.
 # To skip: set SKIP_DB_UPGRADE=1.
 ```
 
@@ -153,7 +154,7 @@ cd transit-explorer
 flyctl launch --no-deploy --copy-config --name transit-explorer --yes
 flyctl volumes create tm_data --size 3 --region sjc --yes
 
-# Secrets (file-based JSON gets materialized to disk by gunicorn_startup.sh)
+# Secrets (file-based JSON gets materialized to disk by bin/start on boot)
 flyctl secrets set \
   OBA_API_KEY="..." \
   FIREBASE_PROJECT_ID="transit-explorer-55b66" \
@@ -163,7 +164,7 @@ flyctl secrets set \
 flyctl deploy --remote-only --ha=false
 ```
 
-`fly.toml` already pins `WEB_CONCURRENCY=4`, `GUNICORN_TIMEOUT=30`, `OBA_REFRESH_TTL_HOURS=24`, and a 3-minute healthcheck grace period. Migrations and OBA loading are handled by `bin/start prod` (not `gunicorn_startup.sh`, which is now a thin shim).
+`fly.toml` already pins `WEB_CONCURRENCY=4`, `GUNICORN_TIMEOUT=30`, `OBA_REFRESH_TTL_HOURS=24`, and a 3-minute healthcheck grace period. Migrations and OBA loading are handled by `bin/start prod`. `gunicorn_startup.sh` is now a thin backwards-compat shim that just `exec`s `bin/start prod`.
 
 ### Frontend on Vercel
 
@@ -231,7 +232,8 @@ transit-explorer/
 ├── docker-compose.yml         # Local prod-like stack (backend + nginx + dist)
 ├── nginx.conf                 # Used by docker-compose
 ├── fly.toml                   # Fly.io deploy config
-├── gunicorn_startup.sh        # Entrypoint inside Docker
+├── bin/start                  # Canonical entrypoint (modes: dev|prod|migrate|load-data)
+├── gunicorn_startup.sh        # Backwards-compat shim → execs bin/start prod
 ├── backup.sh                  # Online SQLite snapshot + rotation
 ├── DEVELOPMENT.md             # Day-to-day dev & deploy guide
 └── docs/

@@ -153,7 +153,7 @@ git push -u origin feature/my-thing
 
 ## 4. Deploying backend changes (Fly.io)
 
-**Backend deploys are automatic via GitHub Actions.** Pushing to `main` with changes under `app/`, `requirements.txt`, `Dockerfile`, `fly.toml`, `gunicorn_startup.sh`, or `.dockerignore` triggers [.github/workflows/fly-deploy.yml](.github/workflows/fly-deploy.yml). The workflow runs `flyctl deploy --local-only --ha=false --strategy immediate --detach`, then polls `/api/health` until the app is back.
+**Backend deploys are automatic via GitHub Actions.** Pushing to `main` with changes under `app/`, `requirements.txt`, `Dockerfile`, `fly.toml`, `bin/start`, or `.dockerignore` triggers [.github/workflows/fly-deploy.yml](.github/workflows/fly-deploy.yml). The workflow runs `flyctl deploy --local-only --ha=false --strategy immediate --detach`, then polls `/api/health` until the app is back.
 
 Watch a run: https://github.com/cirillojon/transit-explorer/actions
 
@@ -230,7 +230,7 @@ Escape hatch: `AUTO_UPGRADE_ON_BOOT=1` lets `create_app()` re-run `flask db upgr
 
 ### When something goes wrong
 
-- **Healthcheck failing after deploy:** `flyctl logs` and look for the error. The live app already sets `SKIP_DATA_LOAD=1`; if the app is simply warming the dataset, remember `fly.toml` gives it a 3-minute healthcheck grace period and the GitHub workflow polls `/api/health` for up to 10 minutes.
+- **Healthcheck failing after deploy:** `flyctl logs` and look for the error. `/api/health` should come up within seconds of gunicorn booting (the in-process OBA loader runs in the background and doesn't block it); `fly.toml` still gives a 3-minute grace period and the GitHub workflow polls `/api/health` for up to 10 minutes as a safety margin.
 - **OOM (Out Of Memory):** `flyctl scale memory 2048 -a transit-explorer`.
 - **DB locked / migration errors:** SSH in, run `sqlite3 /app/tm-instance/data.db ".timeout 5000"` to diagnose. Worst case, restore from backup (see §6).
 - **Need to rebuild image without code changes:** `flyctl deploy --remote-only --ha=false --strategy immediate --no-cache`.
@@ -265,7 +265,7 @@ FLASK_APP=app.py flask db upgrade
 git add app/migrations/versions/ app/models.py
 git commit -m "Add foo column to users"
 git push
-# 6. Deploy backend (gunicorn_startup.sh runs `flask db upgrade` on boot):
+# 6. Deploy backend (`bin/start prod` runs `flask db upgrade` on boot):
 flyctl deploy --remote-only --ha=false --strategy immediate
 ```
 

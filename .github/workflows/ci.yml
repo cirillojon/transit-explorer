@@ -33,7 +33,6 @@ jobs:
         env:
           FLASK_APP: app.py
           FLASK_ENV: development
-          SKIP_STARTUP_DATA_TASKS: "1"
           SQLALCHEMY_DATABASE_URI: "sqlite:////tmp/ci-schema-check.db"
         run: |
           rm -f /tmp/ci-schema-check.db
@@ -42,7 +41,6 @@ jobs:
       - name: Run pytest
         env:
           FLASK_ENV: development
-          SKIP_STARTUP_DATA_TASKS: "1"
         # -v          → one line per test (visible in the live log)
         # --tb=short  → readable failure tracebacks
         # --color=yes → GitHub renders ANSI colors in the log viewer
