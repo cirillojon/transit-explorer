@@ -389,18 +389,26 @@ def get_stats():
 @api_blueprint.route('/me/activity')
 @require_auth
 def get_activity():
-    """Recent rides, collapsed by adjacent hops in same direction (30-min window)."""
+    """Recent rides, one entry per logged trip.
+
+    A "trip" is the set of hops created by a single POST /me/segments,
+    identified by sharing the same (route_id, direction_id, completed_at).
+    Within a trip, hops are ordered along the route's stop sequence so the
+    boarding and alighting stops are correct regardless of DB row order.
+    """
     user = g.current_user
     try:
         limit = min(max(int(request.args.get('limit', 20)), 1), 100)
     except (TypeError, ValueError):
         limit = 20
 
+    # Pull enough rows that `limit` distinct trips can be formed even when
+    # individual trips contain many hops. 50 hops/trip is a generous cap.
     segs = (
         UserSegment.query
         .filter_by(user_id=user.id)
-        .order_by(desc(UserSegment.completed_at))
-        .limit(limit * 6)
+        .order_by(desc(UserSegment.completed_at), UserSegment.id)
+        .limit(limit * 50)
         .all()
     )
 
@@ -410,39 +418,59 @@ def get_activity():
         if route_ids else {}
     )
 
-    grouped = []
-    cur = None
-    for s in segs:
-        if cur and s.route_id == cur['route_id'] and s.direction_id == cur['direction_id']:
-            delta = abs((cur['_first_time'] - s.completed_at).total_seconds())
-            if delta <= 30 * 60:
-                cur['hops'] += 1
-                cur['from_stop_id'] = s.from_stop_id
-                cur['from_stop_name'] = s.from_stop.name if s.from_stop else None
-                continue
-        if cur:
-            grouped.append(cur)
-            if len(grouped) >= limit:
-                break
-        r = routes_by_id.get(s.route_id)
-        cur = {
-            'route_id': s.route_id,
-            'route_name': (r.short_name or r.long_name) if r else s.route_id,
-            'route_color': r.color if r else None,
-            'direction_id': s.direction_id,
-            'from_stop_id': s.from_stop_id,
-            'from_stop_name': s.from_stop.name if s.from_stop else None,
-            'to_stop_id': s.to_stop_id,
-            'to_stop_name': s.to_stop.name if s.to_stop else None,
-            'hops': 1,
-            'completed_at': s.completed_at.isoformat() if s.completed_at else None,
-            '_first_time': s.completed_at,
-        }
-    if cur and len(grouped) < limit:
-        grouped.append(cur)
+    # Build a stop-index lookup per (route_id, direction_id) so we can sort
+    # hops within a trip along the route. Only fetch the directions we need.
+    dir_rows = (
+        RouteDirection.query.filter(RouteDirection.route_id.in_(route_ids)).all()
+        if route_ids else []
+    )
+    stop_index = {}
+    for d in dir_rows:
+        try:
+            stop_ids = json.loads(d.stop_ids_json or '[]')
+        except (ValueError, TypeError):
+            stop_ids = []
+        if isinstance(stop_ids, list):
+            stop_index[(d.route_id, d.direction_id)] = {
+                sid: i for i, sid in enumerate(stop_ids)
+            }
 
-    for g_ in grouped:
-        g_.pop('_first_time', None)
+    # Bucket hops by trip key. dict preserves insertion order, which mirrors
+    # the desc(completed_at) ordering above (newest trip first). We keep
+    # collecting hops for trip keys we've already seen, but stop scanning
+    # once we have `limit` distinct trips so we don't drop hops from a
+    # trip mid-bucket.
+    trips = {}
+    for s in segs:
+        key = (s.route_id, s.direction_id, s.completed_at)
+        if key not in trips and len(trips) >= limit:
+            break
+        trips.setdefault(key, []).append(s)
+
+    grouped = []
+    for (route_id, direction_id, _), hops in trips.items():
+        idx = stop_index.get((route_id, direction_id), {})
+        hops_sorted = sorted(
+            hops,
+            key=lambda h: (idx.get(h.from_stop_id, 10**9), h.id),
+        )
+        first = hops_sorted[0]
+        last = hops_sorted[-1]
+        r = routes_by_id.get(route_id)
+        grouped.append({
+            'route_id': route_id,
+            'route_name': (r.short_name or r.long_name) if r else route_id,
+            'route_color': r.color if r else None,
+            'direction_id': direction_id,
+            'from_stop_id': first.from_stop_id,
+            'from_stop_name': first.from_stop.name if first.from_stop else None,
+            'to_stop_id': last.to_stop_id,
+            'to_stop_name': last.to_stop.name if last.to_stop else None,
+            'hops': len(hops_sorted),
+            'completed_at': first.completed_at.isoformat() if first.completed_at else None,
+        })
+        if len(grouped) >= limit:
+            break
 
     return jsonify({'activity': grouped})
 
@@ -452,7 +480,21 @@ def get_activity():
 def get_progress():
     """Per-route completion summary. Constant-query: O(1) DB calls regardless of N."""
     user = g.current_user
-    segments = UserSegment.query.filter_by(user_id=user.id).all()
+    # Order matters: the frontend reconstructs trips by grouping hops with
+    # the same (direction_id, completed_at) and then sorts within each trip
+    # along the route. We sort here too so callers without that logic get
+    # rows in route-ordered, time-grouped order.
+    segments = (
+        UserSegment.query
+        .filter_by(user_id=user.id)
+        .order_by(
+            UserSegment.route_id,
+            UserSegment.direction_id,
+            UserSegment.completed_at,
+            UserSegment.id,
+        )
+        .all()
+    )
     if not segments:
         return jsonify({'progress': []})
 
@@ -504,6 +546,21 @@ def get_progress():
         total = data['total_segments']
         completed = data['completed_segments']
         data['completion_pct'] = round(completed / total * 100, 1) if total > 0 else 0
+
+        # Re-sort each route's segments along the route's stop sequence so
+        # callers without trip-grouping logic still see hops in route order
+        # (the SQL ORDER BY only gives us id-order within a trip, which can
+        # be reverse-route-order if rows were inserted that way).
+        stop_idx_by_dir = {
+            d['direction_id']: {sid: i for i, sid in enumerate(d.get('stop_ids') or [])}
+            for d in data['directions']
+        }
+        data['segments'].sort(key=lambda s: (
+            s['direction_id'],
+            s['completed_at'] or '',
+            stop_idx_by_dir.get(s['direction_id'], {}).get(s['from_stop_id'], 10**9),
+            s['id'],
+        ))
 
     # Sort: in-progress first (highest %), completed routes last
     progress_list = sorted(
