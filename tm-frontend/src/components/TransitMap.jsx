@@ -49,6 +49,7 @@ function TransitMap({
   const [optimisticDone, setOptimisticDone] = useState(() => new Set());
   const [recentlyDone, setRecentlyDone] = useState(() => new Set());
   const [helpOpen, setHelpOpen] = useState(false);
+  const [helpAutoOpened, setHelpAutoOpened] = useState(false);
   const [tripStatsTick, setTripStatsTick] = useState(0); // bumps to refresh avg
   const [liveTripMs, setLiveTripMs] = useState(0);
   const toastTimerRef = useRef(null);
@@ -94,7 +95,10 @@ function TransitMap({
   useEffect(() => {
     try {
       const seen = localStorage.getItem(HELP_SEEN_KEY);
-      if (!seen) setHelpOpen(true);
+      if (!seen) {
+        setHelpAutoOpened(true);
+        setHelpOpen(true);
+      }
     } catch {
       /* localStorage disabled — skip auto-open */
     }
@@ -790,20 +794,6 @@ function TransitMap({
         onUndo={undoBoarding}
       />
 
-      {/* Highlighted-from-progress banner */}
-      {highlightedSegment && !pickState && (
-        <div className="highlight-banner">
-          <span>📍 Viewing segment from progress</span>
-          <button
-            className="pick-cancel"
-            style={{ marginLeft: 10 }}
-            onClick={() => onClearHighlight?.()}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {toast && (
         <div className={`map-toast map-toast-${toast.kind}`}>{toast.msg}</div>
       )}
@@ -811,7 +801,10 @@ function TransitMap({
       <button
         type="button"
         className="map-help-button"
-        onClick={() => setHelpOpen(true)}
+        onClick={() => {
+          setHelpAutoOpened(false);
+          setHelpOpen(true);
+        }}
         aria-label="How to use the map"
         title="How to log a ride"
       >
@@ -820,6 +813,7 @@ function TransitMap({
 
       <HelpModal
         open={helpOpen}
+        showDontShowAgain={helpAutoOpened}
         onClose={() => setHelpOpen(false)}
         onDontShowAgain={() => {
           try {

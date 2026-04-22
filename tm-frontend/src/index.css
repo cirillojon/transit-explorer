@@ -828,6 +828,30 @@ button {
   background: rgba(250, 204, 21, 0.08);
 }
 
+/* Minimize/expand chevron on the pick overlay. Hidden on desktop where
+   the overlay sits unobtrusively; shown on mobile where it can otherwise
+   block the map. See mobile media block below. */
+.pick-collapse-toggle {
+  display: none;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.pick-collapse-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ── Stop search (overlay) ─────────────────────────────── */
 .stop-search {
   position: relative;
@@ -2370,26 +2394,6 @@ button {
   }
 }
 
-/* ── Highlighted segment banner ─────────────────────────── */
-.highlight-banner {
-  position: absolute;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  background: rgba(250, 204, 21, 0.12);
-  border: 1px solid var(--yellow);
-  color: var(--yellow);
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  box-shadow: var(--shadow-md);
-}
-
 /* ── Mobile (drawer) ───────────────────────────────────── */
 .mobile-sidebar-toggle {
   display: none;
@@ -2625,6 +2629,25 @@ button {
     white-space: normal;
     font-size: 13px;
   }
+  .pick-collapse-toggle {
+    display: inline-flex;
+  }
+  /* Collapsed pill: compact one-line summary the user can tap to expand. */
+  .pick-overlay.is-collapsed {
+    padding: 6px 10px;
+    gap: 8px;
+    flex-wrap: nowrap;
+    align-items: center;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .pick-overlay.is-collapsed .pick-prompt {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   @keyframes slide-up {
     from {
       opacity: 0;
@@ -2638,20 +2661,6 @@ button {
 
   .map-toast {
     top: calc(env(safe-area-inset-top, 0px) + 76px);
-  }
-
-  /* Anchor the highlight banner to the top on mobile so it can't overlap
-     the bottom-anchored route details / legend stack. Sits just below the
-     mobile route badge (top + 12 + 54px height + 10 gap ≈ 76px). */
-  .highlight-banner {
-    top: calc(env(safe-area-inset-top, 0px) + 76px);
-    bottom: auto;
-    left: 12px;
-    right: 12px;
-    transform: none;
-    white-space: normal;
-    text-align: center;
-    justify-content: center;
   }
 
   /* Achievement toasts: keep them on the left side at the bottom on mobile
@@ -2703,8 +2712,7 @@ button {
 
   /* Tame Leaflet's attribution on phones — by default it lives flush
      bottom-right and visually collides with the stop-search row /
-     legend pill. Make it small, slightly transparent, and push it
-     above the iOS home-indicator safe area. */
+     legend pill. Makme-indicator safe area. */
   .leaflet-control-attribution {
     font-size: 9px !important;
     line-height: 1.2 !important;
@@ -3481,11 +3489,14 @@ button {
   .help-modal-title {
     font-size: 19px;
   }
-  /* Move the help button above the bottom-anchored map overlays so it
-     doesn't sit underneath them on phones. */
+  /* Move the help button to the top-right on phones so it doesn't sit
+     under bottom-anchored map overlays (legend, pick prompt, popup
+     toasts). Sits below the mobile route badge (top + 12 + 54 + 12). */
   .map-help-button {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
-    left: 12px;
+    top: calc(env(safe-area-inset-top, 0px) + 78px);
+    right: 12px;
+    bottom: auto;
+    left: auto;
     width: 40px;
     height: 40px;
   }
