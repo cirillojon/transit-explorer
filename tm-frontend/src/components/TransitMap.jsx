@@ -479,6 +479,12 @@ function TransitMap({
     });
   }, [allProgressDetails, allRouteSegments, effectiveCompleted]);
 
+  // Build a lookup map for O(1) access in the segment render loop.
+  const allRouteStatsById = useMemo(
+    () => new Map(allRouteStats.map((r) => [r.id, r])),
+    [allRouteStats],
+  );
+
   const completionStats = useMemo(() => {
     if (!directionSegments.length) return null;
     const done = directionSegments.filter((s) =>
@@ -736,7 +742,7 @@ function TransitMap({
         {/* All in-progress routes overlay (no single route selected) */}
         {allRouteSegments.map((seg) => {
           const done = effectiveCompleted.has(seg.key);
-          const routeInfo = allRouteStats.find((r) => r.id === seg.routeId);
+          const routeInfo = allRouteStatsById.get(seg.routeId);
           return (
             <Polyline
               key={seg.key}
