@@ -8,6 +8,7 @@ import StatsCard from "./StatsCard";
 import Achievements from "./Achievements";
 import RecentActivity from "./RecentActivity";
 import ConfirmDialog from "./ConfirmDialog";
+import { groupIntoJourneys } from "./journeyGrouping";
 
 function formatDurationMs(ms) {
   if (ms == null || ms <= 0) return null;
@@ -54,60 +55,6 @@ function parseDurationInput(text) {
   return matched ? Math.round(total) : NaN;
 }
 
-/* Group consecutive same-direction hops into journey objects. */
-function groupIntoJourneys(segments) {
-  if (!segments.length) return [];
-  const sorted = [...segments].sort(
-    (a, b) => new Date(a.completed_at) - new Date(b.completed_at),
-  );
-  const journeys = [];
-  let run = [sorted[0]];
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = run[run.length - 1];
-    const cur = sorted[i];
-    if (
-      cur.direction_id === prev.direction_id &&
-      cur.from_stop_id === prev.to_stop_id
-    ) {
-      run.push(cur);
-    } else {
-      journeys.push(makeJourney(run));
-      run = [cur];
-    }
-  }
-  journeys.push(makeJourney(run));
-  return journeys.reverse();
-}
-
-function makeJourney(segs) {
-  const first = segs[0];
-  const last = segs[segs.length - 1];
-  // Duration is recorded only on the first row of a logged run, but if
-  // the user later edits a hop in the middle we still want to surface
-  // any non-null value here.
-  const durationSeg = segs.find((s) => s.duration_ms != null);
-  return {
-    key: `${first.direction_id}-${first.from_stop_id}-${last.to_stop_id}-${first.completed_at}`,
-    directionId: first.direction_id,
-    directionName: first.direction_name || first.direction_id,
-    boardStop: first.from_stop_name || first.from_stop_id,
-    alightStop: last.to_stop_name || last.to_stop_id,
-    stopCount: segs.length + 1,
-    date: new Date(first.completed_at).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year:
-        new Date(first.completed_at).getFullYear() !== new Date().getFullYear()
-          ? "numeric"
-          : undefined,
-    }),
-    notes: segs.find((s) => s.notes)?.notes || "",
-    durationMs: durationSeg ? durationSeg.duration_ms : null,
-    durationSegmentId: durationSeg ? durationSeg.id : first.id,
-    segments: segs,
-  };
-}
-
 function UserProgress({
   progress,
   stats,
@@ -120,6 +67,7 @@ function UserProgress({
   onShowAllRoutes,
 }) {
   const [expandedRoute, setExpandedRoute] = useState(null);
+  const [expandedRide, setExpandedRide] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [noteText, setNoteText] = useState("");
   const [editingDuration, setEditingDuration] = useState(null);
@@ -135,7 +83,7 @@ function UserProgress({
   const journeysByRoute = useMemo(() => {
     const map = {};
     for (const rp of progress) {
-      map[rp.route_id] = groupIntoJourneys(rp.segments);
+      map[rp.route_id] = groupIntoJourneys(rp.segments, rp.directions);
     }
     return map;
   }, [progress]);
@@ -174,6 +122,9 @@ function UserProgress({
     lastAutoKey.current = key;
     setView("routes");
     setExpandedRoute(highlightedRoute.route_id);
+    if (highlightedJourney) {
+      setExpandedRide(highlightedJourney.key);
+    }
     // Defer scroll until after the expansion renders.
     requestAnimationFrame(() => {
       const target =
@@ -472,6 +423,7 @@ function UserProgress({
                     {journeys.map((journey) => {
                       const isHighlightedJourney =
                         highlightedJourney?.key === journey.key;
+                      const isOpen = expandedRide === journey.key;
                       const intermediate = Math.max(0, journey.stopCount - 2);
                       // Render up to 5 dots for the strip; large rides
                       // collapse the middle into a single "+N" pip.
@@ -489,126 +441,173 @@ function UserProgress({
                         }
                       }
                       dots.push("alight");
+                      const ridePanelId = `ride-panel-${journey.key}`;
                       return (
                         <div
                           key={journey.key}
                           ref={(el) => {
                             journeyRefs.current[journey.key] = el;
                           }}
-                          className={`ride-card ${
+                          className={`ride-card ${isOpen ? "is-open" : ""} ${
                             isHighlightedJourney ? "is-highlighted" : ""
                           }`}
                         >
-                          <div className="ride-card-top">
-                            <span className="ride-direction-tag">
-                              {journey.directionName}
-                            </span>
-                            {journey.durationMs != null && (
+                          <button
+                            type="button"
+                            className="ride-summary"
+                            onClick={() =>
+                              setExpandedRide(isOpen ? null : journey.key)
+                            }
+                            aria-expanded={isOpen}
+                            aria-controls={ridePanelId}
+                          >
+                            <div className="ride-summary-line">
                               <span
-                                className="ride-duration-tag"
-                                title="Time spent on this ride"
+                                className="ride-direction-tag"
+                                title={journey.directionName}
                               >
-                                ⏱ {formatDurationMs(journey.durationMs)}
+                                {journey.directionName}
                               </span>
-                            )}
-                            <span className="ride-date">{journey.date}</span>
-                          </div>
+                              {journey.durationMs != null && (
+                                <span
+                                  className="ride-duration-tag"
+                                  title="Time spent on this ride"
+                                >
+                                  ⏱ {formatDurationMs(journey.durationMs)}
+                                </span>
+                              )}
+                              {journey.notes && (
+                                <span
+                                  className="ride-note-tag"
+                                  title={journey.notes}
+                                  aria-label="Has a note"
+                                >
+                                  📝
+                                </span>
+                              )}
+                              <span className="ride-when">
+                                {journey.date} · {journey.time}
+                              </span>
+                              <span
+                                className="ride-chevron"
+                                aria-hidden="true"
+                              >
+                                {isOpen ? "▴" : "▾"}
+                              </span>
+                            </div>
+                            <div className="ride-stops">
+                              <span
+                                className="ride-board"
+                                title={journey.boardStop}
+                              >
+                                {journey.boardStop}
+                              </span>
+                              <span className="ride-arrow">→</span>
+                              <span
+                                className="ride-alight"
+                                title={journey.alightStop}
+                              >
+                                {journey.alightStop}
+                              </span>
+                              <span className="ride-stop-count-inline">
+                                {journey.stopCount} stops
+                              </span>
+                            </div>
+                          </button>
 
-                          <div className="ride-stops">
-                            <span
-                              className="ride-board"
-                              title={journey.boardStop}
+                          {isOpen && (
+                            <div
+                              id={ridePanelId}
+                              className="ride-detail"
                             >
-                              {journey.boardStop}
-                            </span>
-                            <span className="ride-arrow">→</span>
-                            <span
-                              className="ride-alight"
-                              title={journey.alightStop}
-                            >
-                              {journey.alightStop}
-                            </span>
-                          </div>
+                              <div className="ride-strip" aria-hidden="true">
+                                {dots.map((d, i) => {
+                                  if (typeof d === "object") {
+                                    return (
+                                      <React.Fragment key={i}>
+                                        <span className="ride-dot ride-dot-collapse">
+                                          +{d.collapse}
+                                        </span>
+                                        {i < dots.length - 1 && (
+                                          <span className="ride-line" />
+                                        )}
+                                      </React.Fragment>
+                                    );
+                                  }
+                                  return (
+                                    <React.Fragment key={i}>
+                                      <span
+                                        className={`ride-dot ride-dot-${d}`}
+                                      />
+                                      {i < dots.length - 1 && (
+                                        <span className="ride-line" />
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })}
+                                <span className="ride-stop-count">
+                                  {journey.stopCount} stops
+                                </span>
+                              </div>
 
-                          <div className="ride-strip" aria-hidden="true">
-                            {dots.map((d, i) => {
-                              if (typeof d === "object") {
-                                return (
-                                  <React.Fragment key={i}>
-                                    <span className="ride-dot ride-dot-collapse">
-                                      +{d.collapse}
-                                    </span>
-                                    {i < dots.length - 1 && (
-                                      <span className="ride-line" />
-                                    )}
-                                  </React.Fragment>
-                                );
-                              }
-                              return (
-                                <React.Fragment key={i}>
-                                  <span className={`ride-dot ride-dot-${d}`} />
-                                  {i < dots.length - 1 && (
-                                    <span className="ride-line" />
-                                  )}
-                                </React.Fragment>
-                              );
-                            })}
-                            <span className="ride-stop-count">
-                              {journey.stopCount} stops
-                            </span>
-                          </div>
+                              {journey.notes && (
+                                <div className="ride-note">
+                                  📝 {journey.notes}
+                                </div>
+                              )}
 
-                          {journey.notes && (
-                            <div className="ride-note">📝 {journey.notes}</div>
-                          )}
+                              <div className="ride-actions">
+                                <button
+                                  className="btn-small btn-view-map"
+                                  onClick={() =>
+                                    onViewSegment?.(
+                                      rp.route_id,
+                                      journey.segments[0],
+                                    )
+                                  }
+                                  title="Show this ride on the map"
+                                >
+                                  🗺 Map
+                                </button>
+                                <button
+                                  className="btn-small"
+                                  onClick={() => {
+                                    setEditingNote(journey.key);
+                                    setNoteText(
+                                      journey.segments[0].notes || "",
+                                    );
+                                  }}
+                                  title={
+                                    journey.notes
+                                      ? "Edit your note"
+                                      : "Add a note about this ride"
+                                  }
+                                >
+                                  📝 Note
+                                </button>
+                                <button
+                                  className="btn-small"
+                                  onClick={() => beginEditDuration(journey)}
+                                  title={
+                                    journey.durationMs != null
+                                      ? "Change recorded ride time"
+                                      : "Record how long this ride took"
+                                  }
+                                >
+                                  ⏱ Time
+                                </button>
+                                <button
+                                  className="btn-small btn-danger ride-delete"
+                                  onClick={() => askDeleteRide(journey)}
+                                  title="Remove this ride from your progress"
+                                  aria-label="Remove ride"
+                                >
+                                  ✕
+                                </button>
+                              </div>
 
-                          <div className="ride-actions">
-                            <button
-                              className="btn-small btn-view-map"
-                              onClick={() =>
-                                onViewSegment?.(
-                                  rp.route_id,
-                                  journey.segments[0],
-                                )
-                              }
-                              title="Show this ride on the map"
-                            >
-                              🗺 Show on map
-                            </button>
-                            <button
-                              className="btn-small"
-                              onClick={() => {
-                                setEditingNote(journey.key);
-                                setNoteText(journey.segments[0].notes || "");
-                              }}
-                            >
-                              {journey.notes ? "Edit note" : "Add note"}
-                            </button>
-                            <button
-                              className="btn-small"
-                              onClick={() => beginEditDuration(journey)}
-                              title={
-                                journey.durationMs != null
-                                  ? "Change recorded ride time"
-                                  : "Record how long this ride took"
-                              }
-                            >
-                              {journey.durationMs != null
-                                ? "Edit time"
-                                : "Add time"}
-                            </button>
-                            <button
-                              className="btn-small btn-danger ride-delete"
-                              onClick={() => askDeleteRide(journey)}
-                              title="Remove this ride from your progress"
-                              aria-label="Remove ride"
-                            >
-                              ✕
-                            </button>
-                          </div>
-
-                          {editingDuration === journey.key && (
-                            <div className="duration-edit">
+                              {editingDuration === journey.key && (
+                                <div className="duration-edit">
                               <label
                                 className="duration-edit-label"
                                 htmlFor={`dur-${journey.key}`}
@@ -682,6 +681,8 @@ function UserProgress({
                                   Cancel
                                 </button>
                               </div>
+                            </div>
+                          )}
                             </div>
                           )}
                         </div>
