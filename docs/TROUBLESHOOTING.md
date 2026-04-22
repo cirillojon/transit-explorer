@@ -157,7 +157,7 @@ full tracebacks; the response body to clients is the safe `{"error":
 
 ```bash
 flyctl ssh console -a transit-explorer
-cd /data
+cd /app/tm-instance
 
 # Stop writes briefly:
 sqlite3 data.db "PRAGMA wal_checkpoint(FULL);"

@@ -36,9 +36,12 @@ flask --app app db upgrade                    # apply migrations
 flask --app app run --port 8880
 ```
 
-The first boot triggers an OneBusAway preload that takes 1–3 minutes; the
-route list will populate as the background loader catches up. Set
-`SKIP_DATA_LOAD=1` to skip it (e.g. when running tests).
+The first time you boot the backend via `bin/start dev` (or the Docker
+helper), it kicks off a background OneBusAway preload that takes 1–3
+minutes — the route list will populate as the loader catches up. Pure
+`flask run` does not auto-seed; use `bin/start dev` or run
+`flask data load` manually. Set `SKIP_DATA_LOAD=1` to skip the auto-seed
+(e.g. when running tests).
 
 ### Frontend
 

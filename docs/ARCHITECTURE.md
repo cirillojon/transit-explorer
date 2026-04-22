@@ -2,7 +2,7 @@
 
 Technical reference for Transit Explorer. The product overview lives in
 [the root README](../README.md); the day-to-day operations guide lives in
-[DEVELOPMENT.md](../DEVELOPMENT.md).
+[DEVELOPMENT.md](./DEVELOPMENT.md).
 
 ---
 
@@ -89,6 +89,7 @@ All endpoints under `/api`. Endpoints marked 🔒 require an `Authorization: Bea
 | 🔒 GET    | `/api/me/activity`                         | Recent journeys collapsed across adjacent hops in the same direction                |
 | 🔒 POST   | `/api/me/segments`                         | Mark a contiguous run of hops; returns `created`, `skipped`, `segments`, and totals |
 | 🔒 PUT    | `/api/me/segments/<segment_id>/notes`      | Update notes on a previously logged segment                                         |
+| 🔒 PUT    | `/api/me/segments/<segment_id>/duration`   | Update the recorded ride duration on a logged segment                               |
 | 🔒 DELETE | `/api/me/segments/<segment_id>`            | Delete a single logged segment                                                      |
 | 🔒 DELETE | `/api/me/segments/bulk`                    | Bulk-delete by `ids[]`, or wipe an entire route with `route_id` + `confirm=true`    |
 
@@ -139,7 +140,7 @@ docker start "$CONTAINER"
 
 ## First-time deployment setup
 
-> Day-to-day deploys are described in [DEVELOPMENT.md](../DEVELOPMENT.md). The steps
+> Day-to-day deploys are described in [DEVELOPMENT.md](./DEVELOPMENT.md). The steps
 > below are the one-time setup that produced the live deployment, kept for
 > reference if you ever need to re-create the environment from scratch.
 
@@ -209,7 +210,7 @@ transit-explorer/
 │   └── fly-deploy.yml         # Backend auto-deploy on pushes to main
 ├── app.py                     # Entrypoint for local `flask run`
 ├── app/
-│   ├── __init__.py            # Flask app factory: CORS, Firebase, migrations, OBA boot/backfill
+│   ├── __init__.py            # Flask app factory: CORS, Firebase, extensions, blueprints (no migrations / data fetches)
 │   ├── auth.py                # Firebase token verification, require_auth decorator
 │   ├── config.py
 │   ├── data_loader.py         # OneBusAway → SQLite ingester
@@ -235,9 +236,11 @@ transit-explorer/
 ├── bin/start                  # Canonical entrypoint (modes: dev|prod|migrate|load-data)
 ├── gunicorn_startup.sh        # Backwards-compat shim → execs bin/start prod
 ├── backup.sh                  # Online SQLite snapshot + rotation
-├── DEVELOPMENT.md             # Day-to-day dev & deploy guide
 └── docs/
-    └── ARCHITECTURE.md        # This file
+    ├── ARCHITECTURE.md        # This file
+    ├── DEPLOYMENT.md          # First-time Fly + Vercel setup
+    ├── DEVELOPMENT.md         # Day-to-day dev & deploy guide
+    └── TROUBLESHOOTING.md     # Production triage and recovery
 ```
 
 ---

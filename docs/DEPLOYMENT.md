@@ -167,7 +167,7 @@ curl https://transit-explorer.fly.dev/api/health
 #   flyctl ssh console -C "flask data status" -a transit-explorer
 
 # Auth must be required on writes:
-curl -X POST https://transit-explorer.fly.dev/api/segments
+curl -X POST https://transit-explorer.fly.dev/api/me/segments
 # Expect 401
 
 # Open the production site, sign in with Google, mark a segment, refresh.

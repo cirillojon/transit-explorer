@@ -79,9 +79,9 @@ npm run dev                            # → http://localhost:5173
 A pure-Python (no Docker) backend workflow, the full `.env` reference, and the
 deployment story are documented separately:
 
-- 🛠️ **[DEVELOPMENT.md](./DEVELOPMENT.md)** — daily dev loop, deploys,
+- 🛠️ **[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)** — daily dev loop, deploys,
   database migrations, troubleshooting cheat sheet.
-- � **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** — first-time Fly + Vercel
+- 🚀 **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** — first-time Fly + Vercel
   setup checklist.
 - 🩹 **[docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)** — emergency
   procedures, log inspection, backup/restore.
@@ -102,8 +102,7 @@ deployment story are documented separately:
 transit-explorer/
 ├── app/              # Flask backend (models, routes, OBA loader)
 ├── tm-frontend/      # React + Vite SPA
-├── docs/             # Architecture and reference docs
-├── DEVELOPMENT.md    # Day-to-day dev & deploy guide
+├── docs/             # Architecture, deployment, dev, troubleshooting
 ├── README.md         # You are here
 ├── Dockerfile        # Backend image
 ├── docker-compose.yml
@@ -121,7 +120,7 @@ Issues and pull requests are welcome — see
 [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, branch flow, and test commands.
 
 For the deployment / migration workflow, see
-[DEVELOPMENT.md](./DEVELOPMENT.md).
+[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md).
 
 ---
 

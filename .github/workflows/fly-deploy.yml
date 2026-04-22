@@ -42,8 +42,9 @@ jobs:
       - name: Deploy to Fly.io
         # Single-machine + mounted volume: a rolling deploy is impossible
         # (Fly can't mount one volume on two machines), so use immediate.
-        # --detach: don't wait for healthcheck handoff in CI; the OBA preload
-        # makes the first healthcheck flap and CI just sits there.
+        # --detach: don't wait for healthcheck handoff in CI; the in-process
+        # OBA loader runs in the background and the first /api/health may
+        # briefly flap during gunicorn cold-start.
         # We verify health out-of-band via the /api/health probe step below.
         run: |
           flyctl deploy \
