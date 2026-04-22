@@ -144,6 +144,8 @@ function TransitMap({
   highlightedSegment,
   onClearHighlight,
   onUnlockToast,
+  allProgressDetails,
+  onClearAllProgress,
 }) {
   const [routeDetail, setRouteDetail] = useState(null);
   const [marking, setMarking] = useState(false);
@@ -410,6 +412,50 @@ function TransitMap({
     return merged;
   }, [completedSegments, optimisticDone]);
 
+  // Segments for all in-progress routes, used in "view all routes" mode.
+  const allRouteSegments = useMemo(() => {
+    if (!allProgressDetails?.length || selectedRoute) return [];
+    const result = [];
+    for (const detail of allProgressDetails) {
+      const color = detail.color ? `#${detail.color}` : "#60a5fa";
+      for (const dir of detail.directions || []) {
+        const line = decode(dir.encoded_polyline);
+        const stopIds = dir.stop_ids || [];
+        const stopsMap = detail.stops || {};
+        // Filter stopIds and stopPositions in parallel so segment indices
+        // stay aligned with the surviving stop IDs.
+        const filteredStopIds = stopIds.filter((id) => Boolean(stopsMap[id]));
+        const stopPositions = filteredStopIds.map((id) => {
+          const stop = stopsMap[id];
+          return [stop.lat, stop.lon];
+        });
+        const polySegs = slicePolylineByStops(line, stopPositions);
+        const segmentCount = Math.min(
+          polySegs.length,
+          Math.max(0, filteredStopIds.length - 1),
+        );
+        for (let i = 0; i < segmentCount; i++) {
+          result.push({
+            routeId: detail.id,
+            directionId: dir.direction_id,
+            fromStopId: filteredStopIds[i],
+            toStopId: filteredStopIds[i + 1],
+            positions: polySegs[i],
+            color,
+            key: `${detail.id}|${dir.direction_id}|${filteredStopIds[i]}|${filteredStopIds[i + 1]}`,
+          });
+        }
+      }
+    }
+    return result;
+  }, [allProgressDetails, selectedRoute]);
+
+  // All positions across every in-progress route for fitting the map view.
+  const allProgressPositions = useMemo(
+    () => allRouteSegments.flatMap((s) => s.positions),
+    [allRouteSegments],
+  );
+
   const completionStats = useMemo(() => {
     if (!directionSegments.length) return null;
     const done = directionSegments.filter((s) =>
@@ -659,6 +705,25 @@ function TransitMap({
           allSelectedPositions.length > 0 &&
           !highlightPositions && <FitBounds positions={allSelectedPositions} />}
         {highlightPositions && <FitHighlight positions={highlightPositions} />}
+        {!selectedRoute &&
+          allProgressPositions.length > 0 && (
+            <FitBounds positions={allProgressPositions} />
+          )}
+
+        {/* All in-progress routes overlay (no single route selected) */}
+        {allRouteSegments.map((seg) => {
+          const done = effectiveCompleted.has(seg.key);
+          return (
+            <Polyline
+              key={seg.key}
+              positions={seg.positions}
+              color={done ? "#22c55e" : seg.color}
+              weight={done ? 5 : 3}
+              opacity={done ? 0.85 : 0.45}
+              interactive={false}
+            />
+          );
+        })}
 
         {/* Two passes: faint background line, bold colored overlay.
              Lets completed hops glow on top of the route base. */}
@@ -1096,13 +1161,45 @@ function TransitMap({
         </div>
       )}
 
-      {!selectedRoute && (
+      {!selectedRoute && !allProgressDetails?.length && (
         <div className="map-hero-hint">
           <h2>Pick a route to start</h2>
           <p>
             Use the sidebar to choose a route, then tap its stops or click
             directly on a polyline to log a ride.
           </p>
+        </div>
+      )}
+
+      {!selectedRoute && allProgressDetails?.length > 0 && (
+        <div className="all-routes-banner">
+          <span className="all-routes-banner-text">
+            🗺 Viewing all {allProgressDetails.length} in-progress route
+            {allProgressDetails.length !== 1 ? "s" : ""}
+            {" · "}
+            <span className="all-routes-legend">
+              <i
+                aria-hidden="true"
+                className="all-routes-legend-dot"
+                style={{ background: "#22c55e" }}
+              />{" "}
+              Completed{" "}
+              <i
+                aria-hidden="true"
+                className="all-routes-legend-dot"
+                style={{ background: "#60a5fa" }}
+              />{" "}
+              In progress
+            </span>
+          </span>
+          <button
+            type="button"
+            className="all-routes-banner-clear"
+            onClick={() => onClearAllProgress?.()}
+            aria-label="Close all-routes view"
+          >
+            ✕ Close
+          </button>
         </div>
       )}
 
