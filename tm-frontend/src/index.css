@@ -2631,6 +2631,7 @@ button {
   .app.sidebar-open .map-hero-hint,
   .app.sidebar-open .pick-overlay,
   .app.sidebar-open .highlight-banner,
+  .app.sidebar-open .all-routes-banner,
   .app.sidebar-open .map-toast,
   .app.sidebar-open .popup-toast-stack,
   .app.sidebar-open .stop-search,
