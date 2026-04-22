@@ -5,12 +5,12 @@ working production stack.
 
 ## Architecture recap
 
-| Component | Host       | Notes                                                                       |
-| --------- | ---------- | --------------------------------------------------------------------------- |
-| Backend   | Fly.io     | Two processes (`app` + `worker`) sharing one mounted SQLite volume.         |
-| Frontend  | Vercel     | Static SPA from `tm-frontend/`.                                             |
-| Auth      | Firebase   | Google sign-in only.                                                        |
-| Data      | OneBusAway | TTL-refreshed by the `worker` process; state tracked in `data_loads` table. |
+| Component | Host       | Notes                                                                                        |
+| --------- | ---------- | -------------------------------------------------------------------------------------------- |
+| Backend   | Fly.io     | Single `app` process: gunicorn + in-process OBA loader loop, sharing one mounted SQLite vol. |
+| Frontend  | Vercel     | Static SPA from `tm-frontend/`.                                                              |
+| Auth      | Firebase   | Google sign-in only.                                                                         |
+| Data      | OneBusAway | TTL-refreshed by the in-process loader; state tracked in `data_loads` table.                 |
 
 ## 1. Backend: Fly.io
 
@@ -56,7 +56,8 @@ flyctl deploy --local-only --ha=false --strategy immediate
 | `ALLOWED_ORIGINS`                     | yes      | Comma-separated CORS allowlist; **must be set** in prod.                                       |
 | `RATELIMIT_STORAGE_URI`               | no       | Redis URL for cross-worker rate limits. Default per-process.                                   |
 | `SQLALCHEMY_DATABASE_URI`             | no       | Defaults to SQLite on the mounted volume.                                                      |
-| `OBA_REFRESH_TTL_HOURS`               | no       | Worker refresh cadence (default `24`). Set in `fly.toml [env]`.                                |
+| `OBA_REFRESH_TTL_HOURS`               | no       | In-process loader refresh cadence (default `24`). Set in `fly.toml [env]`.                     |
+| `RUN_INPROC_LOADER`                   | no       | Set `0` to disable the bin/start prod background loader loop (default `1`).                    |
 | `AUTO_UPGRADE_ON_BOOT`                | no       | If `1`, `create_app()` re-runs `flask db upgrade`. Off; `bin/start migrate` already does this. |
 
 ### DNS / custom domain
@@ -85,26 +86,31 @@ flyctl deploy --local-only --ha=false --strategy immediate
 
 ### Process scaling
 
-`fly.toml` declares two processes:
+`fly.toml` declares a single process group:
 
 ```toml
 [processes]
-  app    = "bin/start prod"
-  worker = "bin/start worker"
+  app = 'prod'   # appended as args to the Dockerfile ENTRYPOINT (/app/bin/start)
 ```
 
-The `app` process serves HTTP (gunicorn `--preload`); the `worker` process
-refreshes OBA data on a TTL loop (`OBA_REFRESH_TTL_HOURS`, default 24h) and
-is excluded from the load balancer via `[http_service].processes = ['app']`.
+`bin/start prod` runs migrations, then spawns `flask data load --loop` as a
+background child (logs to `/tmp/te-loader.log`), then exec's gunicorn with
+`--preload`. The loader refreshes OBA data on a TTL loop
+(`OBA_REFRESH_TTL_HOURS`, default 24h).
 
-Keep both at exactly **one machine** — they share the same SQLite volume:
+We used to run a separate `worker` process group, but Fly volumes are
+**single-attach** — only one machine can mount `tm_data` at a time, so the
+worker machine could never see the DB. The in-process loader replaces it.
+
+Keep the app at exactly **one machine** — the loader assumes a single writer:
 
 ```bash
-flyctl scale count app=1 worker=1 --region sjc -a transit-explorer
+flyctl scale count app=1 --region sjc -a transit-explorer
 ```
 
-`bin/start` uses `flock` on `$DATA_DIR/.boot.lock` so the two processes
-serialize their migrate step on first boot.
+Do not scale beyond `app=1` without first migrating off SQLite. Set
+`RUN_INPROC_LOADER=0` (e.g. via `flyctl secrets set` or `[env]`) if you ever
+need to run gunicorn without the loader for debugging.
 
 ## 2. Frontend: Vercel
 

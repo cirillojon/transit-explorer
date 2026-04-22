@@ -101,28 +101,34 @@ If the DB is ahead of the code (e.g. after a rollback), use
 
 ### Background data loader stops updating
 
-`/api/health.last_data_load_at` is hours old. The `worker` process either
-crash-looped or is rate-limited. Check it directly:
+`/api/health.last_data_load_at` is hours old. The in-process loader loop
+(spawned by `bin/start prod` alongside gunicorn) either crash-looped or is
+rate-limited. Inspect it:
 
 ```bash
-flyctl logs   -a transit-explorer -i worker
+flyctl logs   -a transit-explorer
 flyctl status -a transit-explorer
-flyctl ssh console -p worker -C "flask data status" -a transit-explorer
+flyctl ssh console -C "tail -n 200 /tmp/te-loader.log" -a transit-explorer
+flyctl ssh console -C "flask data status" -a transit-explorer
 ```
 
 Force an immediate refresh:
 
 ```bash
-flyctl ssh console -p worker -C "flask data load --force" -a transit-explorer
+flyctl ssh console -C "flask data load --force" -a transit-explorer
 ```
 
-If the worker machine itself is dead:
+If the loader process is gone but gunicorn is still serving traffic, restart
+the machine to respawn it:
 
 ```bash
-flyctl machine restart <worker-machine-id> -a transit-explorer
-# or rescale:
-flyctl scale count app=1 worker=1 --region sjc -a transit-explorer
+flyctl machine restart <machine-id> -a transit-explorer
+# or rescale (still single-machine — see DEPLOYMENT.md):
+flyctl scale count app=1 --region sjc -a transit-explorer
 ```
+
+To run gunicorn without the loader (e.g. while debugging an OBA-side issue),
+set `RUN_INPROC_LOADER=0` via `flyctl secrets set` or `[env]`.
 
 Refresh cadence is controlled by `OBA_REFRESH_TTL_HOURS` (default `24`).
 Lowering it past a few hours will burn OBA quota with no benefit — their

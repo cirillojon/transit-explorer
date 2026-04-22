@@ -20,7 +20,7 @@ Technical reference for Transit Explorer. The product overview lives in
    Google Sign-in            Firebase Admin (token verify)
 ```
 
-- **Backend** boots through `create_app()`, ensures the schema exists, and then loads or backfills OneBusAway data as needed. Local Docker can do a foreground preload via `gunicorn_startup.sh`; Fly sets `SKIP_DATA_LOAD=1` so only the app factory's background loader runs.
+- **Backend** boots through `bin/start prod`: it runs `flask db upgrade` + a schema-drift check under a flock, then spawns a background `flask data load --loop` (the in-process OBA loader) before exec'ing gunicorn with `--preload`. `create_app()` itself does no data fetching or migrations; it just wires extensions and blueprints.
 - **Frontend** is a single-page React app. Tile layer from CARTO, polylines from Google encoded polyline format, auth via Firebase Google sign-in.
 - **Persistence:** SQLite on a mounted volume. The schema is small enough that this works comfortably for a single-instance deployment; switch to Postgres only if you outgrow it.
 
@@ -30,25 +30,28 @@ Technical reference for Transit Explorer. The product overview lives in
 
 ### Backend (`.env`)
 
-| Variable                                     | Required | Default                         | Notes                                                                                    |
-| -------------------------------------------- | -------- | ------------------------------- | ---------------------------------------------------------------------------------------- |
-| `OBA_API_KEY`                                | yes      | —                               | OneBusAway API key                                                                       |
-| `GOOGLE_APPLICATION_CREDENTIALS`             | local    | —                               | Path to a Firebase service-account JSON file                                             |
-| `GOOGLE_APPLICATION_CREDENTIALS_JSON`        | prod     | —                               | Optional JSON secret materialized to disk by `gunicorn_startup.sh`                       |
-| `FIREBASE_PROJECT_ID`                        | fallback | `""`                            | Used when no service-account file is mounted                                             |
-| `SQLALCHEMY_DATABASE_URI`                    | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                                            |
-| `ALLOWED_ORIGINS`                            | prod     | `""`                            | Comma-separated origin allow-list for `/api/*`; blank denies browser origins outside dev |
-| `FLASK_ENV`                                  | no       | `production`                    | If set to `development` and `ALLOWED_ORIGINS` is blank, CORS falls back to `*`           |
-| `FLASK_PORT`                                 | no       | `5000` / `8880` in Docker       | Port the server binds                                                                    |
-| `FLASK_DEBUG`                                | no       | `0`                             | Used by `flask run` in local development                                                 |
-| `LOG_LEVEL`                                  | no       | `INFO`                          | `DEBUG` / `INFO` / `WARNING` / `ERROR`                                                   |
-| `WEB_CONCURRENCY`                            | no       | `4`                             | Gunicorn workers; raise if you scale the Fly machine up                                  |
-| `GUNICORN_TIMEOUT`                           | no       | `30`                            | Per-request timeout for gunicorn (seconds)                                               |
-| `SKIP_DB_UPGRADE`                            | no       | `0`                             | Set `1` to skip boot-time `flask db upgrade` in Docker                                   |
-| `SKIP_DATA_LOAD` / `SKIP_STARTUP_DATA_TASKS` | no       | `0` locally / `1` on Fly        | Aliases. Skip both the foreground preload and the in-process background loader           |
-| `RATELIMIT_STORAGE_URI`                      | no       | `memory://`                     | Flask-Limiter storage backend. Use `redis://...` for cross-worker global limits          |
-| `RATELIMIT_ENABLED`                          | no       | `True`                          | Set `False` (case-insensitive) to disable all rate limiting — used by tests              |
-| `DATABASE_URL`                               | no       | —                               | Legacy fallback only; `SQLALCHEMY_DATABASE_URI` takes precedence                         |
+| Variable                              | Required | Default                         | Notes                                                                                    |
+| ------------------------------------- | -------- | ------------------------------- | ---------------------------------------------------------------------------------------- |
+| `OBA_API_KEY`                         | yes      | —                               | OneBusAway API key                                                                       |
+| `GOOGLE_APPLICATION_CREDENTIALS`      | local    | —                               | Path to a Firebase service-account JSON file                                             |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | prod     | —                               | Optional JSON secret materialized to disk by `gunicorn_startup.sh`                       |
+| `FIREBASE_PROJECT_ID`                 | fallback | `""`                            | Used when no service-account file is mounted                                             |
+| `SQLALCHEMY_DATABASE_URI`             | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                                            |
+| `ALLOWED_ORIGINS`                     | prod     | `""`                            | Comma-separated origin allow-list for `/api/*`; blank denies browser origins outside dev |
+| `FLASK_ENV`                           | no       | `production`                    | If set to `development` and `ALLOWED_ORIGINS` is blank, CORS falls back to `*`           |
+| `FLASK_PORT`                          | no       | `5000` / `8880` in Docker       | Port the server binds                                                                    |
+| `FLASK_DEBUG`                         | no       | `0`                             | Used by `flask run` in local development                                                 |
+| `LOG_LEVEL`                           | no       | `INFO`                          | `DEBUG` / `INFO` / `WARNING` / `ERROR`                                                   |
+| `WEB_CONCURRENCY`                     | no       | `4`                             | Gunicorn workers; raise if you scale the Fly machine up                                  |
+| `GUNICORN_TIMEOUT`                    | no       | `30`                            | Per-request timeout for gunicorn (seconds)                                               |
+| `SKIP_DB_UPGRADE`                     | no       | `0`                             | Set `1` to skip the `bin/start` boot-time `flask db upgrade`                             |
+| `SKIP_DATA_LOAD`                      | no       | `0`                             | Skip the `bin/start dev`/`prod` first-boot auto-seed                                     |
+| `RUN_INPROC_LOADER`                   | no       | `1`                             | In `bin/start prod`, set `0` to disable the background `flask data load --loop`          |
+| `OBA_REFRESH_TTL_HOURS`               | no       | `24`                            | Per-agency refresh interval used by the in-process loader loop                           |
+| `AUTO_UPGRADE_ON_BOOT`                | no       | `0`                             | Escape hatch: re-run `flask db upgrade` from inside `create_app()`                       |
+| `RATELIMIT_STORAGE_URI`               | no       | `memory://`                     | Flask-Limiter storage backend. Use `redis://...` for cross-worker global limits          |
+| `RATELIMIT_ENABLED`                   | no       | `True`                          | Set `False` (case-insensitive) to disable all rate limiting — used by tests              |
+| `DATABASE_URL`                        | no       | —                               | Legacy fallback only; `SQLALCHEMY_DATABASE_URI` takes precedence                         |
 
 ### Frontend (`tm-frontend/.env`)
 
@@ -160,7 +163,7 @@ flyctl secrets set \
 flyctl deploy --remote-only --ha=false
 ```
 
-`fly.toml` already pins `WEB_CONCURRENCY=4`, `GUNICORN_TIMEOUT=30`, `SKIP_DATA_LOAD=1` (the app factory already triggers background load/backfill, so Fly skips the foreground loader in `gunicorn_startup.sh`), and a 3-minute healthcheck grace period.
+`fly.toml` already pins `WEB_CONCURRENCY=4`, `GUNICORN_TIMEOUT=30`, `OBA_REFRESH_TTL_HOURS=24`, and a 3-minute healthcheck grace period. Migrations and OBA loading are handled by `bin/start prod` (not `gunicorn_startup.sh`, which is now a thin shim).
 
 ### Frontend on Vercel
 
