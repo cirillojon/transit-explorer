@@ -126,15 +126,28 @@ function App() {
 
   const handleShowAllProgressRoutes = useCallback(async () => {
     if (!progress.length) return;
-    try {
-      const details = await Promise.all(
-        progress.map((rp) => fetchRouteDetail(rp.route_id)),
-      );
+    const results = await Promise.allSettled(
+      progress.map((rp) => fetchRouteDetail(rp.route_id)),
+    );
+    const details = results
+      .filter((r) => r.status === "fulfilled")
+      .map((r) => r.value);
+    const failedCount = results.length - details.length;
+
+    if (details.length) {
       setAllProgressDetails(details);
       setSelectedRoute(null);
       setSidebarOpen(false);
-    } catch {
-      /* ignore fetch errors */
+    }
+
+    if (failedCount > 0) {
+      setError(
+        details.length
+          ? `Some route details could not be loaded (${failedCount} failed).`
+          : "Unable to load route details right now.",
+      );
+    } else {
+      setError(null);
     }
   }, [progress]);
 

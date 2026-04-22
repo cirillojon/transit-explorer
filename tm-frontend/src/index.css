@@ -3439,6 +3439,8 @@ button {
 }
 
 .btn-view-all-routes {
+  display: inline-flex;
+  align-items: center;
   font-size: 12px;
   padding: 5px 12px;
   gap: 4px;
@@ -3459,7 +3461,6 @@ button {
   padding: 10px 14px;
   backdrop-filter: blur(8px);
   box-shadow: var(--shadow-md);
-  white-space: nowrap;
   max-width: calc(100vw - 40px);
 }
 
@@ -3470,6 +3471,7 @@ button {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  white-space: normal;
 }
 
 .all-routes-legend {
@@ -3478,6 +3480,14 @@ button {
   gap: 6px;
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.all-routes-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  vertical-align: middle;
 }
 
 .all-routes-banner-clear {
