@@ -90,3 +90,4 @@ Thumbs.db
 deps/
 Dockerfile.dev
 docs/_build/
+.github/copilot-instructions.md
