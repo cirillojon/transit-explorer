@@ -7,6 +7,9 @@ function AllRouteSegmentsLayer({
   allRouteStatsById,
 }) {
   return segments.map((seg) => {
+    // Skip hops with no drawable polyline geometry; they're still counted
+    // in per-route progress totals upstream.
+    if (!seg.positions) return null;
     const done = effectiveCompleted.has(seg.key);
     const routeInfo = allRouteStatsById.get(seg.routeId);
     return (

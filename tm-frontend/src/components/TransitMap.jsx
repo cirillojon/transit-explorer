@@ -219,28 +219,28 @@ function TransitMap({
         .map((s) => [s.lat, s.lon]);
       const polySegments = slicePolylineByStops(line, stopPositions);
       for (let i = 0; i < polySegments.length; i++) {
-        // null = no drawable polyline for this stop pair (off-route stop
-        // or missing agency geometry). Skip it visually; the underlying
-        // backend segment is still real and the stops remain clickable.
-        if (polySegments[i] === null) continue;
-        if (i + 1 < stopIds.length) {
-          result.push({
-            directionId: normalizeDirectionId(dir.direction_id),
-            fromStopId: stopIds[i],
-            toStopId: stopIds[i + 1],
-            fromName: stopsMap[stopIds[i]]?.name,
-            toName: stopsMap[stopIds[i + 1]]?.name,
-            positions: polySegments[i],
-            key: `${routeDetail.id}|${normalizeDirectionId(dir.direction_id)}|${stopIds[i]}|${stopIds[i + 1]}`,
-          });
-        }
+        if (i + 1 >= stopIds.length) break;
+        // Always emit a segment object — one per backend stop pair — so
+        // completion stats and highlight lookup remain accurate even when
+        // the agency polyline doesn't have drawable geometry for the hop.
+        // `positions` is `null` for non-drawable hops; renderers skip
+        // those rather than fabricating a line.
+        result.push({
+          directionId: normalizeDirectionId(dir.direction_id),
+          fromStopId: stopIds[i],
+          toStopId: stopIds[i + 1],
+          fromName: stopsMap[stopIds[i]]?.name,
+          toName: stopsMap[stopIds[i + 1]]?.name,
+          positions: polySegments[i],
+          key: `${routeDetail.id}|${normalizeDirectionId(dir.direction_id)}|${stopIds[i]}|${stopIds[i + 1]}`,
+        });
       }
     }
     return result;
   }, [routeDetail, resolvedDirectionId]);
 
   const allSelectedPositions = useMemo(
-    () => directionSegments.flatMap((s) => s.positions),
+    () => directionSegments.flatMap((s) => (s.positions ? s.positions : [])),
     [directionSegments],
   );
 
@@ -291,8 +291,9 @@ function TransitMap({
     const key = `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`;
     const seg = directionSegments.find((s) => s.key === key);
     // Return a fresh array each time so FitHighlight's effect fires even
-    // when the user re-requests the same segment (e.g. "Recenter").
-    return seg ? [...seg.positions] : null;
+    // when the user re-requests the same segment (e.g. "Recenter"). If the
+    // segment exists but has no drawable polyline, there's nothing to fit.
+    return seg && seg.positions ? [...seg.positions] : null;
   }, [highlightedSegment, directionSegments]);
 
   // Reset optimistic completion state whenever the selected route changes.
@@ -347,9 +348,10 @@ function TransitMap({
           Math.max(0, filteredStopIds.length - 1),
         );
         for (let i = 0; i < segmentCount; i++) {
-          // Skip stop pairs with no drawable polyline geometry rather than
-          // fabricating a straight line across the map.
-          if (polySegs[i] === null) continue;
+          // Always emit a segment object so per-route progress totals are
+          // based on real backend hops, not on which ones happen to have
+          // drawable polyline geometry. `positions` is `null` for hops the
+          // renderer should skip.
           result.push({
             routeId: detail.id,
             directionId: dir.direction_id,
@@ -367,7 +369,7 @@ function TransitMap({
 
   // All positions across every in-progress route for fitting the map view.
   const allProgressPositions = useMemo(
-    () => allRouteSegments.flatMap((s) => s.positions),
+    () => allRouteSegments.flatMap((s) => (s.positions ? s.positions : [])),
     [allRouteSegments],
   );
 

@@ -113,8 +113,9 @@ export function getStopPickStatus(stop, pickState, boardingOrderIndex) {
 // Squared-degree distance threshold used to decide a stop is "off-route"
 // (i.e. the agency-supplied polyline doesn't actually reach it). At Seattle
 // latitudes this is roughly ~150m. When either endpoint of a segment is
-// off-route we draw a straight line between the stop coordinates instead of
-// walking the unrelated polyline geometry.
+// off-route we return `null` for that segment rather than fabricating a
+// straight line through unrelated geometry — the agency polyline is the
+// source of truth and a made-up line is more confusing than a visible gap.
 const OFF_ROUTE_THRESHOLD_DEG_SQ = 0.0015 ** 2;
 
 function distSq(a, b) {
@@ -150,8 +151,9 @@ function nearestIndex(line, point) {
  *     truth and a made-up line is more confusing than a visible gap.
  *
  * Callers should treat `null` as "no drawable geometry for this stop pair"
- * and skip it. The stop markers themselves are still rendered so the
- * underlying segment can be marked / clicked.
+ * and skip rendering it. The stop markers themselves are still rendered so
+ * users can board/alight at those stops, but the hop between them won't
+ * have a clickable polyline.
  */
 export function slicePolylineByStops(line, stopPositions) {
   if (stopPositions.length < 2) return [];
