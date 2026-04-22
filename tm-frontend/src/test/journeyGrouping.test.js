@@ -72,11 +72,17 @@ describe("groupIntoJourneys", () => {
     const t = "2026-04-22T20:16:18.604008";
     const segs = [
       hop({
-        id: 1, direction_id: "0", from_stop_id: "s1", to_stop_id: "s2",
+        id: 1,
+        direction_id: "0",
+        from_stop_id: "s1",
+        to_stop_id: "s2",
         completed_at: t,
       }),
       hop({
-        id: 2, direction_id: "1", from_stop_id: "s5", to_stop_id: "s4",
+        id: 2,
+        direction_id: "1",
+        from_stop_id: "s5",
+        to_stop_id: "s4",
         completed_at: t,
       }),
     ];

@@ -488,10 +488,7 @@ function UserProgress({
                               <span className="ride-when">
                                 {journey.date} · {journey.time}
                               </span>
-                              <span
-                                className="ride-chevron"
-                                aria-hidden="true"
-                              >
+                              <span className="ride-chevron" aria-hidden="true">
                                 {isOpen ? "▴" : "▾"}
                               </span>
                             </div>
@@ -516,10 +513,7 @@ function UserProgress({
                           </button>
 
                           {isOpen && (
-                            <div
-                              id={ridePanelId}
-                              className="ride-detail"
-                            >
+                            <div id={ridePanelId} className="ride-detail">
                               <div className="ride-strip" aria-hidden="true">
                                 {dots.map((d, i) => {
                                   if (typeof d === "object") {
@@ -608,81 +602,85 @@ function UserProgress({
 
                               {editingDuration === journey.key && (
                                 <div className="duration-edit">
-                              <label
-                                className="duration-edit-label"
-                                htmlFor={`dur-${journey.key}`}
-                              >
-                                Time on bus
-                              </label>
-                              <input
-                                id={`dur-${journey.key}`}
-                                type="text"
-                                inputMode="text"
-                                value={durationText}
-                                onChange={(e) => {
-                                  setDurationText(e.target.value);
-                                  if (durationError) setDurationError("");
-                                }}
-                                placeholder="e.g. 12m, 1h 5m, or 12:30"
-                                disabled={savingDuration}
-                              />
-                              {durationError && (
-                                <div className="duration-edit-error">
-                                  {durationError}
+                                  <label
+                                    className="duration-edit-label"
+                                    htmlFor={`dur-${journey.key}`}
+                                  >
+                                    Time on bus
+                                  </label>
+                                  <input
+                                    id={`dur-${journey.key}`}
+                                    type="text"
+                                    inputMode="text"
+                                    value={durationText}
+                                    onChange={(e) => {
+                                      setDurationText(e.target.value);
+                                      if (durationError) setDurationError("");
+                                    }}
+                                    placeholder="e.g. 12m, 1h 5m, or 12:30"
+                                    disabled={savingDuration}
+                                  />
+                                  {durationError && (
+                                    <div className="duration-edit-error">
+                                      {durationError}
+                                    </div>
+                                  )}
+                                  <div className="duration-edit-help">
+                                    Leave empty to clear.
+                                  </div>
+                                  <div className="note-edit-actions">
+                                    <button
+                                      className="btn-small btn-primary"
+                                      onClick={() =>
+                                        handleSaveDuration(journey)
+                                      }
+                                      disabled={savingDuration}
+                                    >
+                                      {savingDuration ? "Saving…" : "Save"}
+                                    </button>
+                                    <button
+                                      className="btn-small"
+                                      onClick={() => {
+                                        setEditingDuration(null);
+                                        setDurationError("");
+                                      }}
+                                      disabled={savingDuration}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
                                 </div>
                               )}
-                              <div className="duration-edit-help">
-                                Leave empty to clear.
-                              </div>
-                              <div className="note-edit-actions">
-                                <button
-                                  className="btn-small btn-primary"
-                                  onClick={() => handleSaveDuration(journey)}
-                                  disabled={savingDuration}
-                                >
-                                  {savingDuration ? "Saving…" : "Save"}
-                                </button>
-                                <button
-                                  className="btn-small"
-                                  onClick={() => {
-                                    setEditingDuration(null);
-                                    setDurationError("");
-                                  }}
-                                  disabled={savingDuration}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          )}
 
-                          {editingNote === journey.key && (
-                            <div className="note-edit">
-                              <textarea
-                                value={noteText}
-                                onChange={(e) => setNoteText(e.target.value)}
-                                placeholder="Write a note about this ride..."
-                                rows={2}
-                                autoFocus
-                              />
-                              <div className="note-edit-actions">
-                                <button
-                                  className="btn-small btn-primary"
-                                  onClick={() =>
-                                    handleSaveNote(journey.segments[0].id)
-                                  }
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  className="btn-small"
-                                  onClick={() => setEditingNote(null)}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                              {editingNote === journey.key && (
+                                <div className="note-edit">
+                                  <textarea
+                                    value={noteText}
+                                    onChange={(e) =>
+                                      setNoteText(e.target.value)
+                                    }
+                                    placeholder="Write a note about this ride..."
+                                    rows={2}
+                                    autoFocus
+                                  />
+                                  <div className="note-edit-actions">
+                                    <button
+                                      className="btn-small btn-primary"
+                                      onClick={() =>
+                                        handleSaveNote(journey.segments[0].id)
+                                      }
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      className="btn-small"
+                                      onClick={() => setEditingNote(null)}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

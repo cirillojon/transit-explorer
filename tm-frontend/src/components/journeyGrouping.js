@@ -61,9 +61,7 @@ export function groupIntoJourneys(segments, directions = []) {
   }
 
   // Newest trip first.
-  journeys.sort(
-    (a, b) => new Date(b.startedAt) - new Date(a.startedAt),
-  );
+  journeys.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
   return journeys;
 }
 
