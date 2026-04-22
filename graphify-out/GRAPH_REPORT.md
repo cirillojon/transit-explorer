@@ -1,12 +1,12 @@
 # Graph Report - transit-explorer  (2026-04-22)
 
 ## Corpus Check
-- 43 files · ~76,140 words
+- 53 files · ~77,615 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 280 nodes · 431 edges · 28 communities detected
-- Extraction: 65% EXTRACTED · 35% INFERRED · 0% AMBIGUOUS · INFERRED: 151 edges (avg confidence: 0.59)
+- 299 nodes · 454 edges · 28 communities detected
+- Extraction: 66% EXTRACTED · 34% INFERRED · 0% AMBIGUOUS · INFERRED: 153 edges (avg confidence: 0.59)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -28,7 +28,7 @@
 - [[_COMMUNITY_Community 17|Community 17]]
 - [[_COMMUNITY_Community 18|Community 18]]
 - [[_COMMUNITY_Community 19|Community 19]]
-- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
 - [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 24|Community 24]]
 - [[_COMMUNITY_Community 31|Community 31]]
@@ -40,14 +40,14 @@
 - [[_COMMUNITY_Community 37|Community 37]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `Route` - 22 edges
-2. `Stop` - 21 edges
-3. `RouteDirection` - 21 edges
-4. `User` - 19 edges
-5. `DataLoad` - 18 edges
-6. `RouteStop` - 16 edges
-7. `UserSegment` - 16 edges
-8. `React Framework` - 16 edges
+1. `React Framework` - 25 edges
+2. `Route` - 22 edges
+3. `Stop` - 21 edges
+4. `RouteDirection` - 21 edges
+5. `User` - 19 edges
+6. `DataLoad` - 18 edges
+7. `RouteStop` - 16 edges
+8. `UserSegment` - 16 edges
 9. `mark_segments()` - 10 edges
 10. `Liveness probe + DB connectivity + per-agency data-load status.` - 8 edges
 
@@ -73,8 +73,8 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.06
-Nodes (8): App(), cleanLabel(), getRouteDisplayText(), useAuth(), ErrorBoundary, React Framework, cleanLabel(), getRouteDisplayText()
+Cohesion: 0.04
+Nodes (10): App(), cleanLabel(), getRouteDisplayText(), useAuth(), ErrorBoundary, Leaflet Map Library, React Framework, React-Leaflet (+2 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.12
@@ -93,16 +93,16 @@ Cohesion: 0.12
 Nodes (4): cached(), fetchRouteDetail(), fetchRoutes(), fetchStops()
 
 ### Community 5 - "Community 5"
-Cohesion: 0.14
-Nodes (10): app(), auth_headers(), upgrade(), Flask-CORS, Flask-Limiter, Flask-Migrate, create_app(), _init_firebase() (+2 more)
+Cohesion: 0.15
+Nodes (9): app(), auth_headers(), Flask-CORS, Flask-Limiter, Flask-Migrate, create_app(), _init_firebase(), Flask app factory for Transit Explorer.  Boot model (kept deliberately simple) (+1 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.21
-Nodes (7): Leaflet Map Library, React-Leaflet, formatDuration(), getTripStats(), readTripTimes(), recordTripTime(), TransitMap()
+Cohesion: 0.15
+Nodes (5): add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, baseline schema  Revision ID: f838d5f10e83 Revises:  Create Date: 2026-04-21 14:, upgrade(), SQLAlchemy ORM
 
 ### Community 7 - "Community 7"
-Cohesion: 0.17
-Nodes (4): add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, baseline schema  Revision ID: f838d5f10e83 Revises:  Create Date: 2026-04-21 14:, SQLAlchemy ORM
+Cohesion: 0.18
+Nodes (6): MapLegend(), formatDuration(), getTripStats(), readTripTimes(), recordTripTime(), PickOverlay()
 
 ### Community 8 - "Community 8"
 Cohesion: 0.22
@@ -144,7 +144,7 @@ Nodes (2): Config, Static fallback config. The Flask app factory reads env vars 
 Cohesion: 0.67
 Nodes (3): Firebase Auth, Firebase Keys Not Secrets Rationale, Google Sign-In
 
-### Community 21 - "Community 21"
+### Community 22 - "Community 22"
 Cohesion: 1.0
 Nodes (1): Vite Bundler
 
@@ -193,7 +193,7 @@ Nodes (1): Vite (logo)
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 18`** (3 nodes): `config.py`, `Config`, `Static fallback config. The Flask app factory reads env vars directly,     so th`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 21`** (2 nodes): `vite.config.js`, `Vite Bundler`
+- **Thin community `Community 22`** (2 nodes): `vite.config.js`, `Vite Bundler`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 23`** (2 nodes): `SQLite Database`, `SQLite for Single-Instance Rationale`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -217,12 +217,12 @@ Nodes (1): Vite (logo)
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+- **Why does `React Framework` connect `Community 0` to `Community 10`, `Community 14`, `Community 7`?**
+  _High betweenness centrality (0.070) - this node is a cross-community bridge._
 - **Why does `Flask Framework` connect `Community 8` to `Community 1`, `Community 3`, `Community 5`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
-- **Why does `React Framework` connect `Community 0` to `Community 10`, `Community 6`, `Community 14`?**
-  _High betweenness centrality (0.046) - this node is a cross-community bridge._
-- **Why does `SQLAlchemy ORM` connect `Community 7` to `Community 1`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+  _High betweenness centrality (0.042) - this node is a cross-community bridge._
+- **Why does `SQLAlchemy ORM` connect `Community 6` to `Community 1`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **Are the 19 inferred relationships involving `Route` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
   _`Route` has 19 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 19 inferred relationships involving `Stop` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
