@@ -174,8 +174,19 @@ export function slicePolylineByStops(line, stopPositions) {
       continue;
     }
 
-    const start = Math.min(a.index, b.index);
-    const end = Math.max(a.index, b.index);
+    // Strictly-backwards snap means one of the stops is on a different
+    // part of the polyline than its order suggests (e.g. a malformed
+    // trailing stop that happens to be close to a mid-route vertex).
+    // Drawing the slice would paint a long wrong-direction line across
+    // the map. Skip rather than fabricate. Equal indices are allowed so
+    // densely-spaced stops sharing a vertex still render.
+    if (b.index < a.index) {
+      segments.push(null);
+      continue;
+    }
+
+    const start = a.index;
+    const end = b.index;
     // Use the real stop coordinates as endpoints so adjacent segments butt
     // exactly together with no visual gap from snap rounding.
     segments.push([

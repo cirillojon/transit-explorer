@@ -2082,7 +2082,7 @@
       "label": "slicePolylineByStops()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
-      "source_location": "L150",
+      "source_location": "L156",
       "id": "maputils_slicepolylinebystops",
       "community": 5,
       "norm_label": "slicepolylinebystops()"
@@ -7639,7 +7639,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
-      "source_location": "L150",
+      "source_location": "L156",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_map_maputils_js",
       "_tgt": "maputils_slicepolylinebystops",

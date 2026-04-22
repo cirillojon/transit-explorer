@@ -118,4 +118,25 @@ describe("slicePolylineByStops", () => {
     expect(segs[0][0]).toEqual(stops[0]);
     expect(segs[0][segs[0].length - 1]).toEqual(stops[1]);
   });
+
+  it("returns null when a stop pair would slice backwards on the polyline", () => {
+    // Mirrors the 2 Line direction_id=1 bad-data case: the route's last
+    // stop entry is actually a mid-route station, so it snaps to an
+    // earlier polyline vertex than its predecessor. We must NOT draw a
+    // long backwards line across the polyline.
+    const line = [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [0, 4],
+    ];
+    const stops = [
+      [0, 4], // snaps to last index (end of line)
+      [0, 2], // snaps to middle — backwards from the previous snap
+    ];
+    const segs = slicePolylineByStops(line, stops);
+    expect(segs).toHaveLength(1);
+    expect(segs[0]).toBeNull();
+  });
 });
