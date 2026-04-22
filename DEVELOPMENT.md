@@ -408,4 +408,10 @@ PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
 wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl status -a transit-explorer"
 
 wsl -e bash -lc "/home/jon/.fly/bin/flyctl machine list -a transit-explorer"
+
+# Force an OBA data refresh in production:
+wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -C 'flask data load --force' -a transit-explorer"
+
+# Validate OBA data load status in production:
+wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -C 'flask data status' -a transit-explorer"
 ```
