@@ -122,18 +122,43 @@ function distSq(a, b) {
   return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2;
 }
 
-// Find the polyline index closest to `point`. Returns { index, dSq }.
+// Squared perpendicular distance from `point` to the segment a→b.
+// Treats lat/lon as planar — fine for the small-area off-route check.
+function pointToSegmentDistSq(point, a, b) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return distSq(point, a);
+  let t = ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / len2;
+  if (t < 0) t = 0;
+  else if (t > 1) t = 1;
+  const projX = a[0] + t * dx;
+  const projY = a[1] + t * dy;
+  return (point[0] - projX) ** 2 + (point[1] - projY) ** 2;
+}
+
+// Find the polyline vertex index closest to `point`. Returns the vertex
+// index plus the squared perpendicular distance to the *polyline itself*
+// (not just to the nearest vertex). Using perpendicular distance for the
+// off-route check matters for routes like rail/Sounder where vertices can
+// be kilometers apart along a straight stretch — a station sitting right
+// on the line can still be far from any single vertex.
 function nearestIndex(line, point) {
-  let best = 0;
-  let bestDist = Infinity;
+  let bestIdx = 0;
+  let bestVertexDist = Infinity;
   for (let i = 0; i < line.length; i++) {
     const d = distSq(line[i], point);
-    if (d < bestDist) {
-      bestDist = d;
-      best = i;
+    if (d < bestVertexDist) {
+      bestVertexDist = d;
+      bestIdx = i;
     }
   }
-  return { index: best, dSq: bestDist };
+  let bestSegDist = bestVertexDist;
+  for (let i = 0; i < line.length - 1; i++) {
+    const d = pointToSegmentDistSq(point, line[i], line[i + 1]);
+    if (d < bestSegDist) bestSegDist = d;
+  }
+  return { index: bestIdx, dSq: bestSegDist };
 }
 
 /**
