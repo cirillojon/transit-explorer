@@ -235,7 +235,11 @@ function PPOverview({ progress, achievements }) {
             <div key={r.route_id} className="pp-route-mini">
               <span
                 className="pp-route-pill"
-                style={{ background: r.route_color || "#64748b" }}
+                style={{
+                  background: r.route_color
+                    ? `#${r.route_color}`
+                    : "#64748b",
+                }}
               >
                 {r.route_name}
               </span>
@@ -244,7 +248,9 @@ function PPOverview({ progress, achievements }) {
                   className="pp-route-mini-fill"
                   style={{
                     width: `${Math.min(100, r.completion_pct)}%`,
-                    background: r.route_color || "#60a5fa",
+                    background: r.route_color
+                      ? `#${r.route_color}`
+                      : "#60a5fa",
                   }}
                 />
               </div>
@@ -297,7 +303,11 @@ function PPRoutes({ progress, journeysByRoute }) {
             >
               <span
                 className="pp-route-pill"
-                style={{ background: r.route_color || "#64748b" }}
+                style={{
+                  background: r.route_color
+                    ? `#${r.route_color}`
+                    : "#64748b",
+                }}
               >
                 {r.route_name}
               </span>
@@ -318,7 +328,9 @@ function PPRoutes({ progress, journeysByRoute }) {
                 className="pp-route-bar-fill"
                 style={{
                   width: `${Math.min(100, r.completion_pct)}%`,
-                  background: r.route_color || "#60a5fa",
+                  background: r.route_color
+                    ? `#${r.route_color}`
+                    : "#60a5fa",
                 }}
               />
             </div>
