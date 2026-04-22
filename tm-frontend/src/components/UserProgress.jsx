@@ -117,6 +117,7 @@ function UserProgress({
   onViewSegment,
   highlightedSegment,
   onClearHighlight,
+  onShowAllRoutes,
 }) {
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
@@ -346,6 +347,18 @@ function UserProgress({
 
       {view === "routes" && (
         <div className="progress-routes">
+          {progress.length > 0 && (
+            <div className="progress-routes-toolbar">
+              <button
+                type="button"
+                className="btn-small btn-view-map btn-view-all-routes"
+                onClick={() => onShowAllRoutes?.()}
+                title="Show polylines for all in-progress routes on the map at once"
+              >
+                🗺 View all routes on map
+              </button>
+            </div>
+          )}
           {progress.map((rp) => {
             const journeys = journeysByRoute[rp.route_id] || [];
             const isExpanded = expandedRoute === rp.route_id;

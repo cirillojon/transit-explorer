@@ -10,6 +10,7 @@ import {
   fetchMe,
   fetchStats,
   fetchActivity,
+  fetchRouteDetail,
 } from "./services/api";
 import { useAuth } from "./contexts/AuthContext";
 
@@ -64,6 +65,7 @@ function App() {
   const [popupToasts, setPopupToasts] = useState([]); // achievement-style stacked
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
   const [viewingUser, setViewingUser] = useState(null); // public profile modal
+  const [allProgressDetails, setAllProgressDetails] = useState(null); // "view all routes" mode
 
   const pushToast = useCallback((msg) => {
     const id = Date.now() + Math.random();
@@ -95,7 +97,10 @@ function App() {
 
   const handleSelectRoute = useCallback((route) => {
     setSelectedRoute(route);
-    if (route) setSidebarOpen(false);
+    if (route) {
+      setSidebarOpen(false);
+      setAllProgressDetails(null);
+    }
   }, []);
 
   const loadUserData = useCallback(async () => {
@@ -118,6 +123,20 @@ function App() {
       }
     }
   }, [user]);
+
+  const handleShowAllProgressRoutes = useCallback(async () => {
+    if (!progress.length) return;
+    try {
+      const details = await Promise.all(
+        progress.map((rp) => fetchRouteDetail(rp.route_id)),
+      );
+      setAllProgressDetails(details);
+      setSelectedRoute(null);
+      setSidebarOpen(false);
+    } catch {
+      /* ignore fetch errors */
+    }
+  }, [progress]);
 
   useEffect(() => {
     let cancelled = false;
@@ -387,6 +406,7 @@ function App() {
               onViewSegment={handleViewSegment}
               highlightedSegment={highlightedSegment}
               onClearHighlight={() => setHighlightedSegment(null)}
+              onShowAllRoutes={handleShowAllProgressRoutes}
             />
           )}
 
@@ -417,6 +437,8 @@ function App() {
         highlightedSegment={highlightedSegment}
         onClearHighlight={() => setHighlightedSegment(null)}
         onUnlockToast={pushToast}
+        allProgressDetails={allProgressDetails}
+        onClearAllProgress={() => setAllProgressDetails(null)}
       />
 
       {/* Stacked achievement popup toasts */}
