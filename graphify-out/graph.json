@@ -77,7 +77,7 @@
       "source_file": "app.py",
       "source_location": "L1",
       "id": "app_py",
-      "community": 25,
+      "community": 26,
       "norm_label": "app.py"
     },
     {
@@ -86,7 +86,7 @@
       "source_file": "app/auth.py",
       "source_location": "L1",
       "id": "app_auth_py",
-      "community": 7,
+      "community": 6,
       "norm_label": "auth.py"
     },
     {
@@ -95,7 +95,7 @@
       "source_file": "app/auth.py",
       "source_location": "L10",
       "id": "auth_verify_firebase_token",
-      "community": 7,
+      "community": 6,
       "norm_label": "verify_firebase_token()"
     },
     {
@@ -104,7 +104,7 @@
       "source_file": "app/auth.py",
       "source_location": "L24",
       "id": "auth_require_auth",
-      "community": 7,
+      "community": 6,
       "norm_label": "require_auth()"
     },
     {
@@ -112,7 +112,7 @@
       "file_type": "rationale",
       "source_file": "app/auth.py",
       "source_location": "L11",
-      "community": 7,
+      "community": 6,
       "norm_label": "verify a firebase id token and return the decoded claims.",
       "id": "auth_rationale_11"
     },
@@ -121,7 +121,7 @@
       "file_type": "rationale",
       "source_file": "app/auth.py",
       "source_location": "L25",
-      "community": 7,
+      "community": 6,
       "norm_label": "decorator that requires a valid firebase auth token.      sets g.current_user to",
       "id": "auth_rationale_25"
     },
@@ -212,7 +212,7 @@
       "source_file": "app/config.py",
       "source_location": "L1",
       "id": "app_config_py",
-      "community": 16,
+      "community": 17,
       "norm_label": "config.py"
     },
     {
@@ -221,7 +221,7 @@
       "source_file": "app/config.py",
       "source_location": "L4",
       "id": "config_config",
-      "community": 16,
+      "community": 17,
       "norm_label": "config"
     },
     {
@@ -229,7 +229,7 @@
       "file_type": "rationale",
       "source_file": "app/config.py",
       "source_location": "L5",
-      "community": 16,
+      "community": 17,
       "norm_label": "static fallback config. the flask app factory reads env vars directly,     so th",
       "id": "config_rationale_5"
     },
@@ -509,7 +509,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L1",
       "id": "app_oba_service_py",
-      "community": 12,
+      "community": 13,
       "norm_label": "oba_service.py"
     },
     {
@@ -518,7 +518,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L14",
       "id": "oba_service_get_client",
-      "community": 12,
+      "community": 13,
       "norm_label": "get_client()"
     },
     {
@@ -527,7 +527,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L24",
       "id": "oba_service_fetch_routes_for_agency",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch_routes_for_agency()"
     },
     {
@@ -536,7 +536,7 @@
       "source_file": "app/oba_service.py",
       "source_location": "L48",
       "id": "oba_service_fetch_stops_for_route",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch_stops_for_route()"
     },
     {
@@ -544,7 +544,7 @@
       "file_type": "rationale",
       "source_file": "app/oba_service.py",
       "source_location": "L25",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch all routes for a given agency.",
       "id": "oba_service_rationale_25"
     },
@@ -553,7 +553,7 @@
       "file_type": "rationale",
       "source_file": "app/oba_service.py",
       "source_location": "L49",
-      "community": 12,
+      "community": 13,
       "norm_label": "fetch stops grouped by direction with polylines for a route.      uses raw http",
       "id": "oba_service_rationale_49"
     },
@@ -689,7 +689,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L1",
       "id": "app_migrations_env_py",
-      "community": 7,
+      "community": 6,
       "norm_label": "env.py"
     },
     {
@@ -698,7 +698,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L16",
       "id": "env_get_engine",
-      "community": 7,
+      "community": 6,
       "norm_label": "get_engine()"
     },
     {
@@ -707,7 +707,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L26",
       "id": "env_get_engine_url",
-      "community": 7,
+      "community": 6,
       "norm_label": "get_engine_url()"
     },
     {
@@ -716,7 +716,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L36",
       "id": "env_run_migrations_offline",
-      "community": 7,
+      "community": 6,
       "norm_label": "run_migrations_offline()"
     },
     {
@@ -725,7 +725,7 @@
       "source_file": "app/migrations/env.py",
       "source_location": "L45",
       "id": "env_run_migrations_online",
-      "community": 7,
+      "community": 6,
       "norm_label": "run_migrations_online()"
     },
     {
@@ -1148,7 +1148,7 @@
       "source_file": "app/routes/__init__.py",
       "source_location": "L1",
       "id": "app_routes_init_py",
-      "community": 26,
+      "community": 27,
       "norm_label": "__init__.py"
     },
     {
@@ -1247,7 +1247,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L1",
       "id": "tests_test_auth_py",
-      "community": 13,
+      "community": 14,
       "norm_label": "test_auth.py"
     },
     {
@@ -1256,7 +1256,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L1",
       "id": "test_auth_test_me_requires_auth",
-      "community": 13,
+      "community": 14,
       "norm_label": "test_me_requires_auth()"
     },
     {
@@ -1265,7 +1265,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L6",
       "id": "test_auth_test_me_rejects_malformed_header",
-      "community": 13,
+      "community": 14,
       "norm_label": "test_me_rejects_malformed_header()"
     },
     {
@@ -1274,7 +1274,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L11",
       "id": "test_auth_test_me_accepts_mocked_token",
-      "community": 13,
+      "community": 14,
       "norm_label": "test_me_accepts_mocked_token()"
     },
     {
@@ -1283,7 +1283,7 @@
       "source_file": "tests/test_auth.py",
       "source_location": "L19",
       "id": "test_auth_test_invalid_token_claims_rejected",
-      "community": 13,
+      "community": 14,
       "norm_label": "test_invalid_token_claims_rejected()"
     },
     {
@@ -1292,7 +1292,7 @@
       "source_file": "tests/test_health.py",
       "source_location": "L1",
       "id": "tests_test_health_py",
-      "community": 19,
+      "community": 20,
       "norm_label": "test_health.py"
     },
     {
@@ -1301,7 +1301,7 @@
       "source_file": "tests/test_health.py",
       "source_location": "L1",
       "id": "test_health_test_health_ok",
-      "community": 19,
+      "community": 20,
       "norm_label": "test_health_ok()"
     },
     {
@@ -1310,7 +1310,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L1",
       "id": "tests_test_leaderboard_py",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_leaderboard.py"
     },
     {
@@ -1319,7 +1319,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L1",
       "id": "test_leaderboard_test_leaderboard_empty",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_leaderboard_empty()"
     },
     {
@@ -1328,7 +1328,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L9",
       "id": "test_leaderboard_test_leaderboard_invalid_pagination",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_leaderboard_invalid_pagination()"
     },
     {
@@ -1337,7 +1337,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L14",
       "id": "test_leaderboard_test_leaderboard_includes_user_after_marking",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_leaderboard_includes_user_after_marking()"
     },
     {
@@ -1346,7 +1346,7 @@
       "source_file": "tests/test_leaderboard.py",
       "source_location": "L35",
       "id": "test_leaderboard_test_debug_directions_blocked_in_production",
-      "community": 14,
+      "community": 15,
       "norm_label": "test_debug_directions_blocked_in_production()"
     },
     {
@@ -1535,7 +1535,7 @@
       "source_file": "tests/__init__.py",
       "source_location": "L1",
       "id": "tests_init_py",
-      "community": 27,
+      "community": 28,
       "norm_label": "__init__.py"
     },
     {
@@ -1544,7 +1544,7 @@
       "source_file": "tm-frontend/eslint.config.js",
       "source_location": "L1",
       "id": "tm_frontend_eslint_config_js",
-      "community": 28,
+      "community": 29,
       "norm_label": "eslint.config.js"
     },
     {
@@ -1553,7 +1553,7 @@
       "source_file": "tm-frontend/vite.config.js",
       "source_location": "L1",
       "id": "tm_frontend_vite_config_js",
-      "community": 20,
+      "community": 21,
       "norm_label": "vite.config.js"
     },
     {
@@ -1562,7 +1562,7 @@
       "source_file": "tm-frontend/src/App.jsx",
       "source_location": "L1",
       "id": "tm_frontend_src_app_jsx",
-      "community": 0,
+      "community": 9,
       "norm_label": "app.jsx"
     },
     {
@@ -1571,7 +1571,7 @@
       "source_file": "tm-frontend/src/App.jsx",
       "source_location": "L17",
       "id": "app_cleanlabel",
-      "community": 0,
+      "community": 9,
       "norm_label": "cleanlabel()"
     },
     {
@@ -1580,7 +1580,7 @@
       "source_file": "tm-frontend/src/App.jsx",
       "source_location": "L23",
       "id": "app_getroutedisplaytext",
-      "community": 0,
+      "community": 9,
       "norm_label": "getroutedisplaytext()"
     },
     {
@@ -1589,7 +1589,7 @@
       "source_file": "tm-frontend/src/App.jsx",
       "source_location": "L53",
       "id": "app_app",
-      "community": 0,
+      "community": 9,
       "norm_label": "app()"
     },
     {
@@ -1598,7 +1598,7 @@
       "source_file": "tm-frontend/src/firebase.js",
       "source_location": "L1",
       "id": "tm_frontend_src_firebase_js",
-      "community": 29,
+      "community": 30,
       "norm_label": "firebase.js"
     },
     {
@@ -1724,7 +1724,7 @@
       "source_file": "tm-frontend/src/components/journeyGrouping.js",
       "source_location": "L1",
       "id": "tm_frontend_src_components_journeygrouping_js",
-      "community": 17,
+      "community": 18,
       "norm_label": "journeygrouping.js"
     },
     {
@@ -1733,7 +1733,7 @@
       "source_file": "tm-frontend/src/components/journeyGrouping.js",
       "source_location": "L14",
       "id": "journeygrouping_groupintojourneys",
-      "community": 17,
+      "community": 18,
       "norm_label": "groupintojourneys()"
     },
     {
@@ -1742,7 +1742,7 @@
       "source_file": "tm-frontend/src/components/journeyGrouping.js",
       "source_location": "L68",
       "id": "journeygrouping_makejourney",
-      "community": 17,
+      "community": 18,
       "norm_label": "makejourney()"
     },
     {
@@ -1787,7 +1787,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L1",
       "id": "tm_frontend_src_components_publicprofile_jsx",
-      "community": 9,
+      "community": 10,
       "norm_label": "publicprofile.jsx"
     },
     {
@@ -1796,7 +1796,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L6",
       "id": "publicprofile_groupintojourneys",
-      "community": 9,
+      "community": 10,
       "norm_label": "groupintojourneys()"
     },
     {
@@ -1805,7 +1805,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L30",
       "id": "publicprofile_makejourney",
-      "community": 9,
+      "community": 10,
       "norm_label": "makejourney()"
     },
     {
@@ -1814,7 +1814,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L51",
       "id": "publicprofile_publicprofile",
-      "community": 9,
+      "community": 10,
       "norm_label": "publicprofile()"
     },
     {
@@ -1823,7 +1823,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L220",
       "id": "publicprofile_ppoverview",
-      "community": 9,
+      "community": 10,
       "norm_label": "ppoverview()"
     },
     {
@@ -1832,7 +1832,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L282",
       "id": "publicprofile_pproutes",
-      "community": 9,
+      "community": 10,
       "norm_label": "pproutes()"
     },
     {
@@ -1841,7 +1841,7 @@
       "source_file": "tm-frontend/src/components/PublicProfile.jsx",
       "source_location": "L374",
       "id": "publicprofile_ppachievements",
-      "community": 9,
+      "community": 10,
       "norm_label": "ppachievements()"
     },
     {
@@ -2075,7 +2075,7 @@
       "source_file": "tm-frontend/src/components/map/MapLegend.jsx",
       "source_location": "L1",
       "id": "tm_frontend_src_components_map_maplegend_jsx",
-      "community": 6,
+      "community": 0,
       "norm_label": "maplegend.jsx"
     },
     {
@@ -2084,7 +2084,7 @@
       "source_file": "tm-frontend/src/components/map/MapLegend.jsx",
       "source_location": "L8",
       "id": "maplegend_maplegend",
-      "community": 6,
+      "community": 0,
       "norm_label": "maplegend()"
     },
     {
@@ -2093,7 +2093,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L1",
       "id": "tm_frontend_src_components_map_maputils_js",
-      "community": 6,
+      "community": 7,
       "norm_label": "maputils.js"
     },
     {
@@ -2102,7 +2102,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L31",
       "id": "maputils_readtriptimes",
-      "community": 6,
+      "community": 7,
       "norm_label": "readtriptimes()"
     },
     {
@@ -2111,7 +2111,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L42",
       "id": "maputils_recordtriptime",
-      "community": 6,
+      "community": 7,
       "norm_label": "recordtriptime()"
     },
     {
@@ -2120,7 +2120,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L58",
       "id": "maputils_gettripstats",
-      "community": 6,
+      "community": 7,
       "norm_label": "gettripstats()"
     },
     {
@@ -2129,7 +2129,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L70",
       "id": "maputils_formatduration",
-      "community": 6,
+      "community": 0,
       "norm_label": "formatduration()"
     },
     {
@@ -2138,7 +2138,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L82",
       "id": "maputils_decode",
-      "community": 6,
+      "community": 7,
       "norm_label": "decode()"
     },
     {
@@ -2147,7 +2147,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L87",
       "id": "maputils_normalizedirectionid",
-      "community": 6,
+      "community": 7,
       "norm_label": "normalizedirectionid()"
     },
     {
@@ -2156,7 +2156,7 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L104",
       "id": "maputils_getstoppickstatus",
-      "community": 6,
+      "community": 7,
       "norm_label": "getstoppickstatus()"
     },
     {
@@ -2165,25 +2165,34 @@
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
       "source_location": "L121",
       "id": "maputils_distsq",
-      "community": 6,
+      "community": 7,
       "norm_label": "distsq()"
+    },
+    {
+      "label": "pointToSegmentDistSq()",
+      "file_type": "code",
+      "source_file": "tm-frontend/src/components/map/mapUtils.js",
+      "source_location": "L127",
+      "id": "maputils_pointtosegmentdistsq",
+      "community": 7,
+      "norm_label": "pointtosegmentdistsq()"
     },
     {
       "label": "nearestIndex()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
-      "source_location": "L126",
+      "source_location": "L146",
       "id": "maputils_nearestindex",
-      "community": 6,
+      "community": 7,
       "norm_label": "nearestindex()"
     },
     {
       "label": "slicePolylineByStops()",
       "file_type": "code",
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
-      "source_location": "L158",
+      "source_location": "L183",
       "id": "maputils_slicepolylinebystops",
-      "community": 6,
+      "community": 7,
       "norm_label": "slicepolylinebystops()"
     },
     {
@@ -2192,7 +2201,7 @@
       "source_file": "tm-frontend/src/components/map/PickOverlay.jsx",
       "source_location": "L1",
       "id": "tm_frontend_src_components_map_pickoverlay_jsx",
-      "community": 6,
+      "community": 0,
       "norm_label": "pickoverlay.jsx"
     },
     {
@@ -2201,7 +2210,7 @@
       "source_file": "tm-frontend/src/components/map/PickOverlay.jsx",
       "source_location": "L4",
       "id": "pickoverlay_pickoverlay",
-      "community": 6,
+      "community": 0,
       "norm_label": "pickoverlay()"
     },
     {
@@ -2264,7 +2273,7 @@
       "source_file": "tm-frontend/src/contexts/AuthContext.jsx",
       "source_location": "L1",
       "id": "tm_frontend_src_contexts_authcontext_jsx",
-      "community": 0,
+      "community": 9,
       "norm_label": "authcontext.jsx"
     },
     {
@@ -2273,7 +2282,7 @@
       "source_file": "tm-frontend/src/contexts/AuthContext.jsx",
       "source_location": "L11",
       "id": "authcontext_authprovider",
-      "community": 0,
+      "community": 9,
       "norm_label": "authprovider()"
     },
     {
@@ -2282,7 +2291,7 @@
       "source_file": "tm-frontend/src/contexts/AuthContext.jsx",
       "source_location": "L43",
       "id": "authcontext_useauth",
-      "community": 0,
+      "community": 9,
       "norm_label": "useauth()"
     },
     {
@@ -2462,7 +2471,7 @@
       "source_file": "tm-frontend/src/test/api.test.js",
       "source_location": "L1",
       "id": "tm_frontend_src_test_api_test_js",
-      "community": 21,
+      "community": 22,
       "norm_label": "api.test.js"
     },
     {
@@ -2471,7 +2480,7 @@
       "source_file": "tm-frontend/src/test/api.test.js",
       "source_location": "L10",
       "id": "api_test_currentuser",
-      "community": 21,
+      "community": 22,
       "norm_label": "currentuser()"
     },
     {
@@ -2498,7 +2507,7 @@
       "source_file": "tm-frontend/src/test/journeyGrouping.test.js",
       "source_location": "L1",
       "id": "tm_frontend_src_test_journeygrouping_test_js",
-      "community": 22,
+      "community": 23,
       "norm_label": "journeygrouping.test.js"
     },
     {
@@ -2507,7 +2516,7 @@
       "source_file": "tm-frontend/src/test/journeyGrouping.test.js",
       "source_location": "L6",
       "id": "journeygrouping_test_hop",
-      "community": 22,
+      "community": 23,
       "norm_label": "hop()"
     },
     {
@@ -2516,7 +2525,7 @@
       "source_file": "tm-frontend/src/test/mapUtils.test.js",
       "source_location": "L1",
       "id": "tm_frontend_src_test_maputils_test_js",
-      "community": 30,
+      "community": 31,
       "norm_label": "maputils.test.js"
     },
     {
@@ -2534,7 +2543,7 @@
       "source_file": "tm-frontend/src/test/setup.js",
       "source_location": "L1",
       "id": "tm_frontend_src_test_setup_js",
-      "community": 31,
+      "community": 32,
       "norm_label": "setup.js"
     },
     {
@@ -2542,7 +2551,7 @@
       "file_type": "rationale",
       "source_file": "app/__init__.py",
       "source_location": "L138",
-      "community": 32,
+      "community": 33,
       "norm_label": "initialize firebase admin sdk for token verification.",
       "id": "init_rationale_138"
     },
@@ -2699,7 +2708,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "transit explorer",
       "id": "transit_explorer"
     },
@@ -2712,7 +2721,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 7,
+      "community": 6,
       "norm_label": "flask framework",
       "id": "flask"
     },
@@ -2725,7 +2734,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 20,
+      "community": 21,
       "norm_label": "vite bundler",
       "id": "vite"
     },
@@ -2751,7 +2760,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 24,
       "norm_label": "sqlite database",
       "id": "sqlite"
     },
@@ -2764,7 +2773,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 33,
+      "community": 34,
       "norm_label": "postgresql database",
       "id": "postgresql"
     },
@@ -2803,7 +2812,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 34,
+      "community": 35,
       "norm_label": "gunicorn wsgi server",
       "id": "gunicorn"
     },
@@ -2816,7 +2825,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 18,
+      "community": 19,
       "norm_label": "firebase auth",
       "id": "firebase_auth"
     },
@@ -2829,7 +2838,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 18,
+      "community": 19,
       "norm_label": "google sign-in",
       "id": "google_sign_in"
     },
@@ -2842,7 +2851,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 35,
+      "community": 36,
       "norm_label": "onebusaway api",
       "id": "onebusaway_api"
     },
@@ -2881,7 +2890,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 36,
+      "community": 37,
       "norm_label": "carto basemap tiles",
       "id": "carto"
     },
@@ -2894,7 +2903,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "vercel (frontend hosting)",
       "id": "vercel"
     },
@@ -2907,7 +2916,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "fly.io (backend hosting)",
       "id": "fly_io"
     },
@@ -2920,7 +2929,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "github actions (ci/cd)",
       "id": "github_actions"
     },
@@ -2959,7 +2968,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "gamification",
       "id": "gamification"
     },
@@ -2972,7 +2981,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "leaderboard system",
       "id": "leaderboard"
     },
@@ -2985,7 +2994,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "achievements & badges",
       "id": "achievements"
     },
@@ -2998,7 +3007,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "route tracking",
       "id": "route_tracking"
     },
@@ -3011,7 +3020,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "segment logging",
       "id": "segment_logging"
     },
@@ -3024,7 +3033,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 10,
+      "community": 11,
       "norm_label": "mobile-first ux",
       "id": "mobile_first_ux"
     },
@@ -3037,7 +3046,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 37,
+      "community": 38,
       "norm_label": "in-process loader design rationale",
       "id": "inprocess_loader_rationale"
     },
@@ -3050,7 +3059,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 15,
+      "community": 16,
       "norm_label": "single machine deployment rationale",
       "id": "single_machine_rationale"
     },
@@ -3063,7 +3072,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 23,
+      "community": 24,
       "norm_label": "sqlite for single-instance rationale",
       "id": "sqlite_single_instance_rationale"
     },
@@ -3076,7 +3085,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 18,
+      "community": 19,
       "norm_label": "firebase keys not secrets rationale",
       "id": "firebase_keys_rationale"
     },
@@ -3089,7 +3098,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "transit explorer app (ui)",
       "id": "hero_TransitExplorerApp"
     },
@@ -3102,7 +3111,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "transit routes list (ui)",
       "id": "hero_RoutesList"
     },
@@ -3115,7 +3124,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "interactive map view (ui)",
       "id": "hero_Map"
     },
@@ -3128,7 +3137,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "transit stop (ui)",
       "id": "hero_Stop"
     },
@@ -3141,7 +3150,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "route segment (ui)",
       "id": "hero_RouteSegment"
     },
@@ -3154,7 +3163,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 38,
+      "community": 39,
       "norm_label": "leaderboard ranking (ui)",
       "id": "hero_Leaderboard"
     },
@@ -3167,7 +3176,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "progress tracking (ui)",
       "id": "hero_Progress"
     },
@@ -3180,7 +3189,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 11,
+      "community": 12,
       "norm_label": "seattle map geography",
       "id": "hero_Seattle"
     },
@@ -3193,7 +3202,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 39,
+      "community": 40,
       "norm_label": "vite (logo)",
       "id": "vitesvg_vite"
     },
@@ -3206,7 +3215,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 24,
+      "community": 25,
       "norm_label": "frontend favicon",
       "id": "asset_favicon"
     },
@@ -3219,7 +3228,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 24,
+      "community": 25,
       "norm_label": "react logo (asset)",
       "id": "asset_react_logo"
     }
@@ -9433,7 +9442,19 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
-      "source_location": "L126",
+      "source_location": "L127",
+      "weight": 1.0,
+      "_src": "tm_frontend_src_components_map_maputils_js",
+      "_tgt": "maputils_pointtosegmentdistsq",
+      "source": "tm_frontend_src_components_map_maputils_js",
+      "target": "maputils_pointtosegmentdistsq",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tm-frontend/src/components/map/mapUtils.js",
+      "source_location": "L146",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_map_maputils_js",
       "_tgt": "maputils_nearestindex",
@@ -9445,7 +9466,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
-      "source_location": "L158",
+      "source_location": "L183",
       "weight": 1.0,
       "_src": "tm_frontend_src_components_map_maputils_js",
       "_tgt": "maputils_slicepolylinebystops",
@@ -9493,11 +9514,35 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "tm-frontend/src/components/map/mapUtils.js",
-      "source_location": "L130",
+      "source_location": "L131",
+      "weight": 1.0,
+      "_src": "maputils_pointtosegmentdistsq",
+      "_tgt": "maputils_distsq",
+      "source": "maputils_distsq",
+      "target": "maputils_pointtosegmentdistsq",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "tm-frontend/src/components/map/mapUtils.js",
+      "source_location": "L150",
       "weight": 1.0,
       "_src": "maputils_nearestindex",
       "_tgt": "maputils_distsq",
       "source": "maputils_distsq",
+      "target": "maputils_nearestindex",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "tm-frontend/src/components/map/mapUtils.js",
+      "source_location": "L158",
+      "weight": 1.0,
+      "_src": "maputils_nearestindex",
+      "_tgt": "maputils_pointtosegmentdistsq",
+      "source": "maputils_pointtosegmentdistsq",
       "target": "maputils_nearestindex",
       "confidence_score": 1.0
     },

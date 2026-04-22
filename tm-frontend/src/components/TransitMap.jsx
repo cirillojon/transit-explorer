@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import {
@@ -52,6 +52,9 @@ function TransitMap({
   const [helpAutoOpened, setHelpAutoOpened] = useState(false);
   const [tripStatsTick, setTripStatsTick] = useState(0); // bumps to refresh avg
   const [liveTripMs, setLiveTripMs] = useState(0);
+  // Per-route hide toggles + ridden-only filter for "view all routes" mode.
+  const [hiddenAllRouteIds, setHiddenAllRouteIds] = useState(() => new Set());
+  const [allRoutesRiddenOnly, setAllRoutesRiddenOnly] = useState(false);
   const toastTimerRef = useRef(null);
   const completedTimerRef = useRef(null);
   const recentTimerRef = useRef(null);
@@ -371,6 +374,52 @@ function TransitMap({
   const allProgressPositions = useMemo(
     () => allRouteSegments.flatMap((s) => (s.positions ? s.positions : [])),
     [allRouteSegments],
+  );
+
+  // Reset hide/ridden-only filters when entering or leaving all-routes mode,
+  // or when the underlying route set changes (so stale ids don't linger).
+  const allProgressIdsKey = useMemo(
+    () =>
+      allProgressDetails
+        ? allProgressDetails
+            .map((d) => d.id)
+            .sort()
+            .join("|")
+        : "",
+    [allProgressDetails],
+  );
+  useEffect(() => {
+    setHiddenAllRouteIds(new Set());
+    setAllRoutesRiddenOnly(false);
+  }, [allProgressIdsKey]);
+
+  // Apply the hide-route + ridden-only filters before rendering polylines.
+  const visibleAllRouteSegments = useMemo(() => {
+    if (!allRouteSegments.length) return allRouteSegments;
+    return allRouteSegments.filter((seg) => {
+      if (hiddenAllRouteIds.has(seg.routeId)) return false;
+      if (allRoutesRiddenOnly && !effectiveCompleted.has(seg.key)) return false;
+      return true;
+    });
+  }, [
+    allRouteSegments,
+    hiddenAllRouteIds,
+    allRoutesRiddenOnly,
+    effectiveCompleted,
+  ]);
+
+  const toggleHiddenAllRoute = useCallback((routeId) => {
+    setHiddenAllRouteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(routeId)) next.delete(routeId);
+      else next.add(routeId);
+      return next;
+    });
+  }, []);
+
+  const showAllAllRoutes = useCallback(
+    () => setHiddenAllRouteIds(new Set()),
+    [],
   );
 
   // Per-route completion stats for the "view all routes" legend.
@@ -702,7 +751,7 @@ function TransitMap({
 
         {/* All in-progress routes overlay (no single route selected) */}
         <AllRouteSegmentsLayer
-          segments={allRouteSegments}
+          segments={visibleAllRouteSegments}
           effectiveCompleted={effectiveCompleted}
           allRouteStatsById={allRouteStatsById}
         />
@@ -790,6 +839,11 @@ function TransitMap({
         <AllRoutesBanner
           allProgressDetails={allProgressDetails}
           allRouteStats={allRouteStats}
+          hiddenRouteIds={hiddenAllRouteIds}
+          onToggleRoute={toggleHiddenAllRoute}
+          onShowAllRoutes={showAllAllRoutes}
+          riddenOnly={allRoutesRiddenOnly}
+          onToggleRiddenOnly={() => setAllRoutesRiddenOnly((v) => !v)}
           onClose={onClearAllProgress}
         />
       )}
