@@ -459,7 +459,7 @@ function UserProgress({
                               setExpandedRide(isOpen ? null : journey.key)
                             }
                             aria-expanded={isOpen}
-                            aria-controls={ridePanelId}
+                            aria-controls={isOpen ? ridePanelId : undefined}
                           >
                             <div className="ride-summary-line">
                               <span

@@ -7,9 +7,17 @@ in arbitrary order within a single trip.
 from datetime import datetime, timedelta
 
 
-def _seed_two_trips(app, fake_uid, seeded_route):
-    """Insert 2 trips on the seeded route, intentionally inserting hops
-    out of route order to mimic the real-world DB ordering bug."""
+def _seed_one_shuffled_trip(app, fake_uid, seeded_route):
+    """Seed a single 2-hop trip (stops[0] -> stops[2]) where the rows are
+    inserted in *reverse* route order. This reproduces the production
+    symptom where the DB returns hops within one trip in arbitrary order.
+
+    The seeded route only has 3 stops, so the unique constraint on
+    (user, route, dir, from, to) limits us to one trip per route in this
+    fixture. Multi-trip scenarios are covered by
+    `test_activity_separates_distinct_timestamps` below by using
+    different stop pairs at distinct timestamps.
+    """
     from app import db
     from app.models import User, UserSegment
 
@@ -25,7 +33,6 @@ def _seed_two_trips(app, fake_uid, seeded_route):
     stops = seeded_route["stops"]
     route_id = seeded_route["route"].id
 
-    # Trip 1: stops[0] -> stops[2] (2 hops), all at t1.
     t1 = datetime(2026, 4, 22, 20, 16, 18, 604008)
     # Insert in *reverse* route order to reproduce the production symptom.
     db.session.add(UserSegment(
@@ -38,13 +45,6 @@ def _seed_two_trips(app, fake_uid, seeded_route):
         from_stop_id=stops[0].id, to_stop_id=stops[1].id,
         completed_at=t1,
     ))
-    # Trip 2: a single later hop (still on stops[0]->stops[1]? — no, must be
-    # different to avoid the unique constraint). We add trip 2 on the same
-    # range but with a later timestamp — that's what the unique constraint
-    # actually permits is just one row per (user, route, dir, from, to).
-    # So trip 2 is just a marker timestamped row using a different pair.
-    # Skip: the seeded route only has 3 stops, so a single trip already
-    # exhausts the unique pairs. We'll cover trip-2 via the activity test.
     db.session.commit()
     return user
 
@@ -55,7 +55,7 @@ def test_progress_returns_segments_in_route_order(
     """Even when rows were inserted in shuffled order, /me/progress
     should return them grouped by (direction, completed_at) and sorted
     so a single trip is reconstructable."""
-    _seed_two_trips(app, fake_uid, seeded_route)
+    _seed_one_shuffled_trip(app, fake_uid, seeded_route)
 
     r = client.get("/api/me/progress", headers=auth_headers)
     assert r.status_code == 200
@@ -64,12 +64,15 @@ def test_progress_returns_segments_in_route_order(
     segs = progress[0]["segments"]
     assert len(segs) == 2
 
-    # All hops in this trip share completed_at; ordering within a trip
-    # should follow (direction_id, completed_at, id).
+    stops = seeded_route["stops"]
+    # Hops were inserted in reverse route order; the API must return them
+    # in route order so the trip is reconstructable.
+    assert segs[0]["from_stop_id"] == stops[0].id
+    assert segs[0]["to_stop_id"] == stops[1].id
+    assert segs[1]["from_stop_id"] == stops[1].id
+    assert segs[1]["to_stop_id"] == stops[2].id
     completed_ats = [s["completed_at"] for s in segs]
     assert completed_ats == sorted(completed_ats)
-    direction_ids = [s["direction_id"] for s in segs]
-    assert direction_ids == sorted(direction_ids)
 
 
 def test_activity_groups_one_entry_per_trip(

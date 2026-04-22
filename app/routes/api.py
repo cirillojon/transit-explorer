@@ -436,14 +436,16 @@ def get_activity():
             }
 
     # Bucket hops by trip key. dict preserves insertion order, which mirrors
-    # the desc(completed_at) ordering above (newest trip first).
+    # the desc(completed_at) ordering above (newest trip first). We keep
+    # collecting hops for trip keys we've already seen, but stop scanning
+    # once we have `limit` distinct trips so we don't drop hops from a
+    # trip mid-bucket.
     trips = {}
     for s in segs:
         key = (s.route_id, s.direction_id, s.completed_at)
-        trips.setdefault(key, []).append(s)
-        if len(trips) > limit and key not in trips:
-            # Defensive: shouldn't trigger because of setdefault above.
+        if key not in trips and len(trips) >= limit:
             break
+        trips.setdefault(key, []).append(s)
 
     grouped = []
     for (route_id, direction_id, _), hops in trips.items():
@@ -544,6 +546,21 @@ def get_progress():
         total = data['total_segments']
         completed = data['completed_segments']
         data['completion_pct'] = round(completed / total * 100, 1) if total > 0 else 0
+
+        # Re-sort each route's segments along the route's stop sequence so
+        # callers without trip-grouping logic still see hops in route order
+        # (the SQL ORDER BY only gives us id-order within a trip, which can
+        # be reverse-route-order if rows were inserted that way).
+        stop_idx_by_dir = {
+            d['direction_id']: {sid: i for i, sid in enumerate(d.get('stop_ids') or [])}
+            for d in data['directions']
+        }
+        data['segments'].sort(key=lambda s: (
+            s['direction_id'],
+            s['completed_at'] or '',
+            stop_idx_by_dir.get(s['direction_id'], {}).get(s['from_stop_id'], 10**9),
+            s['id'],
+        ))
 
     # Sort: in-progress first (highest %), completed routes last
     progress_list = sorted(
