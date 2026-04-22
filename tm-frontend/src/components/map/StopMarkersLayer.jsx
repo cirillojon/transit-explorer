@@ -106,7 +106,7 @@ function StopMarkersLayer({
             <>
               <br />
               <span style={{ fontSize: 11, color: "#22d3ee" }}>
-                Available to alight
+                Available ending stop
               </span>
             </>
           )}

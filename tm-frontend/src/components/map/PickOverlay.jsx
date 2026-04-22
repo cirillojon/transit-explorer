@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { formatDuration } from "./mapUtils";
 
 function PickOverlay({
@@ -8,6 +8,13 @@ function PickOverlay({
   activeDirectionMeta,
   onUndo,
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Reset to expanded whenever a new boarding pick begins.
+  useEffect(() => {
+    setCollapsed(false);
+  }, [pickState?.fromId]);
+
   if (marking) {
     return (
       <div className="pick-overlay">
@@ -16,6 +23,43 @@ function PickOverlay({
     );
   }
   if (!pickState) return null;
+
+  if (collapsed) {
+    return (
+      <div
+        className="pick-overlay is-collapsed"
+        role="button"
+        tabIndex={0}
+        onClick={() => setCollapsed(false)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setCollapsed(false);
+          }
+        }}
+      >
+        <span className="pick-dot boarding" />
+        <span className="pick-prompt">Tap ending stop</span>
+        {pickState.boardedAt && (
+          <span className="pick-timer" title="Time since boarding">
+            ⏱ {formatDuration(liveTripMs) || "0s"}
+          </span>
+        )}
+        <button
+          type="button"
+          className="pick-collapse-toggle"
+          aria-label="Expand boarding details"
+          onClick={(e) => {
+            e.stopPropagation();
+            setCollapsed(false);
+          }}
+        >
+          ▴
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="pick-overlay">
       <div className="pick-info">
@@ -48,6 +92,14 @@ function PickOverlay({
         title="Undo boarding (Esc)"
       >
         ↶ Undo boarding
+      </button>
+      <button
+        type="button"
+        className="pick-collapse-toggle"
+        aria-label="Minimize boarding details"
+        onClick={() => setCollapsed(true)}
+      >
+        ▾
       </button>
     </div>
   );

@@ -5,7 +5,7 @@ import React, { useEffect } from "react";
  * time a signed-in user lands on the app, and re-openable from the
  * floating "?" button on the map.
  */
-function HelpModal({ open, onClose, onDontShowAgain }) {
+function HelpModal({ open, onClose, onDontShowAgain, showDontShowAgain = false }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -102,16 +102,18 @@ function HelpModal({ open, onClose, onDontShowAgain }) {
         </div>
 
         <div className="help-modal-actions">
-          <button
-            type="button"
-            className="help-modal-secondary"
-            onClick={() => {
-              onDontShowAgain?.();
-              onClose?.();
-            }}
-          >
-            Don&apos;t show this again
-          </button>
+          {showDontShowAgain && (
+            <button
+              type="button"
+              className="help-modal-secondary"
+              onClick={() => {
+                onDontShowAgain?.();
+                onClose?.();
+              }}
+            >
+              Don&apos;t show this again
+            </button>
+          )}
           <button
             type="button"
             className="help-modal-primary"
