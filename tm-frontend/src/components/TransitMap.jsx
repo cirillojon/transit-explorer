@@ -422,23 +422,28 @@ function TransitMap({
         const line = decode(dir.encoded_polyline);
         const stopIds = dir.stop_ids || [];
         const stopsMap = detail.stops || {};
-        const stopPositions = stopIds
-          .map((id) => stopsMap[id])
-          .filter(Boolean)
-          .map((s) => [s.lat, s.lon]);
+        // Filter stopIds and stopPositions in parallel so segment indices
+        // stay aligned with the surviving stop IDs.
+        const filteredStopIds = stopIds.filter((id) => Boolean(stopsMap[id]));
+        const stopPositions = filteredStopIds.map((id) => {
+          const stop = stopsMap[id];
+          return [stop.lat, stop.lon];
+        });
         const polySegs = slicePolylineByStops(line, stopPositions);
-        for (let i = 0; i < polySegs.length; i++) {
-          if (i + 1 < stopIds.length) {
-            result.push({
-              routeId: detail.id,
-              directionId: dir.direction_id,
-              fromStopId: stopIds[i],
-              toStopId: stopIds[i + 1],
-              positions: polySegs[i],
-              color,
-              key: `${detail.id}|${dir.direction_id}|${stopIds[i]}|${stopIds[i + 1]}`,
-            });
-          }
+        const segmentCount = Math.min(
+          polySegs.length,
+          Math.max(0, filteredStopIds.length - 1),
+        );
+        for (let i = 0; i < segmentCount; i++) {
+          result.push({
+            routeId: detail.id,
+            directionId: dir.direction_id,
+            fromStopId: filteredStopIds[i],
+            toStopId: filteredStopIds[i + 1],
+            positions: polySegs[i],
+            color,
+            key: `${detail.id}|${dir.direction_id}|${filteredStopIds[i]}|${filteredStopIds[i + 1]}`,
+          });
         }
       }
     }
@@ -1173,8 +1178,18 @@ function TransitMap({
             {allProgressDetails.length !== 1 ? "s" : ""}
             {" · "}
             <span className="all-routes-legend">
-              <i className="dot done" /> Completed{" "}
-              <i className="dot" style={{ background: "#60a5fa" }} /> In progress
+              <i
+                aria-hidden="true"
+                className="all-routes-legend-dot"
+                style={{ background: "#22c55e" }}
+              />{" "}
+              Completed{" "}
+              <i
+                aria-hidden="true"
+                className="all-routes-legend-dot"
+                style={{ background: "#60a5fa" }}
+              />{" "}
+              In progress
             </span>
           </span>
           <button
