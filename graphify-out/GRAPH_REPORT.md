@@ -1,60 +1,67 @@
-# Graph Report - .  (2026-04-22)
+# Graph Report - transit-explorer  (2026-04-22)
 
 ## Corpus Check
-- 58 files · ~54,567 words
+- 43 files · ~76,140 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 326 nodes · 641 edges · 21 communities detected
-- Extraction: 76% EXTRACTED · 24% INFERRED · 0% AMBIGUOUS · INFERRED: 153 edges (avg confidence: 0.59)
+- 280 nodes · 431 edges · 28 communities detected
+- Extraction: 65% EXTRACTED · 35% INFERRED · 0% AMBIGUOUS · INFERRED: 151 edges (avg confidence: 0.59)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_React UI Components|React UI Components]]
-- [[_COMMUNITY_API Endpoint Docstrings|API Endpoint Docstrings]]
-- [[_COMMUNITY_Backend API Handlers|Backend API Handlers]]
-- [[_COMMUNITY_Auth & App Bootstrap|Auth & App Bootstrap]]
-- [[_COMMUNITY_Flask CLI Commands|Flask CLI Commands]]
-- [[_COMMUNITY_Frontend Stack & Hosting|Frontend Stack & Hosting]]
-- [[_COMMUNITY_Frontend API Client|Frontend API Client]]
-- [[_COMMUNITY_DB Migration Scripts|DB Migration Scripts]]
-- [[_COMMUNITY_Segment Marking Tests|Segment Marking Tests]]
-- [[_COMMUNITY_Public Profile UI|Public Profile UI]]
-- [[_COMMUNITY_OneBusAway Service Layer|OneBusAway Service Layer]]
-- [[_COMMUNITY_Product Features (Gamification)|Product Features (Gamification)]]
-- [[_COMMUNITY_Hero Screenshot UI|Hero Screenshot UI]]
-- [[_COMMUNITY_Leaderboard Tests|Leaderboard Tests]]
-- [[_COMMUNITY_Auth Tests|Auth Tests]]
-- [[_COMMUNITY_Config Module|Config Module]]
-- [[_COMMUNITY_Health Endpoint Tests|Health Endpoint Tests]]
-- [[_COMMUNITY_Frontend API Tests|Frontend API Tests]]
-- [[_COMMUNITY_Frontend Brand Assets|Frontend Brand Assets]]
-- [[_COMMUNITY_Leaderboard Ranking (UI)|Leaderboard Ranking (UI)]]
-- [[_COMMUNITY_Vite logo asset|Vite logo asset]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
+- [[_COMMUNITY_Community 17|Community 17]]
+- [[_COMMUNITY_Community 18|Community 18]]
+- [[_COMMUNITY_Community 19|Community 19]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `React Framework` - 33 edges
-2. `Route` - 23 edges
-3. `Stop` - 22 edges
-4. `RouteDirection` - 22 edges
-5. `User` - 20 edges
-6. `DataLoad` - 19 edges
-7. `RouteStop` - 17 edges
-8. `UserSegment` - 17 edges
-9. `Flask Backend` - 14 edges
-10. `mark_segments()` - 11 edges
+1. `Route` - 22 edges
+2. `Stop` - 21 edges
+3. `RouteDirection` - 21 edges
+4. `User` - 19 edges
+5. `DataLoad` - 18 edges
+6. `RouteStop` - 16 edges
+7. `UserSegment` - 16 edges
+8. `React Framework` - 16 edges
+9. `mark_segments()` - 10 edges
+10. `Liveness probe + DB connectivity + per-agency data-load status.` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Fly.io (Backend Hosting)` --references--> `Flask Backend`  [INFERRED]
-  README.md → docs/ARCHITECTURE.md
+- `create_app()` --calls--> `app()`  [INFERRED]
+  app/__init__.py → tests/conftest.py
 - `Verify a Firebase ID token and return the decoded claims.` --uses--> `User`  [INFERRED]
-  /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer/app/auth.py → /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer/app/models.py
+  app/auth.py → app/models.py
 - `Decorator that requires a valid Firebase auth token.      Sets g.current_user to` --uses--> `User`  [INFERRED]
-  /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer/app/auth.py → /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer/app/models.py
-- `Transit Explorer` --references--> `Flask Backend`  [EXTRACTED]
-  README.md → docs/ARCHITECTURE.md
-- `Flask Backend` --calls--> `Gunicorn WSGI Server`  [EXTRACTED]
-  docs/ARCHITECTURE.md → requirements.txt
+  app/auth.py → app/models.py
+- `register_cli()` --calls--> `create_app()`  [INFERRED]
+  app/cli.py → app/__init__.py
+- `create_user()` --calls--> `User`  [INFERRED]
+  app/data_loader.py → app/models.py
 
 ## Hyperedges (group relationships)
 - **Automated Deployment Pipeline** — github_actions, fly_io, vercel [EXTRACTED 1.00]
@@ -65,115 +72,157 @@
 
 ## Communities
 
-### Community 0 - "React UI Components"
-Cohesion: 0.05
-Nodes (26): Achievements(), App(), cleanLabel(), getRouteDisplayText(), AuthProvider(), useAuth(), ConfirmDialog(), ErrorBoundary (+18 more)
+### Community 0 - "Community 0"
+Cohesion: 0.06
+Nodes (8): App(), cleanLabel(), getRouteDisplayText(), useAuth(), ErrorBoundary, React Framework, cleanLabel(), getRouteDisplayText()
 
-### Community 1 - "API Endpoint Docstrings"
-Cohesion: 0.19
-Nodes (30): List routes with total possible segment counts (cached client-side)., Top users by total segments. Supports period filter and pagination.      Query p, Public, read-only view of another explorer's progress.      Returns the same sha, Rich stats payload: totals, achievements, top routes, 14d sparkline, rank., Recent rides, collapsed by adjacent hops in same direction (30-min window)., Liveness probe + DB connectivity + per-agency data-load status., Per-route completion summary. Constant-query: O(1) DB calls regardless of N., Mark a contiguous run of segments as completed.      Returns: { created, skipped (+22 more)
+### Community 1 - "Community 1"
+Cohesion: 0.12
+Nodes (27): bulk_delete_segments(), debug_directions(), _diff_achievements(), _evaluate_achievements(), get_activity(), get_leaderboard(), get_me(), get_progress() (+19 more)
 
-### Community 2 - "Backend API Handlers"
-Cohesion: 0.14
-Nodes (29): bulk_delete_segments(), debug_directions(), delete_segment(), _diff_achievements(), _evaluate_achievements(), get_activity(), get_leaderboard(), get_me() (+21 more)
+### Community 2 - "Community 2"
+Cohesion: 0.25
+Nodes (26): List routes with total possible segment counts (cached client-side)., Top users by total segments. Supports period filter and pagination.      Query p, Public, read-only view of another explorer's progress.      Returns the same sha, Rich stats payload: totals, achievements, top routes, 14d sparkline, rank., Recent rides, collapsed by adjacent hops in same direction (30-min window)., Liveness probe + DB connectivity + per-agency data-load status., Per-route completion summary. Constant-query: O(1) DB calls regardless of N., Mark a contiguous run of segments as completed.      Returns: { created, skipped (+18 more)
 
-### Community 3 - "Auth & App Bootstrap"
-Cohesion: 0.1
-Nodes (28): Verify a Firebase ID token and return the decoded claims., Decorator that requires a valid Firebase auth token.      Sets g.current_user to, require_auth(), verify_firebase_token(), OneBusAway Data Loader, get_engine(), get_engine_url(), run_migrations_offline() (+20 more)
-
-### Community 4 - "Flask CLI Commands"
-Cohesion: 0.17
+### Community 3 - "Community 3"
+Cohesion: 0.13
 Nodes (20): data_check_schema(), data_load(), data_status(), Flask CLI commands for Transit Explorer.  Registered in app/__init__.py via ap, Refresh transit routes/stops/directions from OneBusAway., Print the per-agency DataLoad state as JSON., Exit 1 if SQLAlchemy models drift from alembic head.      Used by `bin/check-s, register_cli() (+12 more)
 
-### Community 5 - "Frontend Stack & Hosting"
-Cohesion: 0.16
-Nodes (18): CARTO Basemap Tiles, Fly.io (Backend Hosting), GitHub Actions (CI/CD), Leaflet Map Library, React Frontend (Vite SPA), React-Leaflet, Single Machine Deployment Rationale, decode() (+10 more)
+### Community 4 - "Community 4"
+Cohesion: 0.12
+Nodes (4): cached(), fetchRouteDetail(), fetchRoutes(), fetchStops()
 
-### Community 6 - "Frontend API Client"
+### Community 5 - "Community 5"
+Cohesion: 0.14
+Nodes (10): app(), auth_headers(), upgrade(), Flask-CORS, Flask-Limiter, Flask-Migrate, create_app(), _init_firebase() (+2 more)
+
+### Community 6 - "Community 6"
 Cohesion: 0.21
-Nodes (18): bulkDeleteSegments(), cached(), deleteSegment(), fetchActivity(), fetchHealth(), fetchLeaderboard(), fetchMe(), fetchProgress() (+10 more)
+Nodes (7): Leaflet Map Library, React-Leaflet, formatDuration(), getTripStats(), readTripTimes(), recordTripTime(), TransitMap()
 
-### Community 7 - "DB Migration Scripts"
+### Community 7 - "Community 7"
+Cohesion: 0.17
+Nodes (4): add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, baseline schema  Revision ID: f838d5f10e83 Revises:  Create Date: 2026-04-21 14:, SQLAlchemy ORM
+
+### Community 8 - "Community 8"
+Cohesion: 0.22
+Nodes (8): Verify a Firebase ID token and return the decoded claims., Decorator that requires a valid Firebase auth token.      Sets g.current_user to, require_auth(), verify_firebase_token(), get_engine(), get_engine_url(), run_migrations_online(), Flask Framework
+
+### Community 9 - "Community 9"
 Cohesion: 0.2
-Nodes (10): downgrade(), add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, upgrade(), downgrade(), add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, upgrade(), downgrade(), baseline schema  Revision ID: f838d5f10e83 Revises:  Create Date: 2026-04-21 14: (+2 more)
+Nodes (4): If pair_keys[0] was already marked, duration_ms must still land on     the firs, duration_ms on a fresh multi-hop mark attaches to the first new row., test_mark_segments_attaches_duration_to_first_new_row(), test_mark_segments_persists_duration_on_first_row()
 
-### Community 8 - "Segment Marking Tests"
-Cohesion: 0.29
-Nodes (9): If pair_keys[0] was already marked, duration_ms must still land on     the firs, duration_ms on a fresh multi-hop mark attaches to the first new row., test_mark_segments_attaches_duration_to_first_new_row(), test_mark_segments_persists_duration_on_first_row(), test_mark_segments_rejects_missing_stop(), test_mark_segments_rejects_oversize_notes(), test_mark_segments_validates_id_format(), test_mark_segments_validates_required_fields() (+1 more)
+### Community 10 - "Community 10"
+Cohesion: 0.33
+Nodes (2): groupIntoJourneys(), makeJourney()
 
-### Community 9 - "Public Profile UI"
-Cohesion: 0.46
-Nodes (6): groupIntoJourneys(), makeJourney(), PPAchievements(), PPOverview(), PPRoutes(), PublicProfile()
-
-### Community 10 - "OneBusAway Service Layer"
-Cohesion: 0.43
-Nodes (5): fetch_routes_for_agency(), fetch_stops_for_route(), get_client(), Fetch all routes for a given agency., Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP
-
-### Community 11 - "Product Features (Gamification)"
+### Community 11 - "Community 11"
 Cohesion: 0.43
 Nodes (7): Achievements & Badges, Gamification, Leaderboard System, Mobile-First UX, Route Tracking, Segment Logging, Transit Explorer
 
-### Community 12 - "Hero Screenshot UI"
+### Community 12 - "Community 12"
 Cohesion: 0.33
 Nodes (7): Interactive Map View (UI), Progress Tracking (UI), Route Segment (UI), Transit Routes List (UI), Seattle Map Geography, Transit Stop (UI), Transit Explorer App (UI)
 
-### Community 13 - "Leaderboard Tests"
-Cohesion: 0.53
-Nodes (4): test_debug_directions_blocked_in_production(), test_leaderboard_empty(), test_leaderboard_includes_user_after_marking(), test_leaderboard_invalid_pagination()
+### Community 13 - "Community 13"
+Cohesion: 0.4
+Nodes (5): fetch_routes_for_agency(), fetch_stops_for_route(), get_client(), Fetch all routes for a given agency., Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP
 
-### Community 14 - "Auth Tests"
-Cohesion: 0.53
-Nodes (4): test_invalid_token_claims_rejected(), test_me_accepts_mocked_token(), test_me_rejects_malformed_header(), test_me_requires_auth()
+### Community 14 - "Community 14"
+Cohesion: 0.4
+Nodes (2): groupIntoJourneys(), makeJourney()
 
-### Community 15 - "Config Module"
+### Community 17 - "Community 17"
 Cohesion: 0.5
+Nodes (4): Fly.io (Backend Hosting), GitHub Actions (CI/CD), Single Machine Deployment Rationale, Vercel (Frontend Hosting)
+
+### Community 18 - "Community 18"
+Cohesion: 0.67
 Nodes (2): Config, Static fallback config. The Flask app factory reads env vars directly,     so th
 
-### Community 16 - "Health Endpoint Tests"
+### Community 19 - "Community 19"
 Cohesion: 0.67
-Nodes (1): test_health_ok()
+Nodes (3): Firebase Auth, Firebase Keys Not Secrets Rationale, Google Sign-In
 
-### Community 17 - "Frontend API Tests"
-Cohesion: 0.67
-Nodes (1): currentUser()
+### Community 21 - "Community 21"
+Cohesion: 1.0
+Nodes (1): Vite Bundler
 
-### Community 18 - "Frontend Brand Assets"
+### Community 23 - "Community 23"
+Cohesion: 1.0
+Nodes (2): SQLite Database, SQLite for Single-Instance Rationale
+
+### Community 24 - "Community 24"
 Cohesion: 1.0
 Nodes (2): Frontend Favicon, React Logo (asset)
 
-### Community 31 - "Leaderboard Ranking (UI)"
+### Community 31 - "Community 31"
+Cohesion: 1.0
+Nodes (1): PostgreSQL Database
+
+### Community 32 - "Community 32"
+Cohesion: 1.0
+Nodes (1): Gunicorn WSGI Server
+
+### Community 33 - "Community 33"
+Cohesion: 1.0
+Nodes (1): OneBusAway API
+
+### Community 34 - "Community 34"
+Cohesion: 1.0
+Nodes (1): CARTO Basemap Tiles
+
+### Community 35 - "Community 35"
+Cohesion: 1.0
+Nodes (1): In-Process Loader Design Rationale
+
+### Community 36 - "Community 36"
 Cohesion: 1.0
 Nodes (1): Leaderboard Ranking (UI)
 
-### Community 32 - "Vite logo asset"
+### Community 37 - "Community 37"
 Cohesion: 1.0
 Nodes (1): Vite (logo)
 
 ## Knowledge Gaps
-- **28 isolated node(s):** `Refresh transit routes/stops/directions from OneBusAway.`, `Print the per-agency DataLoad state as JSON.`, `Exit 1 if SQLAlchemy models drift from alembic head.      Used by `bin/check-s`, `Static fallback config. The Flask app factory reads env vars directly,     so th`, `Per-agency snapshot of the last OneBusAway data import.      One row per agency.` (+23 more)
+- **41 isolated node(s):** `Flask CLI commands for Transit Explorer.  Registered in app/__init__.py via ap`, `Refresh transit routes/stops/directions from OneBusAway.`, `Print the per-agency DataLoad state as JSON.`, `Exit 1 if SQLAlchemy models drift from alembic head.      Used by `bin/check-s`, `Static fallback config. The Flask app factory reads env vars directly,     so th` (+36 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Config Module`** (4 nodes): `config.py`, `Config`, `Static fallback config. The Flask app factory reads env vars directly,     so th`, `config.py`
+- **Thin community `Community 10`** (7 nodes): `groupIntoJourneys()`, `makeJourney()`, `PPAchievements()`, `PPOverview()`, `PPRoutes()`, `PublicProfile()`, `PublicProfile.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Health Endpoint Tests`** (3 nodes): `test_health.py`, `test_health_ok()`, `test_health.py`
+- **Thin community `Community 14`** (6 nodes): `UserProgress.jsx`, `formatDurationMs()`, `groupIntoJourneys()`, `makeJourney()`, `parseDurationInput()`, `UserProgress()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Frontend API Tests`** (3 nodes): `currentUser()`, `api.test.js`, `api.test.js`
+- **Thin community `Community 18`** (3 nodes): `config.py`, `Config`, `Static fallback config. The Flask app factory reads env vars directly,     so th`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Frontend Brand Assets`** (2 nodes): `Frontend Favicon`, `React Logo (asset)`
+- **Thin community `Community 21`** (2 nodes): `vite.config.js`, `Vite Bundler`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Leaderboard Ranking (UI)`** (1 nodes): `Leaderboard Ranking (UI)`
+- **Thin community `Community 23`** (2 nodes): `SQLite Database`, `SQLite for Single-Instance Rationale`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Vite logo asset`** (1 nodes): `Vite (logo)`
+- **Thin community `Community 24`** (2 nodes): `Frontend Favicon`, `React Logo (asset)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 31`** (1 nodes): `PostgreSQL Database`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 32`** (1 nodes): `Gunicorn WSGI Server`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 33`** (1 nodes): `OneBusAway API`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 34`** (1 nodes): `CARTO Basemap Tiles`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 35`** (1 nodes): `In-Process Loader Design Rationale`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 36`** (1 nodes): `Leaderboard Ranking (UI)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 37`** (1 nodes): `Vite (logo)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Flask Backend` connect `Auth & App Bootstrap` to `Product Features (Gamification)`, `Frontend Stack & Hosting`, `DB Migration Scripts`?**
-  _High betweenness centrality (0.298) - this node is a cross-community bridge._
-- **Why does `React Framework` connect `React UI Components` to `Public Profile UI`, `Frontend Stack & Hosting`?**
-  _High betweenness centrality (0.267) - this node is a cross-community bridge._
-- **Why does `React Frontend (Vite SPA)` connect `Frontend Stack & Hosting` to `React UI Components`, `Auth & App Bootstrap`, `Product Features (Gamification)`?**
-  _High betweenness centrality (0.260) - this node is a cross-community bridge._
+- **Why does `Flask Framework` connect `Community 8` to `Community 1`, `Community 3`, `Community 5`?**
+  _High betweenness centrality (0.047) - this node is a cross-community bridge._
+- **Why does `React Framework` connect `Community 0` to `Community 10`, `Community 6`, `Community 14`?**
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
+- **Why does `SQLAlchemy ORM` connect `Community 7` to `Community 1`?**
+  _High betweenness centrality (0.032) - this node is a cross-community bridge._
 - **Are the 19 inferred relationships involving `Route` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
   _`Route` has 19 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 19 inferred relationships involving `Stop` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
