@@ -1,7 +1,7 @@
 # Graph Report - transit-explorer  (2026-04-22)
 
 ## Corpus Check
-- 43 files · ~76,069 words
+- 43 files · ~76,140 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
