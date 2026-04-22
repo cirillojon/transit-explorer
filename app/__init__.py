@@ -48,7 +48,10 @@ logging.basicConfig(
     level=getattr(logging, _log_level, logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-for _noisy in ("werkzeug", "urllib3", "httpx", "httpcore"):
+_flask_env = os.getenv("FLASK_ENV", "").lower()
+_werkzeug_level = logging.INFO if _flask_env != "production" else logging.WARNING
+logging.getLogger("werkzeug").setLevel(_werkzeug_level)
+for _noisy in ("urllib3", "httpx", "httpcore"):
     logging.getLogger(_noisy).setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
