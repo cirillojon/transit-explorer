@@ -177,13 +177,16 @@ mode_load_data() {
   if [ "$loop" -eq 1 ]; then
     local ttl="${OBA_REFRESH_TTL_HOURS:-24}"
     while true; do
-      log "worker: running flask data load ${args[*]:-}"
-      flask data load "${args[@]:-}" || log "data load failed, will retry"
+      # NOTE: do NOT use "${args[@]:-}" here — that expands to a single
+      # empty-string arg when args is empty, and click rejects it as
+      # "Got unexpected extra argument ()". Use the unquoted +-form.
+      log "worker: running flask data load ${args[*]+${args[*]}}"
+      flask data load ${args[@]+"${args[@]}"} || log "data load failed, will retry"
       log "worker: sleeping ${ttl}h until next refresh"
       sleep "$(python3 -c "print(int(float('${ttl}') * 3600))")"
     done
   else
-    flask data load "${args[@]:-}"
+    flask data load ${args[@]+"${args[@]}"}
   fi
 }
 
