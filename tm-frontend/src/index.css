@@ -3684,6 +3684,46 @@ button {
   border: 1px solid var(--border);
   color: var(--text);
   white-space: nowrap;
+  cursor: pointer;
+  transition:
+    opacity 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.all-routes-route-chip:hover {
+  border-color: var(--accent);
+}
+
+.all-routes-route-chip.is-hidden {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.all-routes-route-chip.is-hidden .all-routes-legend-dot {
+  filter: grayscale(0.6);
+}
+
+.all-routes-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.all-routes-banner-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.all-routes-banner-toggle input {
+  margin: 0;
+  cursor: pointer;
 }
 
 .all-routes-route-chip-pct {
