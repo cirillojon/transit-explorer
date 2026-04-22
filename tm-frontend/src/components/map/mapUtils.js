@@ -137,26 +137,27 @@ function nearestIndex(line, point) {
 
 /**
  * Snap each stop to the nearest index on the polyline, then build one
- * segment per consecutive stop pair. Each segment always begins and ends at
- * the actual stop coordinates so adjacent segments visually connect even
- * when the agency polyline is incomplete or doesn't reach a stop.
+ * segment per consecutive stop pair.
  *
- * If either endpoint of a pair is too far from the polyline (per
- * OFF_ROUTE_THRESHOLD_DEG_SQ), or the snapped indices are out of order
- * (which usually means an off-route stop "snapped" to a coincidentally
- * nearer vertex elsewhere on the line), the segment falls back to a
- * straight line between the two stop coordinates.
+ * Returns a sparse array of length `stopPositions.length - 1`. Each entry is
+ * either:
+ *   - an array of [lat, lon] points starting at stopA and ending at stopB
+ *     (polyline geometry between them, with the real stop coords as
+ *     endpoints so adjacent segments butt cleanly), OR
+ *   - `null` when either endpoint is too far from the polyline
+ *     (per OFF_ROUTE_THRESHOLD_DEG_SQ). We deliberately do NOT fabricate a
+ *     straight line in that case — the agency polyline is the source of
+ *     truth and a made-up line is more confusing than a visible gap.
+ *
+ * Callers should treat `null` as "no drawable geometry for this stop pair"
+ * and skip it. The stop markers themselves are still rendered so the
+ * underlying segment can be marked / clicked.
  */
 export function slicePolylineByStops(line, stopPositions) {
   if (stopPositions.length < 2) return [];
   if (line.length === 0) {
-    // No polyline at all — connect stops with straight lines so markers
-    // aren't visually orphaned.
-    const segments = [];
-    for (let i = 0; i < stopPositions.length - 1; i++) {
-      segments.push([stopPositions[i], stopPositions[i + 1]]);
-    }
-    return segments;
+    // No polyline at all → no segments are drawable.
+    return new Array(stopPositions.length - 1).fill(null);
   }
 
   const snaps = stopPositions.map((sp) => nearestIndex(line, sp));
@@ -165,22 +166,23 @@ export function slicePolylineByStops(line, stopPositions) {
   for (let i = 0; i < snaps.length - 1; i++) {
     const a = snaps[i];
     const b = snaps[i + 1];
-    const stopA = stopPositions[i];
-    const stopB = stopPositions[i + 1];
     const aOff = a.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ;
     const bOff = b.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ;
-    // Treat backwards / equal snaps as off-route too: a legitimate
-    // forward step on a one-way polyline always advances the index.
-    const nonMonotonic = b.index <= a.index;
 
-    if (aOff || bOff || nonMonotonic) {
-      segments.push([stopA, stopB]);
+    if (aOff || bOff) {
+      segments.push(null);
       continue;
     }
 
-    // Use the real stop coordinates as endpoints so this segment butts
-    // exactly against the previous/next one with no visual gap.
-    segments.push([stopA, ...line.slice(a.index + 1, b.index), stopB]);
+    const start = Math.min(a.index, b.index);
+    const end = Math.max(a.index, b.index);
+    // Use the real stop coordinates as endpoints so adjacent segments butt
+    // exactly together with no visual gap from snap rounding.
+    segments.push([
+      stopPositions[i],
+      ...line.slice(start + 1, end),
+      stopPositions[i + 1],
+    ]);
   }
   return segments;
 }

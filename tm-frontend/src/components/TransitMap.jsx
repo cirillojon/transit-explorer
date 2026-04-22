@@ -219,6 +219,10 @@ function TransitMap({
         .map((s) => [s.lat, s.lon]);
       const polySegments = slicePolylineByStops(line, stopPositions);
       for (let i = 0; i < polySegments.length; i++) {
+        // null = no drawable polyline for this stop pair (off-route stop
+        // or missing agency geometry). Skip it visually; the underlying
+        // backend segment is still real and the stops remain clickable.
+        if (polySegments[i] === null) continue;
         if (i + 1 < stopIds.length) {
           result.push({
             directionId: normalizeDirectionId(dir.direction_id),
@@ -343,6 +347,9 @@ function TransitMap({
           Math.max(0, filteredStopIds.length - 1),
         );
         for (let i = 0; i < segmentCount; i++) {
+          // Skip stop pairs with no drawable polyline geometry rather than
+          // fabricating a straight line across the map.
+          if (polySegs[i] === null) continue;
           result.push({
             routeId: detail.id,
             directionId: dir.direction_id,

@@ -30,28 +30,20 @@ describe("slicePolylineByStops", () => {
     expect(slicePolylineByStops([], [])).toEqual([]);
   });
 
-  it("falls back to straight lines when polyline is empty", () => {
+  it("returns all-null segments when polyline is empty", () => {
     const stops = [
       [0, 0],
       [0, 1],
       [0, 2],
     ];
     const segs = slicePolylineByStops([], stops);
-    expect(segs).toEqual([
-      [
-        [0, 0],
-        [0, 1],
-      ],
-      [
-        [0, 1],
-        [0, 2],
-      ],
-    ]);
+    // No fabricated geometry — caller should skip these visually.
+    expect(segs).toEqual([null, null]);
   });
 
-  it("connects an off-route stop with a straight line to its neighbors", () => {
-    // Polyline runs along latitude 0 from lon 0..4. Middle stop is far north
-    // (off-route).
+  it("returns null for stop pairs with an off-route endpoint", () => {
+    // Polyline runs along latitude 0 from lon 0..4. Middle stop is far
+    // north of the line (off-route).
     const line = [
       [0, 0],
       [0, 1],
@@ -66,24 +58,17 @@ describe("slicePolylineByStops", () => {
     ];
     const segs = slicePolylineByStops(line, stops);
     expect(segs).toHaveLength(2);
-    // Both segments adjacent to the off-route stop should be straight
-    // 2-point connectors so the marker isn't orphaned.
-    expect(segs[0]).toEqual([
-      [0, 0],
-      [5, 2],
-    ]);
-    expect(segs[1]).toEqual([
-      [5, 2],
-      [0, 4],
-    ]);
+    // Both segments touch the off-route stop → null. We deliberately do
+    // NOT fabricate a straight line across the map.
+    expect(segs[0]).toBeNull();
+    expect(segs[1]).toBeNull();
   });
 
-  it("uses straight-line fallback for leading off-route stops (bus 3 case)", () => {
-    // Simulates the bus 3 direction-0 bug: first few stops live on a side
-    // street the agency polyline never enters; the rest of the route is
-    // properly covered.
+  it("returns null for leading off-route stops (bus 3 case)", () => {
+    // First few stops live on a side street the agency polyline never
+    // enters; the rest of the route is properly covered.
     const line = [
-      [0, 10], // start of "covered" geometry
+      [0, 10],
       [0, 11],
       [0, 12],
       [0, 13],
@@ -98,38 +83,39 @@ describe("slicePolylineByStops", () => {
     ];
     const segs = slicePolylineByStops(line, stops);
     expect(segs).toHaveLength(stops.length - 1);
-    // Every consecutive pair has a non-empty segment whose endpoints are
-    // the real stop coords — no invisible gaps.
-    for (let i = 0; i < segs.length; i++) {
-      expect(segs[i].length).toBeGreaterThanOrEqual(2);
-      expect(segs[i][0]).toEqual(stops[i]);
-      expect(segs[i][segs[i].length - 1]).toEqual(stops[i + 1]);
-    }
-    // The on-line stretch from [0,10] -> [0,12] should walk through the
-    // intermediate polyline vertex at [0,11].
+    // Pairs touching off-route stops are skipped (null).
+    expect(segs[0]).toBeNull();
+    expect(segs[1]).toBeNull();
+    expect(segs[2]).toBeNull();
+    // Pairs entirely on the polyline render normally and walk the line.
     expect(segs[3]).toEqual([
       [0, 10],
       [0, 11],
       [0, 12],
     ]);
+    expect(segs[4]).toEqual([
+      [0, 12],
+      [0, 13],
+    ]);
   });
 
-  it("falls back to straight line when snaps would go backwards", () => {
-    // Two stops both close to the line but the second one is closer to an
-    // earlier polyline vertex than the first — naive nearest-snap would
-    // produce a backwards slice.
+  it("renders close on-route stops sharing a polyline vertex", () => {
+    // Two on-route stops that snap to the same polyline vertex (a normal
+    // case for densely-spaced urban stops). Should still render — NOT be
+    // skipped — so adjacent stops aren't visually disconnected.
     const line = [
       [0, 0],
       [0, 1],
       [0, 2],
-      [0, 3],
     ];
     const stops = [
-      [0, 2.9], // snaps to index 3
-      [0, 0.1], // snaps to index 0 -> backwards
+      [0.0001, 1.0], // snaps to index 1
+      [0.0001, 1.001], // also snaps to index 1
     ];
     const segs = slicePolylineByStops(line, stops);
     expect(segs).toHaveLength(1);
-    expect(segs[0]).toEqual([stops[0], stops[1]]);
+    expect(segs[0]).not.toBeNull();
+    expect(segs[0][0]).toEqual(stops[0]);
+    expect(segs[0][segs[0].length - 1]).toEqual(stops[1]);
   });
 });
