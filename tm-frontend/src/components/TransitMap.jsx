@@ -1,150 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Polyline,
-  Marker,
-  CircleMarker,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import L from "leaflet";
-import polyline from "@mapbox/polyline";
 import {
   fetchRouteDetail,
   invalidateCache,
   markSegments,
 } from "../services/api";
 import HelpModal from "./HelpModal";
-
-const SEATTLE_CENTER = [47.6062, -122.3321];
-
-const HELP_SEEN_KEY = "te-help-seen-v1";
-const TRIP_TIMES_KEY = "te-trip-times-v1";
-const TRIP_TIMES_MAX = 25; // keep at most N samples per route+direction
-
-function readTripTimes() {
-  try {
-    const raw = localStorage.getItem(TRIP_TIMES_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function recordTripTime(routeId, directionId, ms) {
-  if (!routeId || ms == null || ms <= 0) return null;
-  const all = readTripTimes();
-  const key = `${routeId}|${directionId}`;
-  const list = Array.isArray(all[key]) ? all[key] : [];
-  list.push(Math.round(ms));
-  const trimmed = list.slice(-TRIP_TIMES_MAX);
-  all[key] = trimmed;
-  try {
-    localStorage.setItem(TRIP_TIMES_KEY, JSON.stringify(all));
-  } catch {
-    /* storage full / disabled — ignore */
-  }
-  return trimmed;
-}
-
-function getTripStats(routeId, directionId) {
-  const all = readTripTimes();
-  const list = all[`${routeId}|${directionId}`] || [];
-  if (!list.length) return null;
-  const total = list.reduce((a, b) => a + b, 0);
-  return {
-    count: list.length,
-    avgMs: total / list.length,
-    lastMs: list[list.length - 1],
-  };
-}
-
-function formatDuration(ms) {
-  if (!ms || ms <= 0) return null;
-  const totalSec = Math.round(ms / 1000);
-  if (totalSec < 60) return `${totalSec}s`;
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  if (min < 60) return sec ? `${min}m ${sec}s` : `${min}m`;
-  const hr = Math.floor(min / 60);
-  const remMin = min % 60;
-  return remMin ? `${hr}h ${remMin}m` : `${hr}h`;
-}
-
-const ROUTE_TYPE_LABELS = {
-  0: "Link",
-  1: "Subway",
-  2: "Rail",
-  3: "Bus",
-  4: "Ferry",
-  5: "Cable",
-  6: "Gondola",
-  7: "Funicular",
-};
-const ROUTE_TYPE_ICONS = {
-  0: "🚊",
-  1: "🚇",
-  2: "🚆",
-  3: "🚌",
-  4: "⛴️",
-  5: "🚠",
-  6: "🚠",
-  7: "🚞",
-};
-
-function decode(encoded) {
-  if (!encoded) return [];
-  return polyline.decode(encoded);
-}
-
-function normalizeDirectionId(value) {
-  if (value == null) return null;
-  return String(value);
-}
-
-/* Snap each stop to the nearest index on the polyline, then slice. */
-function slicePolylineByStops(line, stopPositions) {
-  if (line.length === 0 || stopPositions.length < 2) return [];
-  const indices = stopPositions.map((sp) => {
-    let best = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < line.length; i++) {
-      const d = (line[i][0] - sp[0]) ** 2 + (line[i][1] - sp[1]) ** 2;
-      if (d < bestDist) {
-        bestDist = d;
-        best = i;
-      }
-    }
-    return best;
-  });
-  const segments = [];
-  for (let i = 0; i < indices.length - 1; i++) {
-    const start = Math.min(indices[i], indices[i + 1]);
-    const end = Math.max(indices[i], indices[i + 1]);
-    segments.push(line.slice(start, end + 1));
-  }
-  return segments;
-}
-
-function FitBounds({ positions }) {
-  const map = useMap();
-  useEffect(() => {
-    if (positions.length > 0) map.fitBounds(positions, { padding: [40, 40] });
-  }, [positions, map]);
-  return null;
-}
-
-function FitHighlight({ positions }) {
-  const map = useMap();
-  useEffect(() => {
-    if (positions?.length > 0)
-      map.fitBounds(positions, { padding: [80, 80], maxZoom: 16 });
-  }, [positions, map]);
-  return null;
-}
+import { FitBounds, FitHighlight } from "./map/FitBounds";
+import StopSearch from "./map/StopSearch";
+import DirectionTabs from "./map/DirectionTabs";
+import MapLegend from "./map/MapLegend";
+import AllRoutesBanner from "./map/AllRoutesBanner";
+import PickOverlay from "./map/PickOverlay";
+import RouteSegmentsLayer from "./map/RouteSegmentsLayer";
+import AllRouteSegmentsLayer from "./map/AllRouteSegmentsLayer";
+import StopMarkersLayer from "./map/StopMarkersLayer";
+import {
+  SEATTLE_CENTER,
+  HELP_SEEN_KEY,
+  decode,
+  formatDuration,
+  getTripStats,
+  normalizeDirectionId,
+  recordTripTime,
+  slicePolylineByStops,
+} from "./map/mapUtils";
 
 function TransitMap({
   selectedRoute,
@@ -807,487 +688,77 @@ function TransitMap({
         )}
 
         {/* All in-progress routes overlay (no single route selected) */}
-        {allRouteSegments.map((seg) => {
-          const done = effectiveCompleted.has(seg.key);
-          const routeInfo = allRouteStatsById.get(seg.routeId);
-          return (
-            <Polyline
-              key={seg.key}
-              positions={seg.positions}
-              color={done ? "#22c55e" : seg.color}
-              weight={done ? 5 : 3}
-              opacity={done ? 0.85 : 0.45}
-            >
-              {routeInfo && (
-                <Tooltip sticky pane="tooltipPane">
-                  <span style={{ fontWeight: 600 }}>{routeInfo.name}</span>
-                  {" · "}
-                  {done ? (
-                    <span style={{ color: "#22c55e" }}>Completed</span>
-                  ) : (
-                    <span>{routeInfo.pct}% done</span>
-                  )}
-                </Tooltip>
-              )}
-            </Polyline>
-          );
-        })}
+        <AllRouteSegmentsLayer
+          segments={allRouteSegments}
+          effectiveCompleted={effectiveCompleted}
+          allRouteStatsById={allRouteStatsById}
+        />
 
         {/* Two passes: faint background line, bold colored overlay.
              Lets completed hops glow on top of the route base. */}
-        {directionSegments.map((seg) => {
-          const done = effectiveCompleted.has(seg.key);
-          const isHighlighted =
-            highlightedSegment &&
-            seg.key ===
-              `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`;
-          const isHovered = hoverSeg === seg.key;
-          const isFresh = recentlyDone.has(seg.key);
-          return (
-            <React.Fragment key={seg.key}>
-              <Polyline
-                positions={seg.positions}
-                color={
-                  isHighlighted ? "#facc15" : done ? "#22c55e" : routeColor
-                }
-                weight={isHighlighted ? 8 : done ? 6 : isHovered ? 6 : 4}
-                opacity={isHighlighted ? 1 : done ? 1 : isHovered ? 0.95 : 0.55}
-                eventHandlers={{
-                  click: () => handleSegmentClick(seg),
-                  mouseover: () => setHoverSeg(seg.key),
-                  mouseout: () =>
-                    setHoverSeg((h) => (h === seg.key ? null : h)),
-                }}
-              >
-                <Tooltip sticky direction="top" opacity={0.95}>
-                  <div style={{ fontWeight: 600, fontSize: 12 }}>
-                    {seg.fromName} → {seg.toName}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: done ? "#22c55e" : "#60a5fa",
-                    }}
-                  >
-                    {done ? "✓ Already marked" : "Click to mark this hop"}
-                  </div>
-                </Tooltip>
-              </Polyline>
-              {isFresh && (
-                <Polyline
-                  positions={seg.positions}
-                  color="#4ade80"
-                  weight={14}
-                  opacity={0.55}
-                  className="segment-pulse"
-                  interactive={false}
-                />
-              )}
-            </React.Fragment>
-          );
-        })}
+        <RouteSegmentsLayer
+          segments={directionSegments}
+          effectiveCompleted={effectiveCompleted}
+          highlightedSegment={highlightedSegment}
+          hoverSeg={hoverSeg}
+          setHoverSeg={setHoverSeg}
+          recentlyDone={recentlyDone}
+          routeColor={routeColor}
+          onSegmentClick={handleSegmentClick}
+        />
 
-        {visibleStops.map((stop) => {
-          const isPicking = pickState?.directionId === stop.directionId;
-          const isFrom = isPicking && pickState?.fromStopId === stop.id;
-          // A stop is a valid ending candidate only if it sits *after* the
-          // boarding stop in the direction's stop order.
-          const isValidCandidate =
-            isPicking &&
-            !isFrom &&
-            boardingOrderIndex !== null &&
-            stop.orderIndex > boardingOrderIndex;
-          // Same-direction stops that come *before* boarding are invalid —
-          // dim them and show an explanatory tooltip.
-          const isUpstreamInvalid =
-            isPicking &&
-            !isFrom &&
-            boardingOrderIndex !== null &&
-            stop.orderIndex <= boardingOrderIndex;
-
-          if (isFrom) {
-            return (
-              <Marker
-                key={`${stop.directionId}-${stop.id}`}
-                position={[stop.lat, stop.lon]}
-                icon={boardingIcon}
-                ref={(el) => {
-                  if (el)
-                    stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] =
-                      el;
-                }}
-                eventHandlers={{
-                  click: () =>
-                    handleStopClick(stop.directionId, stop.id, stop.name),
-                }}
-              >
-                <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
-                  <span style={{ fontWeight: 600 }}>{stop.name}</span>
-                  <br />
-                  <span style={{ fontSize: 11, color: "#22c55e" }}>
-                    Boarding stop — tap a stop ahead (toward{" "}
-                    {activeDirectionMeta?.lastStopName || "destination"})
-                  </span>
-                </Tooltip>
-              </Marker>
-            );
-          }
-
-          return (
-            <CircleMarker
-              key={`${stop.directionId}-${stop.id}`}
-              center={[stop.lat, stop.lon]}
-              className={`stop-marker ${isValidCandidate ? "is-alight-candidate" : ""} ${isUpstreamInvalid ? "is-unavailable" : ""}`.trim()}
-              radius={
-                isUpstreamInvalid
-                  ? 4
-                  : stop.isTerminus
-                    ? 7
-                    : isValidCandidate
-                      ? 8
-                      : 5
-              }
-              fillColor={
-                isUpstreamInvalid
-                  ? "#334155"
-                  : isValidCandidate
-                    ? "#22d3ee"
-                    : stop.isTerminus
-                      ? routeColor
-                      : "#fff"
-              }
-              color={
-                isUpstreamInvalid
-                  ? "#475569"
-                  : isValidCandidate
-                    ? "#7dd3fc"
-                    : routeColor
-              }
-              weight={isValidCandidate ? 3.5 : 2}
-              opacity={isUpstreamInvalid ? 0.7 : 1}
-              fillOpacity={isUpstreamInvalid ? 0.2 : 1}
-              dashArray={isUpstreamInvalid ? "2 3" : undefined}
-              ref={(el) => {
-                if (el)
-                  stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] = el;
-              }}
-              eventHandlers={{
-                click: () => {
-                  if (isUpstreamInvalid) {
-                    showToast(
-                      "That stop is behind your boarding point — pick one ahead or change directions.",
-                      "info",
-                    );
-                    return;
-                  }
-                  handleStopClick(stop.directionId, stop.id, stop.name);
-                },
-              }}
-            >
-              <Tooltip direction="top" offset={[0, -8]} opacity={0.95}>
-                <span style={{ fontWeight: 500 }}>{stop.name}</span>
-                {stop.isTerminus && (
-                  <span style={{ fontSize: 10, color: "#94a3b8" }}>
-                    {" "}
-                    · Terminus
-                  </span>
-                )}
-                {!pickState && (
-                  <>
-                    <br />
-                    <span style={{ fontSize: 11, opacity: 0.7 }}>
-                      Tap to board here
-                    </span>
-                  </>
-                )}
-                {isValidCandidate && (
-                  <>
-                    <br />
-                    <span style={{ fontSize: 11, color: "#22d3ee" }}>
-                      Available to alight
-                    </span>
-                  </>
-                )}
-                {isUpstreamInvalid && (
-                  <>
-                    <br />
-                    <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                      Behind boarding — can&apos;t alight here
-                    </span>
-                  </>
-                )}
-              </Tooltip>
-            </CircleMarker>
-          );
-        })}
+        <StopMarkersLayer
+          visibleStops={visibleStops}
+          pickState={pickState}
+          boardingOrderIndex={boardingOrderIndex}
+          routeColor={routeColor}
+          boardingIcon={boardingIcon}
+          activeDirectionMeta={activeDirectionMeta}
+          stopMarkerRefs={stopMarkerRefs}
+          onStopClick={handleStopClick}
+          showToast={showToast}
+        />
       </MapContainer>
 
       {/* Stacked overlay: direction tabs sit directly above the legend so they never overlap */}
       {(directionChoices.length > 1 || selectedRoute) && (
         <div className="map-overlay-stack">
           {selectedRoute && visibleStops.length > 0 && (
-            <div className={`stop-search ${stopSearch ? "is-open" : ""}`}>
-              <div className="stop-search-row">
-                <span
-                  className="stop-search-icon"
-                  aria-hidden="true"
-                  title="Search stops on this route"
-                >
-                  🔍
-                </span>
-                <input
-                  type="text"
-                  className="stop-search-input"
-                  placeholder={
-                    pickState
-                      ? "Find your ending stop…"
-                      : "Find a stop on this route…"
-                  }
-                  value={stopSearch}
-                  onChange={(e) => setStopSearch(e.target.value)}
-                  aria-label="Search stops on this route"
-                />
-                {stopSearch && (
-                  <button
-                    type="button"
-                    className="stop-search-clear"
-                    onClick={() => setStopSearch("")}
-                    aria-label="Clear search"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-              {stopSearch && (
-                <div className="stop-search-results">
-                  {stopSearchResults.length === 0 ? (
-                    <div className="stop-search-empty">No matching stops</div>
-                  ) : (
-                    stopSearchResults.map((s) => {
-                      const isBoardingChoice =
-                        pickState && pickState.fromStopId === s.id;
-                      const isUnavailableChoice =
-                        pickState &&
-                        pickState.directionId === s.directionId &&
-                        boardingOrderIndex !== null &&
-                        s.orderIndex <= boardingOrderIndex;
-                      return (
-                        <button
-                          type="button"
-                          key={`${s.directionId}-${s.id}`}
-                          className={`stop-search-result ${isUnavailableChoice ? "is-unavailable" : pickState ? "is-available" : ""}`.trim()}
-                          onClick={() => handleSearchPick(s)}
-                          disabled={isBoardingChoice || isUnavailableChoice}
-                          title={
-                            isBoardingChoice
-                              ? "This is your boarding stop"
-                              : isUnavailableChoice
-                                ? "Behind boarding: choose a stop ahead"
-                                : pickState
-                                  ? "Mark as ending stop"
-                                  : "Board here"
-                          }
-                        >
-                          <span className="stop-search-result-name">
-                            {s.name}
-                          </span>
-                          {pickState && !isBoardingChoice && (
-                            <span className="stop-search-result-status">
-                              {isUnavailableChoice
-                                ? "Unavailable"
-                                : "Available"}
-                            </span>
-                          )}
-                          {s.isTerminus && (
-                            <span className="stop-search-result-tag">
-                              Terminus
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-            </div>
+            <StopSearch
+              pickState={pickState}
+              stopSearch={stopSearch}
+              setStopSearch={setStopSearch}
+              stopSearchResults={stopSearchResults}
+              boardingOrderIndex={boardingOrderIndex}
+              onPick={handleSearchPick}
+            />
           )}
           {directionChoices.length > 1 && (
-            <div
-              className={`direction-tabs ${hasLockedDirection ? "is-locked" : ""}`}
-            >
-              {directionChoices.map((dir) => (
-                <button
-                  key={dir.directionId}
-                  className={`direction-tab ${resolvedDirectionId === dir.directionId ? "active" : ""} ${hasLockedDirection && resolvedDirectionId === dir.directionId ? "locked" : ""} ${hasLockedDirection && resolvedDirectionId !== dir.directionId ? "inactive" : ""}`.trim()}
-                  onClick={() => {
-                    setActiveDirection(dir.directionId);
-                    setPickState(null);
-                    onClearHighlight?.();
-                  }}
-                >
-                  <span className="direction-tab-label">{dir.label}</span>
-                  <span
-                    className="direction-tab-sub"
-                    title={dir.lastStopName || ""}
-                  >
-                    {hasLockedDirection &&
-                    resolvedDirectionId === dir.directionId
-                      ? dir.lastStopName
-                        ? `Locked toward ${dir.lastStopName}`
-                        : "Locked for current trip"
-                      : dir.lastStopName
-                        ? `Toward ${dir.lastStopName}`
-                        : "Tap to follow this direction"}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <DirectionTabs
+              directionChoices={directionChoices}
+              resolvedDirectionId={resolvedDirectionId}
+              hasLockedDirection={hasLockedDirection}
+              onSelect={(directionId) => {
+                setActiveDirection(directionId);
+                setPickState(null);
+                onClearHighlight?.();
+              }}
+            />
           )}
 
           {/* Map legend + per-route progress */}
           {selectedRoute && (
-            <div
-              className={`map-legend ${legendCollapsed ? "is-collapsed" : ""}`}
-            >
-              <div className="map-legend-title">
-                <span
-                  className="map-legend-swatch"
-                  style={{ background: routeColor }}
-                />
-                <span className="map-legend-mode">
-                  {ROUTE_TYPE_ICONS[selectedRoute.route_type] || "🚌"}{" "}
-                  {ROUTE_TYPE_LABELS[selectedRoute.route_type] || "Transit"}
-                </span>
-                <span className="map-legend-name">
-                  {selectedRoute.short_name || selectedRoute.long_name}
-                  {selectedRoute.short_name && selectedRoute.long_name ? (
-                    <span className="map-legend-sub">
-                      {" "}
-                      · {selectedRoute.long_name}
-                    </span>
-                  ) : null}
-                </span>
-                <button
-                  type="button"
-                  className="map-legend-collapse"
-                  onClick={() => setLegendCollapsed((v) => !v)}
-                  aria-expanded={!legendCollapsed}
-                  aria-label={legendCollapsed ? "Show legend" : "Hide legend"}
-                  title={legendCollapsed ? "Show details" : "Hide details"}
-                >
-                  {legendCollapsed ? "▴" : "▾"}
-                </button>
-              </div>
-              {!legendCollapsed && completionStats && (
-                <div className="map-legend-progress">
-                  <div className="map-legend-bar">
-                    <div
-                      className="map-legend-fill"
-                      style={{
-                        width: `${(completionStats.done / completionStats.total) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <span>
-                    {completionStats.done}/{completionStats.total} done
-                  </span>
-                </div>
-              )}
-              {!legendCollapsed && activeDirectionMeta && (
-                <div className="map-legend-direction">
-                  <span className="map-legend-direction-label">
-                    Logging direction
-                  </span>
-                  <strong>{activeDirectionMeta.label}</strong>
-                  {activeDirectionMeta.firstStopName &&
-                    activeDirectionMeta.lastStopName && (
-                      <span className="map-legend-direction-flow">
-                        {activeDirectionMeta.firstStopName} →{" "}
-                        {activeDirectionMeta.lastStopName}
-                      </span>
-                    )}
-                </div>
-              )}
-              {!legendCollapsed && (
-                <div className="map-legend-steps">
-                  <div
-                    className={`map-legend-step ${activeDirectionMeta || pickState || justCompleted ? "is-complete" : "is-active"}`}
-                  >
-                    <span className="map-legend-step-num">
-                      {activeDirectionMeta || pickState || justCompleted
-                        ? "✓"
-                        : "1"}
-                    </span>
-                    <span>
-                      Choose the correct direction
-                      {activeDirectionMeta?.lastStopName
-                        ? ` (toward ${activeDirectionMeta.lastStopName})`
-                        : ""}
-                    </span>
-                  </div>
-                  <div
-                    className={`map-legend-step ${pickState || justCompleted ? "is-complete" : activeDirectionMeta ? "is-active" : ""}`}
-                  >
-                    <span className="map-legend-step-num">
-                      {pickState || justCompleted ? "✓" : "2"}
-                    </span>
-                    <span>
-                      {pickState
-                        ? `Boarded: ${pickState.fromName}`
-                        : "Tap your boarding stop"}
-                    </span>
-                  </div>
-                  <div
-                    className={`map-legend-step ${justCompleted ? "is-complete" : pickState ? "is-active" : ""}`}
-                  >
-                    <span className="map-legend-step-num">
-                      {justCompleted ? "✓" : "3"}
-                    </span>
-                    <span>
-                      {justCompleted
-                        ? "Trip logged — pick another or change direction"
-                        : "Tap your ending stop in the same direction"}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {!legendCollapsed && (
-                <div className="map-legend-hints">
-                  <span>
-                    <i className="dot done" /> Completed
-                  </span>
-                  <span>
-                    <i
-                      className="dot pending"
-                      style={{ background: routeColor }}
-                    />{" "}
-                    Pending
-                  </span>
-                </div>
-              )}
-              {!legendCollapsed && tripStats && (
-                <div
-                  className="map-legend-trip-stats"
-                  title="Average and most-recent ride time, measured between your boarding and ending taps. Stored locally on this device."
-                >
-                  <span className="map-legend-trip-icon" aria-hidden>
-                    ⏱
-                  </span>
-                  <span>
-                    <strong>{formatDuration(tripStats.avgMs)}</strong> avg
-                    {tripStats.count > 1 ? ` (${tripStats.count} trips)` : ""}
-                    {tripStats.lastMs ? (
-                      <>
-                        {" · "}
-                        <span className="map-legend-trip-last">
-                          last {formatDuration(tripStats.lastMs)}
-                        </span>
-                      </>
-                    ) : null}
-                  </span>
-                </div>
-              )}
-            </div>
+            <MapLegend
+              selectedRoute={selectedRoute}
+              routeColor={routeColor}
+              legendCollapsed={legendCollapsed}
+              setLegendCollapsed={setLegendCollapsed}
+              completionStats={completionStats}
+              activeDirectionMeta={activeDirectionMeta}
+              pickState={pickState}
+              justCompleted={justCompleted}
+              tripStats={tripStats}
+            />
           )}
         </div>
       )}
@@ -1303,86 +774,21 @@ function TransitMap({
       )}
 
       {!selectedRoute && allProgressDetails?.length > 0 && (
-        <div className="all-routes-banner">
-          <div className="all-routes-banner-header">
-            <span className="all-routes-banner-text">
-              🗺 Viewing all {allProgressDetails.length} in-progress route
-              {allProgressDetails.length !== 1 ? "s" : ""}
-            </span>
-            <button
-              type="button"
-              className="all-routes-banner-clear"
-              onClick={() => onClearAllProgress?.()}
-              aria-label="Close all-routes view"
-            >
-              ✕ Close
-            </button>
-          </div>
-          <div className="all-routes-legend-list">
-            <span className="all-routes-legend all-routes-legend-global">
-              <i
-                aria-hidden="true"
-                className="all-routes-legend-dot"
-                style={{ background: "#22c55e" }}
-              />{" "}
-              Completed
-            </span>
-            {allRouteStats.map((r) => (
-              <span key={r.id} className="all-routes-route-chip">
-                <i
-                  aria-hidden="true"
-                  className="all-routes-legend-dot"
-                  style={{ background: r.color }}
-                />
-                {r.name}
-                <span className="all-routes-route-chip-pct">{r.pct}%</span>
-              </span>
-            ))}
-          </div>
-        </div>
+        <AllRoutesBanner
+          allProgressDetails={allProgressDetails}
+          allRouteStats={allRouteStats}
+          onClose={onClearAllProgress}
+        />
       )}
 
       {/* Pick overlay */}
-      {pickState && !marking && (
-        <div className="pick-overlay">
-          <div className="pick-info">
-            <span className="pick-dot boarding" />
-            <span className="pick-label">
-              Boarded at <strong>{pickState.fromName}</strong>
-            </span>
-          </div>
-          <span className="pick-arrow">→</span>
-          <span className="pick-prompt">Now tap your ending stop</span>
-          {pickState.boardedAt && (
-            <span
-              className="pick-timer"
-              title="Time since you tapped your boarding stop"
-            >
-              ⏱ {formatDuration(liveTripMs) || "0s"}
-            </span>
-          )}
-          {activeDirectionMeta && (
-            <span className="pick-direction-lock">
-              Direction locked: {activeDirectionMeta.label}
-              {activeDirectionMeta.lastStopName
-                ? ` toward ${activeDirectionMeta.lastStopName}`
-                : ""}
-            </span>
-          )}
-          <button
-            className="pick-undo"
-            onClick={undoBoarding}
-            title="Undo boarding (Esc)"
-          >
-            ↶ Undo boarding
-          </button>
-        </div>
-      )}
-      {marking && (
-        <div className="pick-overlay">
-          <span className="spinner" /> Saving…
-        </div>
-      )}
+      <PickOverlay
+        pickState={pickState}
+        marking={marking}
+        liveTripMs={liveTripMs}
+        activeDirectionMeta={activeDirectionMeta}
+        onUndo={undoBoarding}
+      />
 
       {/* Highlighted-from-progress banner */}
       {highlightedSegment && !pickState && (
