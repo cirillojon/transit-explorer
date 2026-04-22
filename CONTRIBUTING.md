@@ -25,7 +25,7 @@ cd transit-explorer
 cp .env.example .env                          # then edit
 # Drop your Firebase service-account JSON next to .env as service-account.json
 
-# 2. (Option A) Docker — recommended
+# 2. (Option A) Docker
 ./dev_container_update.sh 8880                # → http://localhost:8880
 
 # 2. (Option B) Pure Python — for fast iteration

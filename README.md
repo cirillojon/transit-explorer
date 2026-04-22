@@ -67,7 +67,7 @@ stay essentially free to host.
 git clone https://github.com/cirillojon/transit-explorer.git
 cd transit-explorer
 
-# 2. Backend (Docker — easiest)
+# 2. Backend (Docker)
 cp .env.example .env                   # then fill in OBA_API_KEY, Firebase IDs
 #   Drop your Firebase service-account JSON next to .env as service-account.json
 ./dev_container_update.sh 8880         # → http://localhost:8880

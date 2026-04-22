@@ -24,7 +24,7 @@ cp .env.example .env                      # then fill in values
 
 # Pick one backend workflow below.
 
-# Preferred backend workflow: Docker helper
+# Docker helper
 ./dev_container_update.sh 8880
 
 # Alternative: local Python environment
@@ -45,7 +45,7 @@ cd ..
 Open two terminals. For the backend terminal, pick one option:
 
 ```bash
-# Terminal 1 — backend (preferred Docker helper)
+# Terminal 1 — backend
 cd transit-explorer
 ./dev_container_update.sh 8880
 ```
@@ -328,7 +328,7 @@ flyctl machine restart <machine-id> -a transit-explorer
 
 ```bash
 # Local dev
-./dev_container_update.sh 8880 # backend (preferred)
+./dev_container_update.sh 8880 # backend with Docker
 flask run --port 8880          # backend without Docker
 npm --prefix tm-frontend run dev   # frontend
 
