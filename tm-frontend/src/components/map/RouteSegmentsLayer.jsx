@@ -12,6 +12,10 @@ function RouteSegmentsLayer({
   onSegmentClick,
 }) {
   return segments.map((seg) => {
+    // Hops with no drawable polyline geometry (off-route stops, missing
+    // agency data) are still tracked in the segment list so completion
+    // stats stay accurate, but there's nothing to paint here.
+    if (!seg.positions) return null;
     const done = effectiveCompleted.has(seg.key);
     const isHighlighted =
       highlightedSegment &&

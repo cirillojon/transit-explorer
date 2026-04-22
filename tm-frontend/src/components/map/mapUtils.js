@@ -110,26 +110,92 @@ export function getStopPickStatus(stop, pickState, boardingOrderIndex) {
   return stop.orderIndex > boardingOrderIndex ? "candidate" : "upstream";
 }
 
-/* Snap each stop to the nearest index on the polyline, then slice. */
-export function slicePolylineByStops(line, stopPositions) {
-  if (line.length === 0 || stopPositions.length < 2) return [];
-  const indices = stopPositions.map((sp) => {
-    let best = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < line.length; i++) {
-      const d = (line[i][0] - sp[0]) ** 2 + (line[i][1] - sp[1]) ** 2;
-      if (d < bestDist) {
-        bestDist = d;
-        best = i;
-      }
+// Squared-degree distance threshold used to decide a stop is "off-route"
+// (i.e. the agency-supplied polyline doesn't actually reach it). At Seattle
+// latitudes this is roughly ~150m. When either endpoint of a segment is
+// off-route we return `null` for that segment rather than fabricating a
+// straight line through unrelated geometry — the agency polyline is the
+// source of truth and a made-up line is more confusing than a visible gap.
+const OFF_ROUTE_THRESHOLD_DEG_SQ = 0.0015 ** 2;
+
+function distSq(a, b) {
+  return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2;
+}
+
+// Find the polyline index closest to `point`. Returns { index, dSq }.
+function nearestIndex(line, point) {
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < line.length; i++) {
+    const d = distSq(line[i], point);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
     }
-    return best;
-  });
+  }
+  return { index: best, dSq: bestDist };
+}
+
+/**
+ * Snap each stop to the nearest index on the polyline, then build one
+ * segment per consecutive stop pair.
+ *
+ * Returns a sparse array of length `stopPositions.length - 1`. Each entry is
+ * either:
+ *   - an array of [lat, lon] points starting at stopA and ending at stopB
+ *     (polyline geometry between them, with the real stop coords as
+ *     endpoints so adjacent segments butt cleanly), OR
+ *   - `null` when either endpoint is too far from the polyline
+ *     (per OFF_ROUTE_THRESHOLD_DEG_SQ). We deliberately do NOT fabricate a
+ *     straight line in that case — the agency polyline is the source of
+ *     truth and a made-up line is more confusing than a visible gap.
+ *
+ * Callers should treat `null` as "no drawable geometry for this stop pair"
+ * and skip rendering it. The stop markers themselves are still rendered so
+ * users can board/alight at those stops, but the hop between them won't
+ * have a clickable polyline.
+ */
+export function slicePolylineByStops(line, stopPositions) {
+  if (stopPositions.length < 2) return [];
+  if (line.length === 0) {
+    // No polyline at all → no segments are drawable.
+    return new Array(stopPositions.length - 1).fill(null);
+  }
+
+  const snaps = stopPositions.map((sp) => nearestIndex(line, sp));
+
   const segments = [];
-  for (let i = 0; i < indices.length - 1; i++) {
-    const start = Math.min(indices[i], indices[i + 1]);
-    const end = Math.max(indices[i], indices[i + 1]);
-    segments.push(line.slice(start, end + 1));
+  for (let i = 0; i < snaps.length - 1; i++) {
+    const a = snaps[i];
+    const b = snaps[i + 1];
+    const aOff = a.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ;
+    const bOff = b.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ;
+
+    if (aOff || bOff) {
+      segments.push(null);
+      continue;
+    }
+
+    // Strictly-backwards snap means one of the stops is on a different
+    // part of the polyline than its order suggests (e.g. a malformed
+    // trailing stop that happens to be close to a mid-route vertex).
+    // Drawing the slice would paint a long wrong-direction line across
+    // the map. Skip rather than fabricate. Equal indices are allowed so
+    // densely-spaced stops sharing a vertex still render.
+    if (b.index < a.index) {
+      segments.push(null);
+      continue;
+    }
+
+    const start = a.index;
+    const end = b.index;
+    // Use the real stop coordinates as endpoints so adjacent segments butt
+    // exactly together with no visual gap from snap rounding.
+    segments.push([
+      stopPositions[i],
+      ...line.slice(start + 1, end),
+      stopPositions[i + 1],
+    ]);
   }
   return segments;
 }

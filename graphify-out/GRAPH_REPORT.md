@@ -1,12 +1,12 @@
 # Graph Report - transit-explorer  (2026-04-22)
 
 ## Corpus Check
-- 53 files · ~77,712 words
+- 54 files · ~78,846 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 299 nodes · 454 edges · 28 communities detected
-- Extraction: 66% EXTRACTED · 34% INFERRED · 0% AMBIGUOUS · INFERRED: 153 edges (avg confidence: 0.59)
+- 302 nodes · 457 edges · 28 communities detected
+- Extraction: 67% EXTRACTED · 33% INFERRED · 0% AMBIGUOUS · INFERRED: 153 edges (avg confidence: 0.59)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -28,16 +28,16 @@
 - [[_COMMUNITY_Community 17|Community 17]]
 - [[_COMMUNITY_Community 18|Community 18]]
 - [[_COMMUNITY_Community 19|Community 19]]
-- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 21|Community 21]]
 - [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 24|Community 24]]
-- [[_COMMUNITY_Community 31|Community 31]]
 - [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 33|Community 33]]
 - [[_COMMUNITY_Community 34|Community 34]]
 - [[_COMMUNITY_Community 35|Community 35]]
 - [[_COMMUNITY_Community 36|Community 36]]
 - [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `React Framework` - 25 edges
@@ -74,7 +74,7 @@
 
 ### Community 0 - "Community 0"
 Cohesion: 0.04
-Nodes (10): App(), cleanLabel(), getRouteDisplayText(), useAuth(), ErrorBoundary, Leaflet Map Library, React Framework, React-Leaflet (+2 more)
+Nodes (8): ErrorBoundary, Leaflet Map Library, React Framework, React-Leaflet, cleanLabel(), getRouteDisplayText(), groupIntoJourneys(), makeJourney()
 
 ### Community 1 - "Community 1"
 Cohesion: 0.12
@@ -93,16 +93,16 @@ Cohesion: 0.12
 Nodes (4): cached(), fetchRouteDetail(), fetchRoutes(), fetchStops()
 
 ### Community 5 - "Community 5"
-Cohesion: 0.15
-Nodes (9): app(), auth_headers(), Flask-CORS, Flask-Limiter, Flask-Migrate, create_app(), _init_firebase(), Flask app factory for Transit Explorer.  Boot model (kept deliberately simple) (+1 more)
+Cohesion: 0.16
+Nodes (8): MapLegend(), distSq(), formatDuration(), getTripStats(), nearestIndex(), readTripTimes(), recordTripTime(), PickOverlay()
 
 ### Community 6 - "Community 6"
 Cohesion: 0.15
-Nodes (5): add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, baseline schema  Revision ID: f838d5f10e83 Revises:  Create Date: 2026-04-21 14:, upgrade(), SQLAlchemy ORM
+Nodes (9): app(), auth_headers(), Flask-CORS, Flask-Limiter, Flask-Migrate, create_app(), _init_firebase(), Flask app factory for Transit Explorer.  Boot model (kept deliberately simple) (+1 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.18
-Nodes (6): MapLegend(), formatDuration(), getTripStats(), readTripTimes(), recordTripTime(), PickOverlay()
+Cohesion: 0.15
+Nodes (5): add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, baseline schema  Revision ID: f838d5f10e83 Revises:  Create Date: 2026-04-21 14:, upgrade(), SQLAlchemy ORM
 
 ### Community 8 - "Community 8"
 Cohesion: 0.22
@@ -113,24 +113,24 @@ Cohesion: 0.2
 Nodes (4): If pair_keys[0] was already marked, duration_ms must still land on     the firs, duration_ms on a fresh multi-hop mark attaches to the first new row., test_mark_segments_attaches_duration_to_first_new_row(), test_mark_segments_persists_duration_on_first_row()
 
 ### Community 10 - "Community 10"
+Cohesion: 0.38
+Nodes (4): App(), cleanLabel(), getRouteDisplayText(), useAuth()
+
+### Community 11 - "Community 11"
 Cohesion: 0.33
 Nodes (2): groupIntoJourneys(), makeJourney()
 
-### Community 11 - "Community 11"
+### Community 12 - "Community 12"
 Cohesion: 0.43
 Nodes (7): Achievements & Badges, Gamification, Leaderboard System, Mobile-First UX, Route Tracking, Segment Logging, Transit Explorer
 
-### Community 12 - "Community 12"
+### Community 13 - "Community 13"
 Cohesion: 0.33
 Nodes (7): Interactive Map View (UI), Progress Tracking (UI), Route Segment (UI), Transit Routes List (UI), Seattle Map Geography, Transit Stop (UI), Transit Explorer App (UI)
 
-### Community 13 - "Community 13"
-Cohesion: 0.4
-Nodes (5): fetch_routes_for_agency(), fetch_stops_for_route(), get_client(), Fetch all routes for a given agency., Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP
-
 ### Community 14 - "Community 14"
 Cohesion: 0.4
-Nodes (2): groupIntoJourneys(), makeJourney()
+Nodes (5): fetch_routes_for_agency(), fetch_stops_for_route(), get_client(), Fetch all routes for a given agency., Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP
 
 ### Community 17 - "Community 17"
 Cohesion: 0.5
@@ -144,7 +144,7 @@ Nodes (2): Config, Static fallback config. The Flask app factory reads env vars 
 Cohesion: 0.67
 Nodes (3): Firebase Auth, Firebase Keys Not Secrets Rationale, Google Sign-In
 
-### Community 22 - "Community 22"
+### Community 21 - "Community 21"
 Cohesion: 1.0
 Nodes (1): Vite Bundler
 
@@ -156,72 +156,70 @@ Nodes (2): SQLite Database, SQLite for Single-Instance Rationale
 Cohesion: 1.0
 Nodes (2): Frontend Favicon, React Logo (asset)
 
-### Community 31 - "Community 31"
+### Community 32 - "Community 32"
 Cohesion: 1.0
 Nodes (1): PostgreSQL Database
 
-### Community 32 - "Community 32"
+### Community 33 - "Community 33"
 Cohesion: 1.0
 Nodes (1): Gunicorn WSGI Server
 
-### Community 33 - "Community 33"
+### Community 34 - "Community 34"
 Cohesion: 1.0
 Nodes (1): OneBusAway API
 
-### Community 34 - "Community 34"
+### Community 35 - "Community 35"
 Cohesion: 1.0
 Nodes (1): CARTO Basemap Tiles
 
-### Community 35 - "Community 35"
+### Community 36 - "Community 36"
 Cohesion: 1.0
 Nodes (1): In-Process Loader Design Rationale
 
-### Community 36 - "Community 36"
+### Community 37 - "Community 37"
 Cohesion: 1.0
 Nodes (1): Leaderboard Ranking (UI)
 
-### Community 37 - "Community 37"
+### Community 38 - "Community 38"
 Cohesion: 1.0
 Nodes (1): Vite (logo)
 
 ## Knowledge Gaps
 - **41 isolated node(s):** `Flask CLI commands for Transit Explorer.  Registered in app/__init__.py via ap`, `Refresh transit routes/stops/directions from OneBusAway.`, `Print the per-agency DataLoad state as JSON.`, `Exit 1 if SQLAlchemy models drift from alembic head.      Used by `bin/check-s`, `Static fallback config. The Flask app factory reads env vars directly,     so th` (+36 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 10`** (7 nodes): `groupIntoJourneys()`, `makeJourney()`, `PPAchievements()`, `PPOverview()`, `PPRoutes()`, `PublicProfile()`, `PublicProfile.jsx`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 14`** (6 nodes): `UserProgress.jsx`, `formatDurationMs()`, `groupIntoJourneys()`, `makeJourney()`, `parseDurationInput()`, `UserProgress()`
+- **Thin community `Community 11`** (7 nodes): `groupIntoJourneys()`, `makeJourney()`, `PPAchievements()`, `PPOverview()`, `PPRoutes()`, `PublicProfile()`, `PublicProfile.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 18`** (3 nodes): `config.py`, `Config`, `Static fallback config. The Flask app factory reads env vars directly,     so th`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 22`** (2 nodes): `vite.config.js`, `Vite Bundler`
+- **Thin community `Community 21`** (2 nodes): `vite.config.js`, `Vite Bundler`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 23`** (2 nodes): `SQLite Database`, `SQLite for Single-Instance Rationale`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 24`** (2 nodes): `Frontend Favicon`, `React Logo (asset)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 31`** (1 nodes): `PostgreSQL Database`
+- **Thin community `Community 32`** (1 nodes): `PostgreSQL Database`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 32`** (1 nodes): `Gunicorn WSGI Server`
+- **Thin community `Community 33`** (1 nodes): `Gunicorn WSGI Server`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 33`** (1 nodes): `OneBusAway API`
+- **Thin community `Community 34`** (1 nodes): `OneBusAway API`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (1 nodes): `CARTO Basemap Tiles`
+- **Thin community `Community 35`** (1 nodes): `CARTO Basemap Tiles`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 35`** (1 nodes): `In-Process Loader Design Rationale`
+- **Thin community `Community 36`** (1 nodes): `In-Process Loader Design Rationale`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 36`** (1 nodes): `Leaderboard Ranking (UI)`
+- **Thin community `Community 37`** (1 nodes): `Leaderboard Ranking (UI)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (1 nodes): `Vite (logo)`
+- **Thin community `Community 38`** (1 nodes): `Vite (logo)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `React Framework` connect `Community 0` to `Community 10`, `Community 14`, `Community 7`?**
-  _High betweenness centrality (0.070) - this node is a cross-community bridge._
-- **Why does `Flask Framework` connect `Community 8` to `Community 1`, `Community 3`, `Community 5`?**
-  _High betweenness centrality (0.042) - this node is a cross-community bridge._
-- **Why does `SQLAlchemy ORM` connect `Community 6` to `Community 1`?**
+- **Why does `React Framework` connect `Community 0` to `Community 10`, `Community 11`, `Community 5`?**
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
+- **Why does `Flask Framework` connect `Community 8` to `Community 1`, `Community 3`, `Community 6`?**
+  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+- **Why does `SQLAlchemy ORM` connect `Community 7` to `Community 1`?**
   _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **Are the 19 inferred relationships involving `Route` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
   _`Route` has 19 INFERRED edges - model-reasoned connections that need verification._
