@@ -1,6 +1,9 @@
 # Transit Explorer 🚌
 
 [![CI](https://github.com/cirillojon/transit-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/cirillojon/transit-explorer/actions/workflows/ci.yml)
+[![Fly Deploy](https://github.com/cirillojon/transit-explorer/actions/workflows/fly-deploy.yml/badge.svg)](https://github.com/cirillojon/transit-explorer/actions/workflows/fly-deploy.yml)
+[![Frontend](https://img.shields.io/website?url=https%3A%2F%2Ftransit-explorer.org&label=frontend&up_message=live&down_message=down)](https://transit-explorer.org/)
+[![Backend](https://img.shields.io/website?url=https%3A%2F%2Ftransit-explorer.fly.dev%2Fapi%2Fhealth&label=backend&up_message=healthy&down_message=down)](https://transit-explorer.fly.dev/api/health)
 
 > A gamified transit map for Seattle. Ride a bus or train, mark the segment
 > you traveled, and watch the network fill in. Earn achievements, climb the
