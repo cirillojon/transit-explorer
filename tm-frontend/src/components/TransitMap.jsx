@@ -716,6 +716,7 @@ function TransitMap({
   const routeColor = selectedRoute?.color
     ? `#${selectedRoute.color}`
     : "#60a5fa";
+  const hasLockedDirection = Boolean(pickState);
 
   return (
     <div className="map-wrapper">
@@ -734,10 +735,9 @@ function TransitMap({
           allSelectedPositions.length > 0 &&
           !highlightPositions && <FitBounds positions={allSelectedPositions} />}
         {highlightPositions && <FitHighlight positions={highlightPositions} />}
-        {!selectedRoute &&
-          allProgressPositions.length > 0 && (
-            <FitBounds positions={allProgressPositions} />
-          )}
+        {!selectedRoute && allProgressPositions.length > 0 && (
+          <FitBounds positions={allProgressPositions} />
+        )}
 
         {/* All in-progress routes overlay (no single route selected) */}
         {allRouteSegments.map((seg) => {
@@ -870,20 +870,21 @@ function TransitMap({
             <CircleMarker
               key={`${stop.directionId}-${stop.id}`}
               center={[stop.lat, stop.lon]}
+              className={`stop-marker ${isValidCandidate ? "is-alight-candidate" : ""} ${isUpstreamInvalid ? "is-unavailable" : ""}`.trim()}
               radius={
                 isUpstreamInvalid
                   ? 4
                   : stop.isTerminus
                     ? 7
                     : isValidCandidate
-                      ? 7
+                      ? 8
                       : 5
               }
               fillColor={
                 isUpstreamInvalid
-                  ? "#475569"
+                  ? "#334155"
                   : isValidCandidate
-                    ? "#60a5fa"
+                    ? "#22d3ee"
                     : stop.isTerminus
                       ? routeColor
                       : "#fff"
@@ -892,12 +893,13 @@ function TransitMap({
                 isUpstreamInvalid
                   ? "#475569"
                   : isValidCandidate
-                    ? "#60a5fa"
+                    ? "#7dd3fc"
                     : routeColor
               }
-              weight={isValidCandidate ? 3 : 2}
-              opacity={isUpstreamInvalid ? 0.5 : 1}
-              fillOpacity={isUpstreamInvalid ? 0.4 : 1}
+              weight={isValidCandidate ? 3.5 : 2}
+              opacity={isUpstreamInvalid ? 0.7 : 1}
+              fillOpacity={isUpstreamInvalid ? 0.2 : 1}
+              dashArray={isUpstreamInvalid ? "2 3" : undefined}
               ref={(el) => {
                 if (el)
                   stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] = el;
@@ -934,8 +936,8 @@ function TransitMap({
                 {isValidCandidate && (
                   <>
                     <br />
-                    <span style={{ fontSize: 11, color: "#60a5fa" }}>
-                      Tap — got off here
+                    <span style={{ fontSize: 11, color: "#22d3ee" }}>
+                      Available to alight
                     </span>
                   </>
                 )}
@@ -997,24 +999,38 @@ function TransitMap({
                     stopSearchResults.map((s) => {
                       const isBoardingChoice =
                         pickState && pickState.fromStopId === s.id;
+                      const isUnavailableChoice =
+                        pickState &&
+                        pickState.directionId === s.directionId &&
+                        boardingOrderIndex !== null &&
+                        s.orderIndex <= boardingOrderIndex;
                       return (
                         <button
                           type="button"
                           key={`${s.directionId}-${s.id}`}
-                          className="stop-search-result"
+                          className={`stop-search-result ${isUnavailableChoice ? "is-unavailable" : pickState ? "is-available" : ""}`.trim()}
                           onClick={() => handleSearchPick(s)}
-                          disabled={isBoardingChoice}
+                          disabled={isBoardingChoice || isUnavailableChoice}
                           title={
                             isBoardingChoice
                               ? "This is your boarding stop"
-                              : pickState
-                                ? "Mark as ending stop"
-                                : "Board here"
+                              : isUnavailableChoice
+                                ? "Behind boarding: choose a stop ahead"
+                                : pickState
+                                  ? "Mark as ending stop"
+                                  : "Board here"
                           }
                         >
                           <span className="stop-search-result-name">
                             {s.name}
                           </span>
+                          {pickState && !isBoardingChoice && (
+                            <span className="stop-search-result-status">
+                              {isUnavailableChoice
+                                ? "Unavailable"
+                                : "Available"}
+                            </span>
+                          )}
                           {s.isTerminus && (
                             <span className="stop-search-result-tag">
                               Terminus
@@ -1029,11 +1045,13 @@ function TransitMap({
             </div>
           )}
           {directionChoices.length > 1 && (
-            <div className="direction-tabs">
+            <div
+              className={`direction-tabs ${hasLockedDirection ? "is-locked" : ""}`}
+            >
               {directionChoices.map((dir) => (
                 <button
                   key={dir.directionId}
-                  className={`direction-tab ${activeDirection === dir.directionId ? "active" : ""}`}
+                  className={`direction-tab ${activeDirection === dir.directionId ? "active" : ""} ${hasLockedDirection && activeDirection === dir.directionId ? "locked" : ""} ${hasLockedDirection && activeDirection !== dir.directionId ? "inactive" : ""}`.trim()}
                   onClick={() => {
                     setActiveDirection(dir.directionId);
                     setPickState(null);
@@ -1045,9 +1063,13 @@ function TransitMap({
                     className="direction-tab-sub"
                     title={dir.lastStopName || ""}
                   >
-                    {dir.lastStopName
-                      ? `Toward ${dir.lastStopName}`
-                      : "Tap to follow this direction"}
+                    {hasLockedDirection && activeDirection === dir.directionId
+                      ? dir.lastStopName
+                        ? `Locked toward ${dir.lastStopName}`
+                        : "Locked for current trip"
+                      : dir.lastStopName
+                        ? `Toward ${dir.lastStopName}`
+                        : "Tap to follow this direction"}
                   </span>
                 </button>
               ))}

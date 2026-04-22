@@ -918,6 +918,12 @@ button {
 .stop-search-result:last-child {
   border-bottom: none;
 }
+.stop-search-result.is-available {
+  border-left: 2px solid rgba(34, 211, 238, 0.85);
+}
+.stop-search-result.is-unavailable {
+  border-left: 2px solid rgba(148, 163, 184, 0.6);
+}
 .stop-search-result:hover:not(:disabled) {
   background: var(--surface-2);
   color: var(--accent);
@@ -931,6 +937,17 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.stop-search-result-status {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #22d3ee;
+  flex-shrink: 0;
+}
+.stop-search-result.is-unavailable .stop-search-result-status {
+  color: var(--text-faint);
 }
 .stop-search-result-tag {
   font-size: 9px;
@@ -983,6 +1000,12 @@ button {
   overflow-x: auto;
   flex-shrink: 0;
 }
+.direction-tabs.is-locked {
+  border-color: rgba(34, 211, 238, 0.55);
+  box-shadow:
+    var(--shadow-md),
+    0 0 0 1px rgba(34, 211, 238, 0.25);
+}
 .direction-tabs::-webkit-scrollbar {
   display: none;
 }
@@ -1013,6 +1036,18 @@ button {
   background: var(--accent);
   color: #0b1220;
 }
+.direction-tab.locked {
+  background: linear-gradient(135deg, #22d3ee, #38bdf8);
+  color: #04151f;
+  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.85);
+}
+.direction-tab.inactive {
+  opacity: 0.5;
+  filter: saturate(0.65);
+}
+.direction-tab.locked .direction-tab-sub {
+  color: rgba(4, 21, 31, 0.78);
+}
 .direction-tab-label {
   font-size: 13px;
   font-weight: 600;
@@ -1033,6 +1068,30 @@ button {
 }
 .direction-tab.active .direction-tab-sub {
   color: rgba(11, 18, 32, 0.78);
+}
+
+.leaflet-interactive.stop-marker.is-alight-candidate {
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.85));
+  animation: stop-candidate-pulse 0.95s ease-in-out infinite alternate;
+}
+
+.leaflet-interactive.stop-marker.is-unavailable {
+  filter: saturate(0.5) brightness(0.78);
+}
+
+@keyframes stop-candidate-pulse {
+  from {
+    stroke-width: 2.5;
+  }
+  to {
+    stroke-width: 4.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-interactive.stop-marker.is-alight-candidate {
+    animation: none;
+  }
 }
 
 /* ── Map legend ─────────────────────────────────────────── */
