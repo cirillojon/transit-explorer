@@ -10,7 +10,11 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import polyline from "@mapbox/polyline";
-import { fetchRouteDetail, markSegments } from "../services/api";
+import {
+  fetchRouteDetail,
+  invalidateCache,
+  markSegments,
+} from "../services/api";
 import HelpModal from "./HelpModal";
 
 const SEATTLE_CENTER = [47.6062, -122.3321];
@@ -94,6 +98,11 @@ const ROUTE_TYPE_ICONS = {
 function decode(encoded) {
   if (!encoded) return [];
   return polyline.decode(encoded);
+}
+
+function normalizeDirectionId(value) {
+  if (value == null) return null;
+  return String(value);
 }
 
 /* Snap each stop to the nearest index on the polyline, then slice. */
@@ -255,7 +264,9 @@ function TransitMap({
         if (cancelled) return;
         setRouteDetail(data);
         if (data.directions?.length > 0) {
-          setActiveDirection(data.directions[0].direction_id);
+          setActiveDirection(
+            normalizeDirectionId(data.directions[0].direction_id),
+          );
         }
       })
       .catch(() => !cancelled && showToast("Could not load route", "error"));
@@ -271,7 +282,7 @@ function TransitMap({
       routeDetail &&
       highlightedSegment.routeId === routeDetail.id
     ) {
-      setActiveDirection(highlightedSegment.directionId);
+      setActiveDirection(normalizeDirectionId(highlightedSegment.directionId));
     }
   }, [highlightedSegment, routeDetail]);
 
@@ -283,7 +294,7 @@ function TransitMap({
       const firstStop = ids[0] ? stopsMap[ids[0]] : null;
       const lastStop = ids.length ? stopsMap[ids[ids.length - 1]] : null;
       return {
-        directionId: dir.direction_id,
+        directionId: normalizeDirectionId(dir.direction_id),
         label: dir.direction_name || `Direction ${dir.direction_id}`,
         firstStopName: firstStop?.name || null,
         lastStopName: lastStop?.name || null,
@@ -291,19 +302,28 @@ function TransitMap({
     });
   }, [routeDetail]);
 
+  const resolvedDirectionId = useMemo(() => {
+    if (!directionChoices.length) return null;
+    if (activeDirection != null) return normalizeDirectionId(activeDirection);
+    return directionChoices[0].directionId;
+  }, [directionChoices, activeDirection]);
+
   const activeDirectionMeta = useMemo(
     () =>
-      directionChoices.find((dir) => dir.directionId === activeDirection) ||
+      directionChoices.find((dir) => dir.directionId === resolvedDirectionId) ||
       directionChoices[0] ||
       null,
-    [directionChoices, activeDirection],
+    [directionChoices, resolvedDirectionId],
   );
 
   const directionSegments = useMemo(() => {
     if (!routeDetail) return [];
     const result = [];
     for (const dir of routeDetail.directions || []) {
-      if (activeDirection !== null && dir.direction_id !== activeDirection)
+      if (
+        resolvedDirectionId !== null &&
+        normalizeDirectionId(dir.direction_id) !== resolvedDirectionId
+      )
         continue;
       const line = decode(dir.encoded_polyline);
       const stopIds = dir.stop_ids || [];
@@ -316,19 +336,19 @@ function TransitMap({
       for (let i = 0; i < polySegments.length; i++) {
         if (i + 1 < stopIds.length) {
           result.push({
-            directionId: dir.direction_id,
+            directionId: normalizeDirectionId(dir.direction_id),
             fromStopId: stopIds[i],
             toStopId: stopIds[i + 1],
             fromName: stopsMap[stopIds[i]]?.name,
             toName: stopsMap[stopIds[i + 1]]?.name,
             positions: polySegments[i],
-            key: `${routeDetail.id}|${dir.direction_id}|${stopIds[i]}|${stopIds[i + 1]}`,
+            key: `${routeDetail.id}|${normalizeDirectionId(dir.direction_id)}|${stopIds[i]}|${stopIds[i + 1]}`,
           });
         }
       }
     }
     return result;
-  }, [routeDetail, activeDirection]);
+  }, [routeDetail, resolvedDirectionId]);
 
   const allSelectedPositions = useMemo(
     () => directionSegments.flatMap((s) => s.positions),
@@ -341,7 +361,10 @@ function TransitMap({
     const result = [];
     const seen = new Set();
     for (const dir of routeDetail.directions || []) {
-      if (activeDirection !== null && dir.direction_id !== activeDirection)
+      if (
+        resolvedDirectionId !== null &&
+        normalizeDirectionId(dir.direction_id) !== resolvedDirectionId
+      )
         continue;
       const ids = dir.stop_ids || [];
       ids.forEach((stopId, idx) => {
@@ -351,7 +374,7 @@ function TransitMap({
         if (stop) {
           result.push({
             ...stop,
-            directionId: dir.direction_id,
+            directionId: normalizeDirectionId(dir.direction_id),
             isTerminus: idx === 0 || idx === ids.length - 1,
             orderIndex: idx,
           });
@@ -359,7 +382,7 @@ function TransitMap({
       });
     }
     return result;
-  }, [routeDetail, activeDirection]);
+  }, [routeDetail, resolvedDirectionId]);
 
   // When boarded, the boarding stop's index in the active direction tells us
   // which other stops are *downstream* (valid) vs *upstream* (would be a
@@ -497,13 +520,29 @@ function TransitMap({
   // depend on tripStatsTick so the legend re-reads localStorage after
   // each successful save.
   const tripStats = useMemo(() => {
-    if (!routeDetail || activeDirection == null) return null;
-    return getTripStats(routeDetail.id, activeDirection);
+    if (!routeDetail || resolvedDirectionId == null) return null;
+    return getTripStats(routeDetail.id, resolvedDirectionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeDetail, activeDirection, tripStatsTick]);
+  }, [routeDetail, resolvedDirectionId, tripStatsTick]);
+
+  const refreshRouteAfterValidationError = async (preferredDirectionId) => {
+    if (!routeDetail?.id) return;
+    try {
+      invalidateCache(`route:${routeDetail.id}`);
+      const fresh = await fetchRouteDetail(routeDetail.id);
+      setRouteDetail(fresh);
+      const fallbackDirection =
+        normalizeDirectionId(preferredDirectionId) ||
+        normalizeDirectionId(fresh.directions?.[0]?.direction_id);
+      setActiveDirection(fallbackDirection);
+    } catch {
+      // If refresh fails we keep existing data and show the original error toast.
+    }
+  };
 
   const submitMark = async (directionId, fromStopId, toStopId) => {
     if (!routeDetail) return;
+    const normalizedDirectionId = normalizeDirectionId(directionId);
 
     // Capture trip-time + boarding context BEFORE we clear pickState so we
     // can record an accurate duration and pre-paint the segments green.
@@ -515,22 +554,40 @@ function TransitMap({
     // that here so the line turns green immediately on click.
     const optimisticKeys = [];
     const dir = (routeDetail.directions || []).find(
-      (d) => d.direction_id === directionId,
+      (d) => normalizeDirectionId(d.direction_id) === normalizedDirectionId,
     );
-    if (dir) {
-      const ids = dir.stop_ids || [];
-      const a = ids.indexOf(fromStopId);
-      const b = ids.indexOf(toStopId);
-      if (a !== -1 && b !== -1) {
-        const lo = Math.min(a, b);
-        const hi = Math.max(a, b);
-        for (let i = lo; i < hi; i++) {
-          optimisticKeys.push(
-            `${routeDetail.id}|${directionId}|${ids[i]}|${ids[i + 1]}`,
-          );
-        }
-      }
+    if (!dir) {
+      showToast("Direction changed. Please pick stops again.", "info");
+      setPickState(null);
+      refreshRouteAfterValidationError(normalizedDirectionId);
+      return;
     }
+    const ids = dir.stop_ids || [];
+    const fromIdx = ids.indexOf(fromStopId);
+    const toIdx = ids.indexOf(toStopId);
+    if (fromIdx === -1 || toIdx === -1) {
+      showToast(
+        "Route data updated. Reloaded stops for this direction.",
+        "info",
+      );
+      setPickState(null);
+      refreshRouteAfterValidationError(normalizedDirectionId);
+      return;
+    }
+    if (fromIdx >= toIdx) {
+      showToast(
+        "That stop is behind your boarding point — pick one ahead or change directions.",
+        "info",
+      );
+      return;
+    }
+
+    for (let i = fromIdx; i < toIdx; i++) {
+      optimisticKeys.push(
+        `${routeDetail.id}|${normalizedDirectionId}|${ids[i]}|${ids[i + 1]}`,
+      );
+    }
+
     if (optimisticKeys.length) {
       setOptimisticDone((prev) => {
         const next = new Set(prev);
@@ -558,7 +615,7 @@ function TransitMap({
       const sendDuration = tripMs && tripMs > 5000 ? tripMs : null;
       const result = await markSegments(
         routeDetail.id,
-        directionId,
+        normalizedDirectionId,
         fromStopId,
         toStopId,
         "",
@@ -573,7 +630,7 @@ function TransitMap({
         // tapped live, not after-the-fact).
         let tripMsg = "";
         if (tripMs && tripMs > 5000) {
-          recordTripTime(routeDetail.id, directionId, tripMs);
+          recordTripTime(routeDetail.id, normalizedDirectionId, tripMs);
           setTripStatsTick((t) => t + 1);
           const f = formatDuration(tripMs);
           if (f) tripMsg = ` · ${f} on bus`;
@@ -600,6 +657,15 @@ function TransitMap({
         );
       }
     } catch (err) {
+      if (
+        err?.status === 400 &&
+        typeof err?.message === "string" &&
+        err.message.includes("not on this route/direction")
+      ) {
+        setPickState(null);
+        refreshRouteAfterValidationError(normalizedDirectionId);
+      }
+
       // Roll back the optimistic paint if the server rejected the mark.
       if (optimisticKeys.length) {
         setOptimisticDone((prev) => {
@@ -621,9 +687,10 @@ function TransitMap({
 
   const handleStopClick = (directionId, stopId, stopName) => {
     if (!routeDetail || marking) return;
+    const normalizedDirectionId = normalizeDirectionId(directionId);
     if (!pickState) {
       setPickState({
-        directionId,
+        directionId: normalizedDirectionId,
         fromStopId: stopId,
         fromName: stopName,
         boardedAt: Date.now(),
@@ -631,7 +698,7 @@ function TransitMap({
       return;
     }
 
-    if (pickState.directionId !== directionId) {
+    if (pickState.directionId !== normalizedDirectionId) {
       const lockedDirectionName =
         directionChoices.find(
           (dir) => dir.directionId === pickState.directionId,
@@ -648,7 +715,7 @@ function TransitMap({
       return;
     }
 
-    submitMark(directionId, pickState.fromStopId, stopId);
+    submitMark(normalizedDirectionId, pickState.fromStopId, stopId);
   };
 
   // Click a polyline directly to mark just that one hop.
@@ -945,7 +1012,7 @@ function TransitMap({
                   <>
                     <br />
                     <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                      Behind boarding — can't alight here
+                      Behind boarding — can&apos;t alight here
                     </span>
                   </>
                 )}
@@ -1051,7 +1118,7 @@ function TransitMap({
               {directionChoices.map((dir) => (
                 <button
                   key={dir.directionId}
-                  className={`direction-tab ${activeDirection === dir.directionId ? "active" : ""} ${hasLockedDirection && activeDirection === dir.directionId ? "locked" : ""} ${hasLockedDirection && activeDirection !== dir.directionId ? "inactive" : ""}`.trim()}
+                  className={`direction-tab ${resolvedDirectionId === dir.directionId ? "active" : ""} ${hasLockedDirection && resolvedDirectionId === dir.directionId ? "locked" : ""} ${hasLockedDirection && resolvedDirectionId !== dir.directionId ? "inactive" : ""}`.trim()}
                   onClick={() => {
                     setActiveDirection(dir.directionId);
                     setPickState(null);
@@ -1063,7 +1130,8 @@ function TransitMap({
                     className="direction-tab-sub"
                     title={dir.lastStopName || ""}
                   >
-                    {hasLockedDirection && activeDirection === dir.directionId
+                    {hasLockedDirection &&
+                    resolvedDirectionId === dir.directionId
                       ? dir.lastStopName
                         ? `Locked toward ${dir.lastStopName}`
                         : "Locked for current trip"
