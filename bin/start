@@ -4,12 +4,14 @@
 # Modes:
 #   bin/start              # auto: prod if FLASK_ENV=production else dev
 #   bin/start dev          # flask run with debug
-#   bin/start prod         # gunicorn
+#   bin/start prod         # gunicorn (+ optional in-process loader loop)
 #   bin/start migrate      # flask db upgrade only (under flock)
 #   bin/start load-data    # one-shot OBA refresh (TTL-aware)
 #                          # add --loop to run forever, sleeping between cycles
 #                          # add --force to ignore the TTL
-#   bin/start worker       # alias of `load-data --loop` for fly processes
+#   bin/start worker       # alias of `load-data --loop` (legacy; kept for
+#                          # local rehearsal. Fly no longer uses a separate
+#                          # worker machine — see RUN_INPROC_LOADER below.)
 #
 # Env knobs:
 #   FLASK_PORT              port to bind (default 8880)
@@ -21,8 +23,13 @@
 #   OBA_REFRESH_TTL_HOURS   per-agency refresh interval (default 24)
 #   AUTO_SEED_ON_EMPTY=1    in dev or prod mode, run a background
 #                            `flask data load` once if the routes table
-#                            is empty (default 1). Set to 0 on Fly app
-#                            process so only the worker fetches data.
+#                            is empty (default 1).
+#   RUN_INPROC_LOADER=1     in prod mode, also spawn a backgrounded
+#                            `flask data load --loop` next to gunicorn
+#                            (default 1; set 0 to disable, e.g. when
+#                            running multiple app machines). Required on
+#                            Fly because the SQLite volume is single-attach
+#                            and a separate `worker` machine cannot mount it.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -156,6 +163,22 @@ PY
   ( flask data load >/tmp/te-data-load.log 2>&1 & )
 }
 
+# ─── In-process background loader loop (prod) ──
+# Replaces the dedicated Fly `worker` machine: that model can't work because
+# Fly volumes are single-attach (only the `app` machine can mount tm_data).
+# Instead we spawn `flask data load --loop` as a child of bin/start, alongside
+# gunicorn, so it shares the same volume and the same process tree. Output
+# goes to /tmp/te-loader.log so it doesn't interleave with gunicorn access
+# logs.
+start_inproc_loader() {
+  if [ "${RUN_INPROC_LOADER:-1}" != "1" ]; then
+    log "RUN_INPROC_LOADER=0 — skipping in-process loader loop"
+    return
+  fi
+  log "starting in-process loader loop (logs: /tmp/te-loader.log)"
+  ( exec "$0" load-data --loop >/tmp/te-loader.log 2>&1 ) &
+}
+
 # ─── Mode dispatchers ──
 mode_migrate() {
   materialize_firebase_creds
@@ -201,10 +224,10 @@ mode_dev() {
 mode_prod() {
   materialize_firebase_creds
   with_lock do_migrate
-  # Idempotent + TTL-gated. On Fly, AUTO_SEED_ON_EMPTY=0 in fly.toml
-  # so only the dedicated `worker` process loads OBA data. Locally
-  # (no companion worker) this seeds an empty DB on first boot.
+  # First-boot seed if the DB is empty. Idempotent.
   maybe_auto_seed
+  # Periodic refresh loop (replaces the old separate `worker` Fly machine).
+  start_inproc_loader
 
   local port="${FLASK_PORT:-8880}"
   local workers="${WEB_CONCURRENCY:-2}"

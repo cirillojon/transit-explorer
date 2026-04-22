@@ -70,13 +70,13 @@ On a fresh local DB, `bin/start dev` kicks off a background OBA load. `/api/heal
 
 `bin/start` modes:
 
-| Mode        | Purpose                                                                          |
-| ----------- | -------------------------------------------------------------------------------- |
-| `dev`       | migrate + auto-seed (background) + `flask run --debug` on `PORT` (default 8880). |
-| `prod`      | migrate + `gunicorn` (Fly's `app` process).                                      |
-| `worker`    | `flask data load --loop` — refreshes OBA data every `OBA_REFRESH_TTL_HOURS`.     |
-| `migrate`   | `flask db upgrade && flask data check-schema`. Exits 0 on success.               |
-| `load-data` | One-shot `flask data load` (add `--force` to ignore TTL).                        |
+| Mode        | Purpose                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dev`       | migrate + auto-seed (background) + `flask run --debug` on `PORT` (default 8880).                                                                                    |
+| `prod`      | migrate + `gunicorn` + background `flask data load --loop` (Fly's `app` process).                                                                                   |
+| `worker`    | `flask data load --loop` — standalone refresh loop (used for local rehearsal; Fly no longer runs this as a separate machine, the loop is in-process inside `prod`). |
+| `migrate`   | `flask db upgrade && flask data check-schema`. Exits 0 on success.                                                                                                  |
+| `load-data` | One-shot `flask data load` (add `--force` to ignore TTL).                                                                                                           |
 
 A file lock at `$DATA_DIR/.boot.lock` (default `tm-instance/.boot.lock`) serializes the migrate step so concurrent boots don't race.
 
@@ -184,18 +184,19 @@ flyctl tokens revoke <old-token-id>     # optional cleanup; list with `flyctl to
 
 ### What happens on boot
 
-Fly runs two processes from `fly.toml` (`[processes]`), both invoking `bin/start`:
+Fly runs a single process from `fly.toml` (`[processes]`):
 
-- **`app` = `bin/start prod`** → materializes `GOOGLE_APPLICATION_CREDENTIALS_JSON` if present, takes the `$DATA_DIR/.boot.lock` (`flock`), runs `flask db upgrade` + `flask data check-schema`, then exec's gunicorn with `--preload`. Fails fast if migrations or schema-drift fail. The web process **never** kicks off OBA loads — it only serves traffic.
-- **`worker` = `bin/start worker`** → `flask data load --loop`, sleeping `OBA_REFRESH_TTL_HOURS` (default 24h) between iterations. Per-agency state lives in the `data_loads` table; refreshes are TTL-gated and only fetch routes whose direction list is missing/incomplete (or everything if `--force`).
+- **`app` = `bin/start prod`** — materializes `GOOGLE_APPLICATION_CREDENTIALS_JSON` if present, takes the `$DATA_DIR/.boot.lock` (`flock`), runs `flask db upgrade` + `flask data check-schema`, kicks off the in-process loader loop (`flask data load --loop`, output to `/tmp/te-loader.log`), then exec's gunicorn with `--preload`. Fails fast if migrations or schema-drift fail. Set `RUN_INPROC_LOADER=0` to disable the loop (e.g. for debugging).
 
-Scale them like:
+The loader runs inside the same machine as gunicorn because Fly volumes are **single-attach** — only one machine can mount `tm_data` at a time. A previous design used a dedicated `worker` process group, but that worker machine could not mount the volume and silently never ran. Per-agency state lives in the `data_loads` table; refreshes are TTL-gated (default 24h via `OBA_REFRESH_TTL_HOURS`) and only re-fetch routes whose direction list is missing/incomplete (or everything if `--force`).
+
+Scale stays at one machine:
 
 ```bash
-flyctl scale count app=1 worker=1 --region sjc -a transit-explorer
+flyctl scale count app=1 --region sjc -a transit-explorer
 ```
 
-Keep `worker=1`. Both processes share the same SQLite volume; multiple workers would just collide on the boot lock and waste OBA quota.
+Do not scale beyond `app=1` without first migrating off SQLite — the volume is single-attach and the loader loop assumes a single writer.
 
 Escape hatch: `AUTO_UPGRADE_ON_BOOT=1` lets `create_app()` re-run `flask db upgrade` from inside gunicorn (off by default; useful only if you ever bypass `bin/start`).
 
@@ -211,7 +212,8 @@ Escape hatch: `AUTO_UPGRADE_ON_BOOT=1` lets `create_app()` re-run `flask db upgr
 | Manually restart                      | `flyctl machine restart <machine-id> -a transit-explorer`                                                                         |
 | Bump RAM (e.g. OOM)                   | `flyctl scale memory 2048 -a transit-explorer`                                                                                    |
 | Inspect SQLite on the volume          | `flyctl ssh console -C "sqlite3 /app/tm-instance/data.db .tables" -a transit-explorer`                                            |
-| Force OBA refresh on the worker       | `flyctl ssh console -p worker -C "flask data load --force" -a transit-explorer`                                                   |
+| Force OBA refresh in prod             | `flyctl ssh console -C "flask data load --force" -a transit-explorer`                                                             |
+| Tail in-process loader log in prod    | `flyctl ssh console -C "tail -f /tmp/te-loader.log" -a transit-explorer`                                                          |
 | Inspect data-load state in prod       | `flyctl ssh console -C "flask data status" -a transit-explorer`                                                                   |
 | Roll back a deploy                    | Find prior image: `flyctl releases -a transit-explorer`; redeploy: `flyctl deploy --image registry.fly.io/transit-explorer:<tag>` |
 
@@ -401,4 +403,9 @@ Connecting... complete
 EXIT=0
 PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
 
+# Check machine statuses:
+
+wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl status -a transit-explorer"
+
+wsl -e bash -lc "/home/jon/.fly/bin/flyctl machine list -a transit-explorer"
 ```

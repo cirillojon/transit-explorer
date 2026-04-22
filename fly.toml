@@ -22,23 +22,22 @@ primary_region = 'sjc'
   GUNICORN_TIMEOUT = '30'
   LOG_LEVEL = 'INFO'
   WEB_CONCURRENCY = '4'
-  # Per-agency OBA refresh interval. The worker process below loops on
-  # this cadence; the web process never touches OBA at boot.
+  # Per-agency OBA refresh interval for the in-process loader loop
+  # (started by bin/start prod alongside gunicorn).
   OBA_REFRESH_TTL_HOURS = '24'
-  # The dedicated `worker` process owns OBA loads in production. Disable
-  # the bin/start auto-seed on the `app` process to avoid two machines
-  # racing on the same DataLoad row.
-  AUTO_SEED_ON_EMPTY = '0'
 
 [processes]
-  # These strings are appended as ARGS to the Dockerfile ENTRYPOINT
-  # (`/app/bin/start`). Do NOT prefix them with `bin/start` — Fly would
+  # The string is appended as ARGS to the Dockerfile ENTRYPOINT
+  # (`/app/bin/start`). Do NOT prefix with `bin/start` — Fly would
   # then run `/app/bin/start bin/start prod` and the dispatcher would
   # exit 2 with a usage message, putting the machine in a restart loop.
+  #
+  # NOTE: there is intentionally only ONE process group. We tried a
+  # separate `worker` group, but Fly volumes are single-attach so the
+  # worker machine couldn't mount tm_data. Instead `bin/start prod`
+  # spawns a background `flask data load --loop` next to gunicorn
+  # (controlled by RUN_INPROC_LOADER, default on).
   app = 'prod'
-  # Worker shares the same volume; only one machine should run it.
-  # `flyctl scale count app=1 worker=1 --region sjc`
-  worker = 'worker'
 
 [[mounts]]
   source = 'tm_data'
@@ -50,7 +49,6 @@ primary_region = 'sjc'
   auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
-  processes = ['app']
 
   [http_service.concurrency]
     type = 'requests'
