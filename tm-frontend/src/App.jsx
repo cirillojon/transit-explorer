@@ -141,6 +141,47 @@ function App() {
     }
   }, [user]);
 
+  // Called by TransitMap after a segment is successfully marked.
+  // Immediately merges the newly created segments into `progress` (using the
+  // exact same key format as `completedSegments`) so the map stays green
+  // without waiting for a full server round-trip. The full refresh runs in
+  // the background to pick up accurate completion stats, achievements, etc.
+  const handleSegmentsMarked = useCallback(
+    (result) => {
+      if (result?.segments?.length) {
+        setProgress((prev) => {
+          const newSegs = result.segments;
+          const byRoute = {};
+          for (const seg of newSegs) {
+            if (!byRoute[seg.route_id]) byRoute[seg.route_id] = [];
+            byRoute[seg.route_id].push(seg);
+          }
+          return prev.map((rp) => {
+            const extra = byRoute[rp.route_id];
+            if (!extra) return rp;
+            const existingKeys = new Set(
+              rp.segments.map(
+                (s) => `${s.direction_id}|${s.from_stop_id}|${s.to_stop_id}`,
+              ),
+            );
+            const toAdd = extra.filter(
+              (s) =>
+                !existingKeys.has(
+                  `${s.direction_id}|${s.from_stop_id}|${s.to_stop_id}`,
+                ),
+            );
+            return toAdd.length
+              ? { ...rp, segments: [...rp.segments, ...toAdd] }
+              : rp;
+          });
+        });
+      }
+      // Full refresh for accurate completion %, rank, activity feed, etc.
+      loadUserData();
+    },
+    [loadUserData],
+  );
+
   const handleShowAllProgressRoutes = useCallback(async () => {
     if (!progress.length) return;
     const results = await Promise.allSettled(
@@ -464,7 +505,7 @@ function App() {
       <TransitMap
         selectedRoute={selectedRoute}
         completedSegments={completedSegments}
-        onSegmentsMarked={loadUserData}
+        onSegmentsMarked={handleSegmentsMarked}
         highlightedSegment={highlightedSegment}
         onClearHighlight={() => setHighlightedSegment(null)}
         onUnlockToast={pushToast}
