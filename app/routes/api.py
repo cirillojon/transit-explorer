@@ -887,21 +887,26 @@ def bulk_delete_segments():
 
 # ─── Helpers ──────────────────────────────────────────────────────────
 
-def _route_segment_counts():
-    """{route_id: total_possible_segments} computed in a single pass.
+def _route_segment_counts(route_ids=None):
+    """``{route_id: total_possible_segments}`` using the same dedupe rules
+    as ``get_route`` so per-route totals match the hops the frontend
+    actually exposes.
 
-    Uses the same dedupe rules as ``get_route`` so per-route totals here
-    match the hops the frontend actually exposes (see
-    ``_deduped_stop_ids_per_direction`` for why this matters).
+    Pass ``route_ids`` to scope the work to just those routes — e.g.
+    ``_user_summary`` only needs totals for routes the user has marked.
+    Without scoping, this fetches every Stop in the system, which is
+    expensive on hot per-request endpoints like ``/api/me`` and
+    ``/api/me/stats``.
     """
-    route_ids = [
-        rid for (rid,) in (
-            RouteDirection.query
-            .with_entities(RouteDirection.route_id)
-            .distinct()
-            .all()
-        )
-    ]
+    if route_ids is None:
+        route_ids = [
+            rid for (rid,) in (
+                RouteDirection.query
+                .with_entities(RouteDirection.route_id)
+                .distinct()
+                .all()
+            )
+        ]
     out = {}
     for (rid, _did), sids in _deduped_stop_ids_per_direction(route_ids).items():
         out[rid] = out.get(rid, 0) + max(0, len(sids) - 1)
@@ -931,7 +936,9 @@ def _user_summary(user_id):
             .group_by(UserSegment.route_id)
             .all()
         )
-        totals = _route_segment_counts()
+        # Only fetch totals for routes this user has actually marked —
+        # avoids loading every Stop in the system on every /me request.
+        totals = _route_segment_counts(route_ids=list(per_route_done.keys()))
         for rid, done in per_route_done.items():
             if totals.get(rid, 0) > 0 and done >= totals[rid]:
                 completed_routes += 1

@@ -118,30 +118,52 @@ def segments_clean_phantom_hops(dry_run):
         _deduped_stop_ids_per_direction(route_ids)
     )
 
-    bad = []
-    for seg in UserSegment.query.all():
-        hops = valid_hops.get((seg.route_id, seg.direction_id), set())
-        if (seg.from_stop_id, seg.to_stop_id) not in hops:
-            bad.append(seg)
+    # Stream rows + delete in batches so this command stays bounded in
+    # memory and DB-transaction size as the table grows. Wired into
+    # bin/start migrate, so it runs on every deploy.
+    BATCH = 500
+    SAMPLE_LIMIT = 20
+    bad_count = 0
+    sample = []
+    deleted_ids = []
 
-    click.echo(f"Found {len(bad)} phantom UserSegment rows.")
-    if not bad:
-        return
-    if dry_run:
-        for s in bad[:20]:
-            click.echo(
-                f"  user={s.user_id} route={s.route_id} dir={s.direction_id} "
-                f"{s.from_stop_id} -> {s.to_stop_id}"
+    def _flush_deletes():
+        if not deleted_ids:
+            return
+        UserSegment.query.filter(UserSegment.id.in_(deleted_ids)).delete(
+            synchronize_session=False
+        )
+        db.session.commit()
+        deleted_ids.clear()
+
+    for seg in UserSegment.query.yield_per(BATCH):
+        hops = valid_hops.get((seg.route_id, seg.direction_id), set())
+        if (seg.from_stop_id, seg.to_stop_id) in hops:
+            continue
+        bad_count += 1
+        if len(sample) < SAMPLE_LIMIT:
+            sample.append(
+                f"  user={seg.user_id} route={seg.route_id} "
+                f"dir={seg.direction_id} "
+                f"{seg.from_stop_id} -> {seg.to_stop_id}"
             )
-        if len(bad) > 20:
-            click.echo(f"  ... and {len(bad) - 20} more")
+        if not dry_run:
+            deleted_ids.append(seg.id)
+            if len(deleted_ids) >= BATCH:
+                _flush_deletes()
+
+    click.echo(f"Found {bad_count} phantom UserSegment rows.")
+    if not bad_count:
+        return
+    for line in sample:
+        click.echo(line)
+    if bad_count > SAMPLE_LIMIT:
+        click.echo(f"  ... and {bad_count - SAMPLE_LIMIT} more")
+    if dry_run:
         click.echo("Re-run with --no-dry-run to delete.")
         return
-
-    for s in bad:
-        db.session.delete(s)
-    db.session.commit()
-    click.echo(f"Deleted {len(bad)} phantom UserSegment rows.")
+    _flush_deletes()
+    click.echo(f"Deleted {bad_count} phantom UserSegment rows.")
 
 
 def register_cli(app):

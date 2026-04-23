@@ -103,11 +103,21 @@ class RouteDirection(db.Model):
     )
 
     def to_dict(self):
-        stop_ids = json.loads(self.stop_ids_json) if self.stop_ids_json else []
-        encoded_polylines = (
-            json.loads(self.encoded_polylines_json)
-            if self.encoded_polylines_json else []
-        )
+        try:
+            stop_ids = json.loads(self.stop_ids_json) if self.stop_ids_json else []
+        except (ValueError, TypeError):
+            stop_ids = []
+        # Guard against malformed JSON in either column so a single bad
+        # row can't 500 every endpoint that serializes directions.
+        try:
+            encoded_polylines = (
+                json.loads(self.encoded_polylines_json)
+                if self.encoded_polylines_json else []
+            )
+        except (ValueError, TypeError):
+            encoded_polylines = []
+        if not isinstance(encoded_polylines, list):
+            encoded_polylines = []
         # Back-compat: if the variant list wasn't populated yet (older
         # rows from before the migration ran end-to-end), surface the
         # single legacy polyline so the frontend always has something

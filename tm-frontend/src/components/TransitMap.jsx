@@ -210,20 +210,16 @@ function TransitMap({
     [directionChoices, resolvedDirectionId],
   );
 
-  const directionSegments = useMemo(() => {
-    if (!routeDetail) return [];
-    const result = [];
-    // Decode every polyline variant up front. OBA returns one polyline
-    // per *trip-pattern variant* per direction (deviations, short-turns,
-    // "Summit" tail on Route 3, etc.) — the backend now persists the full
-    // list as `encoded_polylines`. We treat the direction's own first
-    // variant as primary, then fall back through:
-    //   1. its OTHER same-direction variants (covers minor patterns
-    //      like Route 3's Summit deviation that aren't on the main line),
-    //   2. all opposite-direction variants (both directions trace the
-    //      same physical track from opposite ends — already handled by
-    //      `slicePolylineByStopsWithFallbacks` with reverse traversal).
-    const decodedByDir = new Map();
+  // Decode every polyline variant exactly once per `routeDetail`. OBA
+  // returns one polyline per *trip-pattern variant* per direction
+  // (deviations, short-turns, "Summit" tail on Route 3, etc.); the
+  // backend persists the full list as `encoded_polylines`. Both
+  // `directionSegments` (per-hop slicer + fallback chain) and
+  // `directionShapes` (faint full-route backdrop) consume this map, so
+  // computing it separately in each was decoding everything twice.
+  const decodedVariantsByDir = useMemo(() => {
+    const out = new Map();
+    if (!routeDetail) return out;
     for (const dir of routeDetail.directions || []) {
       const dirId = normalizeDirectionId(dir.direction_id);
       const variants = dir.encoded_polylines?.length
@@ -234,8 +230,22 @@ function TransitMap({
       const decoded = variants
         .map((enc) => decode(enc))
         .filter((line) => line && line.length > 0);
-      decodedByDir.set(dirId, decoded);
+      out.set(dirId, decoded);
     }
+    return out;
+  }, [routeDetail]);
+
+  const directionSegments = useMemo(() => {
+    if (!routeDetail) return [];
+    const result = [];
+    // Treat the direction's own first variant as primary, then fall back
+    // through:
+    //   1. its OTHER same-direction variants (covers minor patterns
+    //      like Route 3's Summit deviation that aren't on the main line),
+    //   2. all opposite-direction variants (both directions trace the
+    //      same physical track from opposite ends — already handled by
+    //      `slicePolylineByStopsWithFallbacks` with reverse traversal).
+    const decodedByDir = decodedVariantsByDir;
     for (const dir of routeDetail.directions || []) {
       if (
         resolvedDirectionId !== null &&
@@ -294,7 +304,7 @@ function TransitMap({
       }
     }
     return result;
-  }, [routeDetail, resolvedDirectionId]);
+  }, [routeDetail, resolvedDirectionId, decodedVariantsByDir]);
 
   // Decoded full polyline variants for the active direction(s). These get
   // rendered as a thin low-opacity backdrop so the route geometry is
@@ -312,22 +322,18 @@ function TransitMap({
         normalizeDirectionId(dir.direction_id) !== resolvedDirectionId
       )
         continue;
-      const variants = dir.encoded_polylines?.length
-        ? dir.encoded_polylines
-        : dir.encoded_polyline
-          ? [dir.encoded_polyline]
-          : [];
-      variants.forEach((enc, i) => {
-        const decoded = decode(enc);
-        if (!decoded || decoded.length < 2) return;
+      const dirId = normalizeDirectionId(dir.direction_id);
+      const decoded = decodedVariantsByDir.get(dirId) || [];
+      decoded.forEach((line, i) => {
+        if (line.length < 2) return;
         shapes.push({
-          key: `${routeDetail.id}|${normalizeDirectionId(dir.direction_id)}|shape|${i}`,
-          positions: decoded,
+          key: `${routeDetail.id}|${dirId}|shape|${i}`,
+          positions: line,
         });
       });
     }
     return shapes;
-  }, [routeDetail, resolvedDirectionId]);
+  }, [routeDetail, resolvedDirectionId, decodedVariantsByDir]);
 
   const allSelectedPositions = useMemo(
     () => [

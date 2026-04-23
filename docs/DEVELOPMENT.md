@@ -420,7 +420,7 @@ wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -C 'flask data status' -a
 # Manually force load OBA data locally:
 
 (.venv) /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer$ FLASK_APP=app.py
-(.venv) /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer$ flask data-load --force
+(.venv) /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer$ flask data load --force
 2026-04-23 15:47:13,017 [INFO] app: CORS allowed origins: ['https://transit-explorer.org/']
 2026-04-23 15:47:17,029 [INFO] app.data_loader: OBA load: agencies=['1', '40'] force=True ttl=24.0h
 2026-04-23 15:47:19,114 [INFO] app.data_loader: Agency 1: 134/134 routes need refresh (force=True)
