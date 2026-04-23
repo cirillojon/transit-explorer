@@ -234,10 +234,11 @@ export function slicePolylineByStopsWithFallbacks(
   stopPositions,
 ) {
   if (stopPositions.length < 2) return [];
-  const safeFallbacks = (fallbackLines || []).filter(
-    (l) => l && l.length > 0,
-  );
-  if ((!primaryLine || primaryLine.length === 0) && safeFallbacks.length === 0) {
+  const safeFallbacks = (fallbackLines || []).filter((l) => l && l.length > 0);
+  if (
+    (!primaryLine || primaryLine.length === 0) &&
+    safeFallbacks.length === 0
+  ) {
     // No geometry at all → nothing is drawable.
     return new Array(stopPositions.length - 1).fill(null);
   }
