@@ -139,6 +139,14 @@ do_migrate() {
   flask db upgrade
   log "running schema-drift check"
   flask data check-schema
+  # One-time data fix: strip UserSegment rows whose endpoints aren't a
+  # consecutive hop in the deduped stop sequence (caused by an older
+  # mark_segments that expanded over the raw OBA stop list and crossed
+  # same-name twin platforms — the "53/50" / "47/50" progress bug).
+  # Idempotent and cheap: a no-op once the DB is clean.
+  log "running phantom-hop cleanup"
+  flask segments clean-phantom-hops --no-dry-run || \
+    log "phantom-hop cleanup failed (non-fatal)"
 }
 
 # ─── Background auto-seed (dev + local prod) ──
