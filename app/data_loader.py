@@ -209,9 +209,14 @@ def _upsert_direction(route_id, dir_data):
     existing = RouteDirection.query.filter_by(
         route_id=route_id, direction_id=dir_data['direction_id']).first()
     stop_ids_json = json.dumps(dir_data['stop_ids'])
+    encoded_polylines = dir_data.get('encoded_polylines') or (
+        [dir_data['encoded_polyline']] if dir_data.get('encoded_polyline') else []
+    )
+    encoded_polylines_json = json.dumps(encoded_polylines)
     if existing:
         existing.direction_name = dir_data['direction_name']
         existing.encoded_polyline = dir_data['encoded_polyline']
+        existing.encoded_polylines_json = encoded_polylines_json
         existing.stop_ids_json = stop_ids_json
     else:
         db.session.add(RouteDirection(
@@ -219,6 +224,7 @@ def _upsert_direction(route_id, dir_data):
             direction_id=dir_data['direction_id'],
             direction_name=dir_data['direction_name'],
             encoded_polyline=dir_data['encoded_polyline'],
+            encoded_polylines_json=encoded_polylines_json,
             stop_ids_json=stop_ids_json))
 
 

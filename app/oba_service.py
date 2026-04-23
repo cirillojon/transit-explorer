@@ -89,8 +89,15 @@ def fetch_stops_for_route(route_id):
             name_obj = group.get("name", {})
             dir_name = name_obj.get("name", "") if isinstance(name_obj, dict) else ""
 
+            # OBA exposes one polyline per *trip pattern variant* (e.g.
+            # short-turns, deviations, "Summit" tail on Route 3). Keep the
+            # full list so the frontend can fall back across variants when
+            # a stop sits on a deviation that the main pattern misses.
             polylines = group.get("polylines", [])
-            encoded = polylines[0].get("points", "") if polylines else ""
+            encoded_polylines = [
+                p.get("points", "") for p in polylines if p.get("points")
+            ]
+            encoded = encoded_polylines[0] if encoded_polylines else ""
 
             stop_ids = group.get("stopIds", [])
 
@@ -98,15 +105,21 @@ def fetch_stops_for_route(route_id):
                 'direction_id': dir_id,
                 'direction_name': dir_name,
                 'encoded_polyline': encoded,
+                'encoded_polylines': encoded_polylines,
                 'stop_ids': stop_ids,
             })
 
     # Fallback: if no per-direction polylines, use entry-level
     entry_polylines = entry.get("polylines", [])
     if entry_polylines:
-        entry_encoded = entry_polylines[0].get("points", "")
+        entry_encoded_list = [
+            p.get("points", "") for p in entry_polylines if p.get("points")
+        ]
+        entry_encoded = entry_encoded_list[0] if entry_encoded_list else ""
         for d in directions:
             if not d['encoded_polyline'] and entry_encoded:
                 d['encoded_polyline'] = entry_encoded
+            if not d['encoded_polylines'] and entry_encoded_list:
+                d['encoded_polylines'] = list(entry_encoded_list)
 
     return {'directions': directions, 'stops': stops}

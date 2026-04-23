@@ -28,7 +28,7 @@ cp .env.example .env                      # then fill in values
 ./dev_container_update.sh 8880
 
 # Alternative: local Python environment
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate                 # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 # `bin/start dev` handles migrations + auto-seed for you (see Daily loop).
@@ -410,8 +410,33 @@ wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explor
 wsl -e bash -lc "/home/jon/.fly/bin/flyctl machine list -a transit-explorer"
 
 # Force an OBA data refresh in production:
+
 wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -C 'flask data load --force' -a transit-explorer"
 
 # Validate OBA data load status in production:
+
 wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -C 'flask data status' -a transit-explorer"
+
+# Manually force load OBA data locally:
+
+(.venv) /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer$ FLASK_APP=app.py
+(.venv) /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer$ flask data load --force
+2026-04-23 15:47:13,017 [INFO] app: CORS allowed origins: ['https://transit-explorer.org/']
+2026-04-23 15:47:17,029 [INFO] app.data_loader: OBA load: agencies=['1', '40'] force=True ttl=24.0h
+2026-04-23 15:47:19,114 [INFO] app.data_loader: Agency 1: 134/134 routes need refresh (force=True)
+2026-04-23 15:50:01,488 [INFO] app.data_loader: Agency 1: refresh done - 134 routes touched, total=134, error=None
+2026-04-23 15:50:01,804 [INFO] app.data_loader: Agency 40: 33/33 routes need refresh (force=True)
+2026-04-23 15:50:39,341 [INFO] app.data_loader: Agency 40: refresh done - 33 routes touched, total=33, error=None
+{
+  "1": {
+    "loaded": 134,
+    "skipped": false,
+    "error": null
+  },
+  "40": {
+    "loaded": 33,
+    "skipped": false,
+    "error": null
+  }
+}
 ```

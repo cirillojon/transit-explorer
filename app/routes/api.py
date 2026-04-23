@@ -195,6 +195,61 @@ def _dedupe_direction_stop_ids(stop_ids, stops_by_id):
     return out
 
 
+def _deduped_stop_ids_per_direction(route_ids):
+    """Return ``{(route_id, direction_id): deduped_stop_ids}`` for the given
+    route IDs, applying the same dedupe rules as ``get_route``.
+
+    Progress denominators MUST use these deduped counts. The frontend only
+    ever shows users hops between deduped stops — if we count the raw
+    OBA stop list (which can include same-name twins from the opposite
+    direction tacked onto the end, e.g. Sound Transit 1 Line), a user who
+    marks every visible hop tops out at <100% completion. See bug report:
+    "1 Line marked entirely done shows 96%".
+    """
+    if not route_ids:
+        return {}
+    dirs = (
+        RouteDirection.query
+        .filter(RouteDirection.route_id.in_(route_ids))
+        .all()
+    )
+    raw_per_dir = {}
+    all_stop_ids = set()
+    for d in dirs:
+        try:
+            sids = json.loads(d.stop_ids_json or '[]')
+        except (ValueError, TypeError):
+            sids = []
+        if not isinstance(sids, list):
+            sids = []
+        raw_per_dir[(d.route_id, d.direction_id)] = sids
+        all_stop_ids.update(sids)
+    stops_by_id = (
+        {s.id: s for s in Stop.query.filter(Stop.id.in_(all_stop_ids)).all()}
+        if all_stop_ids else {}
+    )
+    return {
+        key: _dedupe_direction_stop_ids(sids, stops_by_id)
+        for key, sids in raw_per_dir.items()
+    }
+
+
+def _valid_hops_per_direction(deduped_per_dir):
+    """Return ``{(route_id, direction_id): {(from_stop_id, to_stop_id), ...}}``
+    for every consecutive hop in the deduped stop sequence.
+
+    Used to filter ``UserSegment`` rows so we never count (or display) a
+    completed hop whose endpoints aren't adjacent in the deduped list the
+    user actually sees. Without this, a long-range mark that expanded
+    across a now-deduped twin platform inflates ``completed_segments``
+    above ``total_segments`` (the "53 / 50" bug).
+    """
+    out = {}
+    for key, sids in deduped_per_dir.items():
+        out[key] = {(a, b) for a, b in zip(sids, sids[1:])}
+    return out
+
+
 @api_blueprint.route('/stops')
 def get_stops():
     stops = Stop.query.all()
@@ -280,6 +335,8 @@ def get_user_profile(user_id):
         dirs = RouteDirection.query.filter(
             RouteDirection.route_id.in_(route_ids)
         ).all()
+        deduped_per_dir = _deduped_stop_ids_per_direction(route_ids)
+        valid_hops_per_dir = _valid_hops_per_direction(deduped_per_dir)
         dir_name_map = {}
         totals_per_route = {rid: 0 for rid in route_ids}
         dirs_per_route = {rid: [] for rid in route_ids}
@@ -287,10 +344,7 @@ def get_user_profile(user_id):
             dir_name_map[(d.route_id, d.direction_id)] = (
                 d.direction_name or d.direction_id
             )
-            try:
-                stop_ids = json.loads(d.stop_ids_json or '[]')
-            except Exception:
-                stop_ids = []
+            stop_ids = deduped_per_dir.get((d.route_id, d.direction_id), [])
             count = max(0, len(stop_ids) - 1)
             totals_per_route[d.route_id] = (
                 totals_per_route.get(d.route_id, 0) + count
@@ -318,6 +372,9 @@ def get_user_profile(user_id):
                     'directions': dirs_per_route.get(rid, []),
                     'segments': [],
                 }
+            valid_hops = valid_hops_per_dir.get((rid, seg.direction_id), set())
+            if (seg.from_stop_id, seg.to_stop_id) not in valid_hops:
+                continue
             by_route[rid]['completed_segments'] += 1
             seg_dict = seg.to_dict()
             seg_dict['direction_name'] = dir_name_map.get(
@@ -327,7 +384,8 @@ def get_user_profile(user_id):
 
         for data in by_route.values():
             total = data['total_segments']
-            completed = data['completed_segments']
+            completed = min(data['completed_segments'], total) if total > 0 else 0
+            data['completed_segments'] = completed
             data['completion_pct'] = (
                 round(completed / total * 100, 1) if total > 0 else 0
             )
@@ -561,15 +619,14 @@ def get_progress():
     routes_by_id = {r.id: r for r in Route.query.filter(Route.id.in_(route_ids)).all()}
 
     dirs = RouteDirection.query.filter(RouteDirection.route_id.in_(route_ids)).all()
+    deduped_per_dir = _deduped_stop_ids_per_direction(route_ids)
+    valid_hops_per_dir = _valid_hops_per_direction(deduped_per_dir)
     dir_name_map = {}
     totals_per_route = {rid: 0 for rid in route_ids}
     dirs_per_route = {rid: [] for rid in route_ids}
     for d in dirs:
         dir_name_map[(d.route_id, d.direction_id)] = d.direction_name or d.direction_id
-        try:
-            stop_ids = json.loads(d.stop_ids_json or '[]')
-        except Exception:
-            stop_ids = []
+        stop_ids = deduped_per_dir.get((d.route_id, d.direction_id), [])
         count = max(0, len(stop_ids) - 1)
         totals_per_route[d.route_id] = totals_per_route.get(d.route_id, 0) + count
         dirs_per_route[d.route_id].append({
@@ -595,6 +652,14 @@ def get_progress():
                 'directions': dirs_per_route.get(rid, []),
                 'segments': [],
             }
+        # Only count + surface hops that are a consecutive pair in the deduped
+        # stop sequence. Without this filter, phantom hops created when the
+        # backend expanded a long range across now-deduped twin platforms
+        # (e.g. the trailing SeaTac platform on 1 Line) would inflate
+        # `completed_segments` past `total_segments` ("53 / 50").
+        valid_hops = valid_hops_per_dir.get((rid, seg.direction_id), set())
+        if (seg.from_stop_id, seg.to_stop_id) not in valid_hops:
+            continue
         by_route[rid]['completed_segments'] += 1
         seg_dict = seg.to_dict()
         seg_dict['direction_name'] = dir_name_map.get((rid, seg.direction_id), seg.direction_id)
@@ -602,7 +667,8 @@ def get_progress():
 
     for data in by_route.values():
         total = data['total_segments']
-        completed = data['completed_segments']
+        completed = min(data['completed_segments'], total) if total > 0 else 0
+        data['completed_segments'] = completed
         data['completion_pct'] = round(completed / total * 100, 1) if total > 0 else 0
 
         # Re-sort each route's segments along the route's stop sequence so
@@ -659,8 +725,8 @@ def mark_segments():
         return jsonify({'error': 'Invalid route/direction'}), 404
 
     try:
-        stop_ids = json.loads(direction.stop_ids_json) if direction.stop_ids_json else []
-        if not isinstance(stop_ids, list):
+        raw_stop_ids = json.loads(direction.stop_ids_json) if direction.stop_ids_json else []
+        if not isinstance(raw_stop_ids, list):
             raise ValueError('stop_ids_json is not a list')
     except (ValueError, TypeError):
         logger.warning(
@@ -668,6 +734,14 @@ def mark_segments():
             route_id, direction_id,
         )
         return jsonify({'error': 'Route data unavailable, please retry'}), 503
+
+    # Expand the requested range over the SAME deduped sequence the frontend
+    # renders. If we expanded over the raw OBA list (which can include
+    # same-name twin platforms tacked onto the wrong direction's tail),
+    # crossing a duplicate would insert a phantom hop that no user can ever
+    # toggle off — inflating progress totals (the "53/50" / "47/50" bugs).
+    deduped_map = _deduped_stop_ids_per_direction([route_id])
+    stop_ids = deduped_map.get((route_id, direction_id), raw_stop_ids) or raw_stop_ids
     try:
         from_idx = stop_ids.index(from_stop_id)
         to_idx = stop_ids.index(to_stop_id)
@@ -813,17 +887,29 @@ def bulk_delete_segments():
 
 # ─── Helpers ──────────────────────────────────────────────────────────
 
-def _route_segment_counts():
-    """{route_id: total_possible_segments} computed in a single query."""
+def _route_segment_counts(route_ids=None):
+    """``{route_id: total_possible_segments}`` using the same dedupe rules
+    as ``get_route`` so per-route totals match the hops the frontend
+    actually exposes.
+
+    Pass ``route_ids`` to scope the work to just those routes — e.g.
+    ``_user_summary`` only needs totals for routes the user has marked.
+    Without scoping, this fetches every Stop in the system, which is
+    expensive on hot per-request endpoints like ``/api/me`` and
+    ``/api/me/stats``.
+    """
+    if route_ids is None:
+        route_ids = [
+            rid for (rid,) in (
+                RouteDirection.query
+                .with_entities(RouteDirection.route_id)
+                .distinct()
+                .all()
+            )
+        ]
     out = {}
-    for d in RouteDirection.query.with_entities(
-        RouteDirection.route_id, RouteDirection.stop_ids_json
-    ).all():
-        try:
-            n = max(0, len(json.loads(d.stop_ids_json or '[]')) - 1)
-        except Exception:
-            n = 0
-        out[d.route_id] = out.get(d.route_id, 0) + n
+    for (rid, _did), sids in _deduped_stop_ids_per_direction(route_ids).items():
+        out[rid] = out.get(rid, 0) + max(0, len(sids) - 1)
     return out
 
 
@@ -850,7 +936,9 @@ def _user_summary(user_id):
             .group_by(UserSegment.route_id)
             .all()
         )
-        totals = _route_segment_counts()
+        # Only fetch totals for routes this user has actually marked —
+        # avoids loading every Stop in the system on every /me request.
+        totals = _route_segment_counts(route_ids=list(per_route_done.keys()))
         for rid, done in per_route_done.items():
             if totals.get(rid, 0) > 0 and done >= totals[rid]:
                 completed_routes += 1

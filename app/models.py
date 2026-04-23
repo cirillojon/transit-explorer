@@ -91,6 +91,11 @@ class RouteDirection(db.Model):
     direction_id = db.Column(db.String(10), nullable=False)
     direction_name = db.Column(db.String(255))
     encoded_polyline = db.Column(db.Text)
+    # JSON-encoded list of all polyline variants for this direction. OBA
+    # returns one polyline per trip-pattern variant (deviations,
+    # short-turns, etc.); storing only the first one — as we used to —
+    # leaves stops on minor patterns visually disconnected from the route.
+    encoded_polylines_json = db.Column(db.Text)
     stop_ids_json = db.Column(db.Text)  # JSON array of ordered stop IDs
 
     __table_args__ = (
@@ -98,13 +103,34 @@ class RouteDirection(db.Model):
     )
 
     def to_dict(self):
-        stop_ids = json.loads(self.stop_ids_json) if self.stop_ids_json else []
+        try:
+            stop_ids = json.loads(self.stop_ids_json) if self.stop_ids_json else []
+        except (ValueError, TypeError):
+            stop_ids = []
+        # Guard against malformed JSON in either column so a single bad
+        # row can't 500 every endpoint that serializes directions.
+        try:
+            encoded_polylines = (
+                json.loads(self.encoded_polylines_json)
+                if self.encoded_polylines_json else []
+            )
+        except (ValueError, TypeError):
+            encoded_polylines = []
+        if not isinstance(encoded_polylines, list):
+            encoded_polylines = []
+        # Back-compat: if the variant list wasn't populated yet (older
+        # rows from before the migration ran end-to-end), surface the
+        # single legacy polyline so the frontend always has something
+        # to draw.
+        if not encoded_polylines and self.encoded_polyline:
+            encoded_polylines = [self.encoded_polyline]
         return {
             'id': self.id,
             'route_id': self.route_id,
             'direction_id': self.direction_id,
             'direction_name': self.direction_name,
             'encoded_polyline': self.encoded_polyline,
+            'encoded_polylines': encoded_polylines,
             'stop_ids': stop_ids,
         }
 

@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline } from "react-leaflet";
 import L from "leaflet";
 import {
   fetchRouteDetail,
@@ -210,21 +210,42 @@ function TransitMap({
     [directionChoices, resolvedDirectionId],
   );
 
+  // Decode every polyline variant exactly once per `routeDetail`. OBA
+  // returns one polyline per *trip-pattern variant* per direction
+  // (deviations, short-turns, "Summit" tail on Route 3, etc.); the
+  // backend persists the full list as `encoded_polylines`. Both
+  // `directionSegments` (per-hop slicer + fallback chain) and
+  // `directionShapes` (faint full-route backdrop) consume this map, so
+  // computing it separately in each was decoding everything twice.
+  const decodedVariantsByDir = useMemo(() => {
+    const out = new Map();
+    if (!routeDetail) return out;
+    for (const dir of routeDetail.directions || []) {
+      const dirId = normalizeDirectionId(dir.direction_id);
+      const variants = dir.encoded_polylines?.length
+        ? dir.encoded_polylines
+        : dir.encoded_polyline
+          ? [dir.encoded_polyline]
+          : [];
+      const decoded = variants
+        .map((enc) => decode(enc))
+        .filter((line) => line && line.length > 0);
+      out.set(dirId, decoded);
+    }
+    return out;
+  }, [routeDetail]);
+
   const directionSegments = useMemo(() => {
     if (!routeDetail) return [];
     const result = [];
-    // Decode every direction's polyline up front so each direction can
-    // fall back to OTHER directions' geometry when its own polyline is
-    // truncated/missing for some hops. Both polylines on a single route
-    // trace the same physical track from opposite ends, so they're a
-    // safe fallback for each other.
-    const decodedByDir = new Map();
-    for (const dir of routeDetail.directions || []) {
-      decodedByDir.set(
-        normalizeDirectionId(dir.direction_id),
-        decode(dir.encoded_polyline),
-      );
-    }
+    // Treat the direction's own first variant as primary, then fall back
+    // through:
+    //   1. its OTHER same-direction variants (covers minor patterns
+    //      like Route 3's Summit deviation that aren't on the main line),
+    //   2. all opposite-direction variants (both directions trace the
+    //      same physical track from opposite ends — already handled by
+    //      `slicePolylineByStopsWithFallbacks` with reverse traversal).
+    const decodedByDir = decodedVariantsByDir;
     for (const dir of routeDetail.directions || []) {
       if (
         resolvedDirectionId !== null &&
@@ -232,10 +253,17 @@ function TransitMap({
       )
         continue;
       const dirId = normalizeDirectionId(dir.direction_id);
-      const line = decodedByDir.get(dirId) || [];
+      const ownVariants = decodedByDir.get(dirId) || [];
+      const line = ownVariants[0] || [];
       const fallbackLines = [];
-      for (const [otherId, otherLine] of decodedByDir) {
-        if (otherId !== dirId && otherLine && otherLine.length) {
+      // Same-direction variants come first — they're the most likely
+      // match for any deviation stop in this direction's stop list.
+      for (let v = 1; v < ownVariants.length; v++) {
+        fallbackLines.push(ownVariants[v]);
+      }
+      for (const [otherId, otherVariants] of decodedByDir) {
+        if (otherId === dirId) continue;
+        for (const otherLine of otherVariants) {
           fallbackLines.push(otherLine);
         }
       }
@@ -276,11 +304,43 @@ function TransitMap({
       }
     }
     return result;
-  }, [routeDetail, resolvedDirectionId]);
+  }, [routeDetail, resolvedDirectionId, decodedVariantsByDir]);
+
+  // Decoded full polyline variants for the active direction(s). These get
+  // rendered as a thin low-opacity backdrop so the route geometry is
+  // always visually continuous, even when our per-stop slicer can't find
+  // a single polyline that covers a hop at a trip-pattern variant
+  // boundary. The colored per-hop segments still sit on top for the
+  // traveled/untraveled coloring; we just refuse to leave physical gaps
+  // in the route shape itself.
+  const directionShapes = useMemo(() => {
+    if (!routeDetail) return [];
+    const shapes = [];
+    for (const dir of routeDetail.directions || []) {
+      if (
+        resolvedDirectionId !== null &&
+        normalizeDirectionId(dir.direction_id) !== resolvedDirectionId
+      )
+        continue;
+      const dirId = normalizeDirectionId(dir.direction_id);
+      const decoded = decodedVariantsByDir.get(dirId) || [];
+      decoded.forEach((line, i) => {
+        if (line.length < 2) return;
+        shapes.push({
+          key: `${routeDetail.id}|${dirId}|shape|${i}`,
+          positions: line,
+        });
+      });
+    }
+    return shapes;
+  }, [routeDetail, resolvedDirectionId, decodedVariantsByDir]);
 
   const allSelectedPositions = useMemo(
-    () => directionSegments.flatMap((s) => (s.positions ? s.positions : [])),
-    [directionSegments],
+    () => [
+      ...directionSegments.flatMap((s) => (s.positions ? s.positions : [])),
+      ...directionShapes.flatMap((s) => s.positions),
+    ],
+    [directionSegments, directionShapes],
   );
 
   const visibleStops = useMemo(() => {
@@ -370,24 +430,33 @@ function TransitMap({
     const result = [];
     for (const detail of allProgressDetails) {
       const color = detail.color ? `#${detail.color}` : "#60a5fa";
-      // Decode every direction's polyline up front so each direction can
-      // fall back to OTHER directions' geometry when its own polyline is
-      // truncated/missing for some hops (see TransitMap.directionSegments
-      // for context — same workaround applies here for the all-routes
-      // overview mode).
+      // Decode every polyline variant up front. See
+      // TransitMap.directionSegments for the full rationale — same
+      // multi-variant fallback chain applies here for all-routes mode.
       const decodedByDir = new Map();
       for (const dir of detail.directions || []) {
-        decodedByDir.set(
-          normalizeDirectionId(dir.direction_id),
-          decode(dir.encoded_polyline),
-        );
+        const dirId = normalizeDirectionId(dir.direction_id);
+        const variants = dir.encoded_polylines?.length
+          ? dir.encoded_polylines
+          : dir.encoded_polyline
+            ? [dir.encoded_polyline]
+            : [];
+        const decoded = variants
+          .map((enc) => decode(enc))
+          .filter((line) => line && line.length > 0);
+        decodedByDir.set(dirId, decoded);
       }
       for (const dir of detail.directions || []) {
         const dirId = normalizeDirectionId(dir.direction_id);
-        const line = decodedByDir.get(dirId) || [];
+        const ownVariants = decodedByDir.get(dirId) || [];
+        const line = ownVariants[0] || [];
         const fallbackLines = [];
-        for (const [otherId, otherLine] of decodedByDir) {
-          if (otherId !== dirId && otherLine && otherLine.length) {
+        for (let v = 1; v < ownVariants.length; v++) {
+          fallbackLines.push(ownVariants[v]);
+        }
+        for (const [otherId, otherVariants] of decodedByDir) {
+          if (otherId === dirId) continue;
+          for (const otherLine of otherVariants) {
             fallbackLines.push(otherLine);
           }
         }
@@ -817,6 +886,22 @@ function TransitMap({
 
         {/* Two passes: faint background line, bold colored overlay.
              Lets completed hops glow on top of the route base. */}
+        {/* Backdrop: full decoded shape variants for the active
+             direction. Renders as a thin low-opacity line so the route
+             geometry is always continuous, even where per-stop slicing
+             can't bridge a trip-pattern variant boundary (e.g. King
+             County Route 3 Summit deviation). The colored hop overlay
+             below sits on top for traveled/untraveled coloring. */}
+        {directionShapes.map((shape) => (
+          <Polyline
+            key={shape.key}
+            positions={shape.positions}
+            color={routeColor}
+            weight={3}
+            opacity={0.35}
+            interactive={false}
+          />
+        ))}
         <RouteSegmentsLayer
           segments={directionSegments}
           effectiveCompleted={effectiveCompleted}
