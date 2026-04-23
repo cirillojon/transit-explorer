@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline } from "react-leaflet";
 import L from "leaflet";
 import {
   fetchRouteDetail,
@@ -296,9 +296,45 @@ function TransitMap({
     return result;
   }, [routeDetail, resolvedDirectionId]);
 
+  // Decoded full polyline variants for the active direction(s). These get
+  // rendered as a thin low-opacity backdrop so the route geometry is
+  // always visually continuous, even when our per-stop slicer can't find
+  // a single polyline that covers a hop at a trip-pattern variant
+  // boundary. The colored per-hop segments still sit on top for the
+  // traveled/untraveled coloring; we just refuse to leave physical gaps
+  // in the route shape itself.
+  const directionShapes = useMemo(() => {
+    if (!routeDetail) return [];
+    const shapes = [];
+    for (const dir of routeDetail.directions || []) {
+      if (
+        resolvedDirectionId !== null &&
+        normalizeDirectionId(dir.direction_id) !== resolvedDirectionId
+      )
+        continue;
+      const variants = dir.encoded_polylines?.length
+        ? dir.encoded_polylines
+        : dir.encoded_polyline
+          ? [dir.encoded_polyline]
+          : [];
+      variants.forEach((enc, i) => {
+        const decoded = decode(enc);
+        if (!decoded || decoded.length < 2) return;
+        shapes.push({
+          key: `${routeDetail.id}|${normalizeDirectionId(dir.direction_id)}|shape|${i}`,
+          positions: decoded,
+        });
+      });
+    }
+    return shapes;
+  }, [routeDetail, resolvedDirectionId]);
+
   const allSelectedPositions = useMemo(
-    () => directionSegments.flatMap((s) => (s.positions ? s.positions : [])),
-    [directionSegments],
+    () => [
+      ...directionSegments.flatMap((s) => (s.positions ? s.positions : [])),
+      ...directionShapes.flatMap((s) => s.positions),
+    ],
+    [directionSegments, directionShapes],
   );
 
   const visibleStops = useMemo(() => {
@@ -844,6 +880,22 @@ function TransitMap({
 
         {/* Two passes: faint background line, bold colored overlay.
              Lets completed hops glow on top of the route base. */}
+        {/* Backdrop: full decoded shape variants for the active
+             direction. Renders as a thin low-opacity line so the route
+             geometry is always continuous, even where per-stop slicing
+             can't bridge a trip-pattern variant boundary (e.g. King
+             County Route 3 Summit deviation). The colored hop overlay
+             below sits on top for traveled/untraveled coloring. */}
+        {directionShapes.map((shape) => (
+          <Polyline
+            key={shape.key}
+            positions={shape.positions}
+            color={routeColor}
+            weight={3}
+            opacity={0.35}
+            interactive={false}
+          />
+        ))}
         <RouteSegmentsLayer
           segments={directionSegments}
           effectiveCompleted={effectiveCompleted}
