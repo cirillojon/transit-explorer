@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { slicePolylineByStops } from "../components/map/mapUtils";
+import {
+  slicePolylineByStops,
+  slicePolylineByStopsWithFallbacks,
+} from "../components/map/mapUtils";
 
 describe("slicePolylineByStops", () => {
   it("returns one segment per consecutive stop pair", () => {
@@ -138,5 +141,88 @@ describe("slicePolylineByStops", () => {
     const segs = slicePolylineByStops(line, stops);
     expect(segs).toHaveLength(1);
     expect(segs[0]).toBeNull();
+  });
+});
+
+describe("slicePolylineByStopsWithFallbacks", () => {
+  it("uses the primary polyline when it covers all stops", () => {
+    const primary = [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+    ];
+    const stops = [
+      [0, 0],
+      [0, 2],
+    ];
+    const segs = slicePolylineByStopsWithFallbacks(primary, [], stops);
+    expect(segs).toHaveLength(1);
+    expect(segs[0][0]).toEqual(stops[0]);
+    expect(segs[0][segs[0].length - 1]).toEqual(stops[1]);
+  });
+
+  it("falls back to a reversed opposite-direction polyline (1 Line case)", () => {
+    // Mirrors Sound Transit 1 Line: the active direction's polyline only
+    // covers the northern half of the route, so the southern stops would
+    // render as null. The opposite direction's polyline covers the full
+    // route — but it runs the other way, so we have to walk it backwards.
+    const truncatedPrimary = [
+      [0, 5], // only the northern half
+      [0, 6],
+      [0, 7],
+      [0, 8],
+    ];
+    const fullOpposite = [
+      [0, 8], // opposite direction, full route, runs north -> south
+      [0, 7],
+      [0, 6],
+      [0, 5],
+      [0, 4],
+      [0, 3],
+      [0, 2],
+      [0, 1],
+      [0, 0],
+    ];
+    // Stops in the active direction: south -> north.
+    const stops = [
+      [0, 0], // off the truncated primary; covered by opposite (reversed)
+      [0, 2], // off the truncated primary; covered by opposite (reversed)
+      [0, 5], // on the primary
+      [0, 8], // on the primary
+    ];
+    const segs = slicePolylineByStopsWithFallbacks(
+      truncatedPrimary,
+      [fullOpposite],
+      stops,
+    );
+    expect(segs).toHaveLength(3);
+    // Southern hops were rescued by the opposite-direction fallback.
+    expect(segs[0]).not.toBeNull();
+    expect(segs[0][0]).toEqual(stops[0]);
+    expect(segs[0][segs[0].length - 1]).toEqual(stops[1]);
+    expect(segs[1]).not.toBeNull();
+    expect(segs[1][0]).toEqual(stops[1]);
+    expect(segs[1][segs[1].length - 1]).toEqual(stops[2]);
+    // Hops fully on the primary use the primary polyline.
+    expect(segs[2]).not.toBeNull();
+    expect(segs[2][0]).toEqual(stops[2]);
+    expect(segs[2][segs[2].length - 1]).toEqual(stops[3]);
+  });
+
+  it("returns null when no polyline (primary or fallback) covers a hop", () => {
+    const primary = [
+      [0, 0],
+      [0, 1],
+    ];
+    const fallback = [
+      [0, 0],
+      [0, 1],
+    ];
+    const stops = [
+      [5, 5], // far off both lines
+      [5, 6], // far off both lines
+    ];
+    const segs = slicePolylineByStopsWithFallbacks(primary, [fallback], stops);
+    expect(segs).toEqual([null]);
   });
 });

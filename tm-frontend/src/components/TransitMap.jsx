@@ -30,7 +30,7 @@ import {
   getTripStats,
   normalizeDirectionId,
   recordTripTime,
-  slicePolylineByStops,
+  slicePolylineByStopsWithFallbacks,
 } from "./map/mapUtils";
 
 function TransitMap({
@@ -213,20 +213,43 @@ function TransitMap({
   const directionSegments = useMemo(() => {
     if (!routeDetail) return [];
     const result = [];
+    // Decode every direction's polyline up front so each direction can
+    // fall back to OTHER directions' geometry when its own polyline is
+    // truncated/missing for some hops. Both polylines on a single route
+    // trace the same physical track from opposite ends, so they're a
+    // safe fallback for each other.
+    const decodedByDir = new Map();
+    for (const dir of routeDetail.directions || []) {
+      decodedByDir.set(
+        normalizeDirectionId(dir.direction_id),
+        decode(dir.encoded_polyline),
+      );
+    }
     for (const dir of routeDetail.directions || []) {
       if (
         resolvedDirectionId !== null &&
         normalizeDirectionId(dir.direction_id) !== resolvedDirectionId
       )
         continue;
-      const line = decode(dir.encoded_polyline);
+      const dirId = normalizeDirectionId(dir.direction_id);
+      const line = decodedByDir.get(dirId) || [];
+      const fallbackLines = [];
+      for (const [otherId, otherLine] of decodedByDir) {
+        if (otherId !== dirId && otherLine && otherLine.length) {
+          fallbackLines.push(otherLine);
+        }
+      }
       const stopIds = dir.stop_ids || [];
       const stopsMap = routeDetail.stops || {};
       const stopPositions = stopIds
         .map((id) => stopsMap[id])
         .filter(Boolean)
         .map((s) => [s.lat, s.lon]);
-      const polySegments = slicePolylineByStops(line, stopPositions);
+      const polySegments = slicePolylineByStopsWithFallbacks(
+        line,
+        fallbackLines,
+        stopPositions,
+      );
       for (let i = 0; i < polySegments.length; i++) {
         if (i + 1 >= stopIds.length) break;
         // Always emit a segment object — one per backend stop pair — so
@@ -340,8 +363,27 @@ function TransitMap({
     const result = [];
     for (const detail of allProgressDetails) {
       const color = detail.color ? `#${detail.color}` : "#60a5fa";
+      // Decode every direction's polyline up front so each direction can
+      // fall back to OTHER directions' geometry when its own polyline is
+      // truncated/missing for some hops (see TransitMap.directionSegments
+      // for context — same workaround applies here for the all-routes
+      // overview mode).
+      const decodedByDir = new Map();
       for (const dir of detail.directions || []) {
-        const line = decode(dir.encoded_polyline);
+        decodedByDir.set(
+          normalizeDirectionId(dir.direction_id),
+          decode(dir.encoded_polyline),
+        );
+      }
+      for (const dir of detail.directions || []) {
+        const dirId = normalizeDirectionId(dir.direction_id);
+        const line = decodedByDir.get(dirId) || [];
+        const fallbackLines = [];
+        for (const [otherId, otherLine] of decodedByDir) {
+          if (otherId !== dirId && otherLine && otherLine.length) {
+            fallbackLines.push(otherLine);
+          }
+        }
         const stopIds = dir.stop_ids || [];
         const stopsMap = detail.stops || {};
         // Filter stopIds and stopPositions in parallel so segment indices
@@ -351,7 +393,11 @@ function TransitMap({
           const stop = stopsMap[id];
           return [stop.lat, stop.lon];
         });
-        const polySegs = slicePolylineByStops(line, stopPositions);
+        const polySegs = slicePolylineByStopsWithFallbacks(
+          line,
+          fallbackLines,
+          stopPositions,
+        );
         const segmentCount = Math.min(
           polySegs.length,
           Math.max(0, filteredStopIds.length - 1),
