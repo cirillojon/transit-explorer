@@ -46,11 +46,7 @@ function ConfirmDialog({
           </p>
         )}
         <div className="modal-actions">
-          <button
-            ref={cancelBtnRef}
-            className="modal-btn"
-            onClick={onCancel}
-          >
+          <button ref={cancelBtnRef} className="modal-btn" onClick={onCancel}>
             {cancelLabel}
           </button>
           <button

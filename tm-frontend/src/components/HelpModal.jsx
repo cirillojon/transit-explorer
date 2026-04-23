@@ -5,7 +5,12 @@ import React, { useEffect, useRef } from "react";
  * time a signed-in user lands on the app, and re-openable from the
  * floating "?" button on the map.
  */
-function HelpModal({ open, onClose, onDontShowAgain, showDontShowAgain = false }) {
+function HelpModal({
+  open,
+  onClose,
+  onDontShowAgain,
+  showDontShowAgain = false,
+}) {
   const closeBtnRef = useRef(null);
 
   useEffect(() => {

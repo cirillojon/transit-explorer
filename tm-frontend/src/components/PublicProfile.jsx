@@ -1,52 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchUserProfile } from "../services/api";
-
-/* Group consecutive same-direction hops into a single "ride". Mirrors the
- * grouping used in UserProgress so the public view feels familiar. */
-function groupIntoJourneys(segments) {
-  if (!segments?.length) return [];
-  const sorted = [...segments].sort(
-    (a, b) => new Date(a.completed_at) - new Date(b.completed_at),
-  );
-  const journeys = [];
-  let run = [sorted[0]];
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = run[run.length - 1];
-    const cur = sorted[i];
-    if (
-      cur.direction_id === prev.direction_id &&
-      cur.from_stop_id === prev.to_stop_id
-    ) {
-      run.push(cur);
-    } else {
-      journeys.push(makeJourney(run));
-      run = [cur];
-    }
-  }
-  journeys.push(makeJourney(run));
-  return journeys.reverse();
-}
-
-function makeJourney(segs) {
-  const first = segs[0];
-  const last = segs[segs.length - 1];
-  return {
-    key: `${first.direction_id}-${first.from_stop_id}-${last.to_stop_id}-${first.completed_at}`,
-    directionId: first.direction_id,
-    directionName: first.direction_name || first.direction_id,
-    boardStop: first.from_stop_name || first.from_stop_id,
-    alightStop: last.to_stop_name || last.to_stop_id,
-    stopCount: segs.length + 1,
-    date: new Date(first.completed_at).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year:
-        new Date(first.completed_at).getFullYear() !== new Date().getFullYear()
-          ? "numeric"
-          : undefined,
-    }),
-  };
-}
+import { groupIntoJourneys } from "./journeyGrouping";
 
 function PublicProfile({ userId, fallbackEntry, onClose }) {
   const [data, setData] = useState(null);

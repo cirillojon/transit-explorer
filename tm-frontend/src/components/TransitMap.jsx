@@ -33,6 +33,83 @@ import {
   slicePolylineByStopsWithFallbacks,
 } from "./map/mapUtils";
 
+// Cache decoded "view all routes" segments per route-detail object.
+// `fetchRouteDetail` returns the same object across its 5-minute cache
+// window, so toggling the all-routes view (or refreshing one route while
+// keeping others) won't redo the expensive polyline decode + slice for
+// every route.
+const allRouteSegmentsByDetail = new WeakMap();
+
+function buildAllRouteSegmentsForDetail(detail) {
+  const result = [];
+  const color = detail.color ? `#${detail.color}` : "#60a5fa";
+  // Decode every polyline variant up front. See
+  // TransitMap.directionSegments for the full rationale — same
+  // multi-variant fallback chain applies here for all-routes mode.
+  const decodedByDir = new Map();
+  for (const dir of detail.directions || []) {
+    const dirId = normalizeDirectionId(dir.direction_id);
+    const variants = dir.encoded_polylines?.length
+      ? dir.encoded_polylines
+      : dir.encoded_polyline
+        ? [dir.encoded_polyline]
+        : [];
+    const decoded = variants
+      .map((enc) => decode(enc))
+      .filter((line) => line && line.length > 0);
+    decodedByDir.set(dirId, decoded);
+  }
+  for (const dir of detail.directions || []) {
+    const dirId = normalizeDirectionId(dir.direction_id);
+    const ownVariants = decodedByDir.get(dirId) || [];
+    const line = ownVariants[0] || [];
+    const fallbackLines = [];
+    for (let v = 1; v < ownVariants.length; v++) {
+      fallbackLines.push(ownVariants[v]);
+    }
+    for (const [otherId, otherVariants] of decodedByDir) {
+      if (otherId === dirId) continue;
+      for (const otherLine of otherVariants) {
+        fallbackLines.push(otherLine);
+      }
+    }
+    const stopIds = dir.stop_ids || [];
+    const stopsMap = detail.stops || {};
+    // Filter stopIds and stopPositions in parallel so segment indices
+    // stay aligned with the surviving stop IDs.
+    const filteredStopIds = stopIds.filter((id) => Boolean(stopsMap[id]));
+    const stopPositions = filteredStopIds.map((id) => {
+      const stop = stopsMap[id];
+      return [stop.lat, stop.lon];
+    });
+    const polySegs = slicePolylineByStopsWithFallbacks(
+      line,
+      fallbackLines,
+      stopPositions,
+    );
+    const segmentCount = Math.min(
+      polySegs.length,
+      Math.max(0, filteredStopIds.length - 1),
+    );
+    for (let i = 0; i < segmentCount; i++) {
+      // Always emit a segment object so per-route progress totals are
+      // based on real backend hops, not on which ones happen to have
+      // drawable polyline geometry. `positions` is `null` for hops the
+      // renderer should skip.
+      result.push({
+        routeId: detail.id,
+        directionId: dir.direction_id,
+        fromStopId: filteredStopIds[i],
+        toStopId: filteredStopIds[i + 1],
+        positions: polySegs[i],
+        color,
+        key: `${detail.id}|${dir.direction_id}|${filteredStopIds[i]}|${filteredStopIds[i + 1]}`,
+      });
+    }
+  }
+  return result;
+}
+
 function TransitMap({
   selectedRoute,
   completedSegments,
@@ -83,11 +160,11 @@ function TransitMap({
     [],
   );
 
-  const showToast = (msg, kind = "success") => {
+  const showToast = useCallback((msg, kind = "success") => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ msg, kind });
     toastTimerRef.current = setTimeout(() => setToast(null), 2500);
-  };
+  }, []);
 
   useEffect(
     () => () => {
@@ -425,75 +502,24 @@ function TransitMap({
   }, [completedSegments, optimisticDone]);
 
   // Segments for all in-progress routes, used in "view all routes" mode.
+  //
+  // Per-route decoding is cached in a module-level WeakMap keyed on the
+  // detail object reference. `fetchRouteDetail` already returns the same
+  // object across its 5-minute cache window, so toggling "view all routes"
+  // on/off (or refreshing one route while keeping others) won't re-decode
+  // every polyline.
   const allRouteSegments = useMemo(() => {
     if (!allProgressDetails?.length || selectedRoute) return [];
     const result = [];
     for (const detail of allProgressDetails) {
-      const color = detail.color ? `#${detail.color}` : "#60a5fa";
-      // Decode every polyline variant up front. See
-      // TransitMap.directionSegments for the full rationale — same
-      // multi-variant fallback chain applies here for all-routes mode.
-      const decodedByDir = new Map();
-      for (const dir of detail.directions || []) {
-        const dirId = normalizeDirectionId(dir.direction_id);
-        const variants = dir.encoded_polylines?.length
-          ? dir.encoded_polylines
-          : dir.encoded_polyline
-            ? [dir.encoded_polyline]
-            : [];
-        const decoded = variants
-          .map((enc) => decode(enc))
-          .filter((line) => line && line.length > 0);
-        decodedByDir.set(dirId, decoded);
+      const cached = allRouteSegmentsByDetail.get(detail);
+      if (cached) {
+        for (const seg of cached) result.push(seg);
+        continue;
       }
-      for (const dir of detail.directions || []) {
-        const dirId = normalizeDirectionId(dir.direction_id);
-        const ownVariants = decodedByDir.get(dirId) || [];
-        const line = ownVariants[0] || [];
-        const fallbackLines = [];
-        for (let v = 1; v < ownVariants.length; v++) {
-          fallbackLines.push(ownVariants[v]);
-        }
-        for (const [otherId, otherVariants] of decodedByDir) {
-          if (otherId === dirId) continue;
-          for (const otherLine of otherVariants) {
-            fallbackLines.push(otherLine);
-          }
-        }
-        const stopIds = dir.stop_ids || [];
-        const stopsMap = detail.stops || {};
-        // Filter stopIds and stopPositions in parallel so segment indices
-        // stay aligned with the surviving stop IDs.
-        const filteredStopIds = stopIds.filter((id) => Boolean(stopsMap[id]));
-        const stopPositions = filteredStopIds.map((id) => {
-          const stop = stopsMap[id];
-          return [stop.lat, stop.lon];
-        });
-        const polySegs = slicePolylineByStopsWithFallbacks(
-          line,
-          fallbackLines,
-          stopPositions,
-        );
-        const segmentCount = Math.min(
-          polySegs.length,
-          Math.max(0, filteredStopIds.length - 1),
-        );
-        for (let i = 0; i < segmentCount; i++) {
-          // Always emit a segment object so per-route progress totals are
-          // based on real backend hops, not on which ones happen to have
-          // drawable polyline geometry. `positions` is `null` for hops the
-          // renderer should skip.
-          result.push({
-            routeId: detail.id,
-            directionId: dir.direction_id,
-            fromStopId: filteredStopIds[i],
-            toStopId: filteredStopIds[i + 1],
-            positions: polySegs[i],
-            color,
-            key: `${detail.id}|${dir.direction_id}|${filteredStopIds[i]}|${filteredStopIds[i + 1]}`,
-          });
-        }
-      }
+      const segs = buildAllRouteSegmentsForDetail(detail);
+      allRouteSegmentsByDetail.set(detail, segs);
+      for (const seg of segs) result.push(seg);
     }
     return result;
   }, [allProgressDetails, selectedRoute]);
@@ -592,8 +618,10 @@ function TransitMap({
   // each successful save.
   const tripStats = useMemo(() => {
     if (!routeDetail || resolvedDirectionId == null) return null;
+    // Reference tripStatsTick so the lint rule sees it; the value isn't
+    // used directly, it just forces a re-read after each save.
+    void tripStatsTick;
     return getTripStats(routeDetail.id, resolvedDirectionId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeDetail, resolvedDirectionId, tripStatsTick]);
 
   const refreshRouteAfterValidationError = async (preferredDirectionId) => {
@@ -790,28 +818,39 @@ function TransitMap({
   };
 
   // Click a polyline directly to mark just that one hop.
-  const handleSegmentClick = useCallback(
-    (seg) => {
-      if (marking) return;
-      if (effectiveCompleted.has(seg.key)) {
-        showToast("Already marked", "info");
-        return;
-      }
-      submitMark(seg.directionId, seg.fromStopId, seg.toStopId);
-    },
-    // submitMark / showToast are defined in the same component scope; they
-    // close over the latest state already, so we only re-create this when
-    // the things `handleSegmentClick` itself reads change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [marking, effectiveCompleted],
-  );
+  //
+  // We keep the latest values in a ref and read from it inside a stable
+  // useCallback. This lets the memoized child <Segment> components keep a
+  // stable `onSegmentClick` reference (so React.memo actually skips them
+  // on unrelated re-renders) without lying to the exhaustive-deps lint.
+  const segmentClickStateRef = useRef({
+    marking,
+    effectiveCompleted,
+    submitMark,
+    showToast,
+  });
+  segmentClickStateRef.current = {
+    marking,
+    effectiveCompleted,
+    submitMark,
+    showToast,
+  };
+  const handleSegmentClick = useCallback((seg) => {
+    const s = segmentClickStateRef.current;
+    if (s.marking) return;
+    if (s.effectiveCompleted.has(seg.key)) {
+      s.showToast("Already marked", "info");
+      return;
+    }
+    s.submitMark(seg.directionId, seg.fromStopId, seg.toStopId);
+  }, []);
 
   // Undo the boarding pick (Escape key or button).
-  const undoBoarding = () => {
+  const undoBoarding = useCallback(() => {
     if (!pickState || marking) return;
     setPickState(null);
     showToast("Boarding undone", "info");
-  };
+  }, [pickState, marking, showToast]);
 
   useEffect(() => {
     if (!pickState) return;
@@ -820,8 +859,7 @@ function TransitMap({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickState, marking]);
+  }, [pickState, undoBoarding]);
 
   // Filtered stop list for the on-map search box.
   const stopSearchResults = useMemo(() => {
