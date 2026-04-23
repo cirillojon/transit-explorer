@@ -185,10 +185,12 @@ export function slicePolylineByStops(line, stopPositions) {
 }
 
 /**
- * Slice geometry for one stop pair against a single polyline.
+ * Slice geometry for one stop pair against a single polyline using
+ * pre-computed snap results.
  *
- * Returns `[stopA, ...intermediate vertices..., stopB]` if both endpoints
- * snap on-route and the snapped indices are monotonic, else `null`.
+ * `snapA` / `snapB` come from `nearestIndex(line, stopPositions[i])` and
+ * are cached per (polyline, stop) so we don't re-scan the full polyline
+ * for every hop and every fallback.
  *
  * `allowReverse` controls what happens when stopB snaps to an EARLIER
  * polyline index than stopA. For the direction's own polyline this means
@@ -198,24 +200,22 @@ export function slicePolylineByStops(line, stopPositions) {
  * polylines trace the same physical track from opposite ends — so we walk
  * the slice backwards and the result still flows from stopA to stopB.
  */
-function sliceOneStopPair(line, pa, pb, allowReverse) {
+function sliceOneStopPair(line, pa, pb, snapA, snapB, allowReverse) {
   if (!line || line.length === 0) return null;
-  const a = nearestIndex(line, pa);
-  const b = nearestIndex(line, pb);
   if (
-    a.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ ||
-    b.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ
+    snapA.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ ||
+    snapB.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ
   ) {
     return null;
   }
-  if (b.index < a.index) {
+  if (snapB.index < snapA.index) {
     if (!allowReverse) return null;
     // Walk the polyline backwards between the two snaps so the resulting
     // points still flow stopA -> stopB visually.
-    const mid = line.slice(b.index + 1, a.index).reverse();
+    const mid = line.slice(snapB.index + 1, snapA.index).reverse();
     return [pa, ...mid, pb];
   }
-  return [pa, ...line.slice(a.index + 1, b.index), pb];
+  return [pa, ...line.slice(snapA.index + 1, snapB.index), pb];
 }
 
 /**
@@ -234,22 +234,51 @@ export function slicePolylineByStopsWithFallbacks(
   stopPositions,
 ) {
   if (stopPositions.length < 2) return [];
-  if (
-    (!primaryLine || primaryLine.length === 0) &&
-    (!fallbackLines || fallbackLines.length === 0)
-  ) {
+  const safeFallbacks = (fallbackLines || []).filter(
+    (l) => l && l.length > 0,
+  );
+  if ((!primaryLine || primaryLine.length === 0) && safeFallbacks.length === 0) {
     // No geometry at all → nothing is drawable.
     return new Array(stopPositions.length - 1).fill(null);
   }
+
+  // Snap each stop ONCE per polyline up front. `nearestIndex` scans the
+  // full polyline, so without caching we'd pay that cost twice per hop
+  // (once per endpoint) and again for every fallback line — quadratic-ish
+  // in the number of stops on long routes. With caching it's O(stops × lines).
+  const snapPrimary =
+    primaryLine && primaryLine.length > 0
+      ? stopPositions.map((sp) => nearestIndex(primaryLine, sp))
+      : null;
+  const snapFallbacks = safeFallbacks.map((line) =>
+    stopPositions.map((sp) => nearestIndex(line, sp)),
+  );
 
   const segments = [];
   for (let i = 0; i < stopPositions.length - 1; i++) {
     const pa = stopPositions[i];
     const pb = stopPositions[i + 1];
-    let seg = sliceOneStopPair(primaryLine, pa, pb, false);
-    if (seg === null && fallbackLines && fallbackLines.length) {
-      for (const fallback of fallbackLines) {
-        seg = sliceOneStopPair(fallback, pa, pb, true);
+    let seg = null;
+    if (snapPrimary) {
+      seg = sliceOneStopPair(
+        primaryLine,
+        pa,
+        pb,
+        snapPrimary[i],
+        snapPrimary[i + 1],
+        false,
+      );
+    }
+    if (seg === null) {
+      for (let f = 0; f < safeFallbacks.length; f++) {
+        seg = sliceOneStopPair(
+          safeFallbacks[f],
+          pa,
+          pb,
+          snapFallbacks[f][i],
+          snapFallbacks[f][i + 1],
+          true,
+        );
         if (seg !== null) break;
       }
     }

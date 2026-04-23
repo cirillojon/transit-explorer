@@ -241,17 +241,24 @@ function TransitMap({
       }
       const stopIds = dir.stop_ids || [];
       const stopsMap = routeDetail.stops || {};
-      const stopPositions = stopIds
-        .map((id) => stopsMap[id])
-        .filter(Boolean)
-        .map((s) => [s.lat, s.lon]);
+      // Filter stopIds and stopPositions in parallel so segment indices
+      // stay aligned with the surviving stop IDs (otherwise polySegments[i]
+      // would no longer correspond to fromStopId/toStopId at the same i).
+      const filteredStopIds = stopIds.filter((id) => Boolean(stopsMap[id]));
+      const stopPositions = filteredStopIds.map((id) => {
+        const stop = stopsMap[id];
+        return [stop.lat, stop.lon];
+      });
       const polySegments = slicePolylineByStopsWithFallbacks(
         line,
         fallbackLines,
         stopPositions,
       );
-      for (let i = 0; i < polySegments.length; i++) {
-        if (i + 1 >= stopIds.length) break;
+      const segmentCount = Math.min(
+        polySegments.length,
+        Math.max(0, filteredStopIds.length - 1),
+      );
+      for (let i = 0; i < segmentCount; i++) {
         // Always emit a segment object — one per backend stop pair — so
         // completion stats and highlight lookup remain accurate even when
         // the agency polyline doesn't have drawable geometry for the hop.
@@ -259,12 +266,12 @@ function TransitMap({
         // those rather than fabricating a line.
         result.push({
           directionId: normalizeDirectionId(dir.direction_id),
-          fromStopId: stopIds[i],
-          toStopId: stopIds[i + 1],
-          fromName: stopsMap[stopIds[i]]?.name,
-          toName: stopsMap[stopIds[i + 1]]?.name,
+          fromStopId: filteredStopIds[i],
+          toStopId: filteredStopIds[i + 1],
+          fromName: stopsMap[filteredStopIds[i]]?.name,
+          toName: stopsMap[filteredStopIds[i + 1]]?.name,
           positions: polySegments[i],
-          key: `${routeDetail.id}|${normalizeDirectionId(dir.direction_id)}|${stopIds[i]}|${stopIds[i + 1]}`,
+          key: `${routeDetail.id}|${normalizeDirectionId(dir.direction_id)}|${filteredStopIds[i]}|${filteredStopIds[i + 1]}`,
         });
       }
     }

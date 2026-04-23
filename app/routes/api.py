@@ -165,7 +165,10 @@ def _dedupe_direction_stop_ids(stop_ids, stops_by_id):
     # twin platforms across the street, tight enough to never collapse two
     # genuinely different stops with a colliding name.
     COORD_TOL = 0.005
-    kept = []  # (name_key, lat, lon)
+    # Index prior coords by normalized name so we only compare against
+    # stops that could actually be a duplicate, instead of scanning every
+    # previously-kept stop on the route (was O(n²) per direction).
+    kept_by_name = {}  # name_key -> list of (lat, lon)
     out = []
     for sid in stop_ids:
         s = stops_by_id.get(sid)
@@ -175,17 +178,19 @@ def _dedupe_direction_stop_ids(stop_ids, stops_by_id):
         name_key = (s.name or '').strip().lower()
         is_dup = False
         if name_key:
-            for prev_name, prev_lat, prev_lon in kept:
-                if (
-                    name_key == prev_name
-                    and abs(s.lat - prev_lat) < COORD_TOL
-                    and abs(s.lon - prev_lon) < COORD_TOL
-                ):
-                    is_dup = True
-                    break
+            prior = kept_by_name.get(name_key)
+            if prior:
+                for prev_lat, prev_lon in prior:
+                    if (
+                        abs(s.lat - prev_lat) < COORD_TOL
+                        and abs(s.lon - prev_lon) < COORD_TOL
+                    ):
+                        is_dup = True
+                        break
         if is_dup:
             continue
-        kept.append((name_key, s.lat, s.lon))
+        if name_key:
+            kept_by_name.setdefault(name_key, []).append((s.lat, s.lon))
         out.append(sid)
     return out
 
