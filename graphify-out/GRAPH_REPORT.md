@@ -1,12 +1,12 @@
-# Graph Report - transit-explorer  (2026-04-22)
+# Graph Report - transit-explorer  (2026-04-23)
 
 ## Corpus Check
-- 57 files · ~85,054 words
+- 58 files · ~86,746 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 333 nodes · 589 edges · 29 communities detected
-- Extraction: 54% EXTRACTED · 46% INFERRED · 0% AMBIGUOUS · INFERRED: 271 edges (avg confidence: 0.56)
+- 354 nodes · 698 edges · 29 communities detected
+- Extraction: 47% EXTRACTED · 53% INFERRED · 0% AMBIGUOUS · INFERRED: 367 edges (avg confidence: 0.55)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -28,7 +28,7 @@
 - [[_COMMUNITY_Community 17|Community 17]]
 - [[_COMMUNITY_Community 18|Community 18]]
 - [[_COMMUNITY_Community 19|Community 19]]
-- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 24|Community 24]]
 - [[_COMMUNITY_Community 25|Community 25]]
 - [[_COMMUNITY_Community 33|Community 33]]
@@ -41,28 +41,28 @@
 - [[_COMMUNITY_Community 40|Community 40]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `User` - 43 edges
-2. `UserSegment` - 40 edges
-3. `Route` - 36 edges
-4. `Stop` - 35 edges
-5. `RouteDirection` - 35 edges
-6. `DataLoad` - 32 edges
-7. `RouteStop` - 30 edges
+1. `User` - 55 edges
+2. `Route` - 52 edges
+3. `UserSegment` - 52 edges
+4. `Stop` - 51 edges
+5. `RouteDirection` - 51 edges
+6. `DataLoad` - 44 edges
+7. `RouteStop` - 42 edges
 8. `React Framework` - 25 edges
 9. `mark_segments()` - 10 edges
 10. `Liveness probe + DB connectivity + per-agency data-load status.` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `User` --uses--> `Tests for the trip-grouping behaviour of /me/progress and /me/activity.  These`  [INFERRED]
+  app/models.py → tests/test_progress_grouping.py
+- `User` --uses--> `Insert 2 trips on the seeded route, intentionally inserting hops     out of rou`  [INFERRED]
+  app/models.py → tests/test_progress_grouping.py
+- `User` --uses--> `Even when rows were inserted in shuffled order, /me/progress     should return`  [INFERRED]
+  app/models.py → tests/test_progress_grouping.py
 - `User` --uses--> `Two POST-shaped trips at distinct timestamps should produce two     activity en`  [INFERRED]
   app/models.py → tests/test_progress_grouping.py
 - `User` --uses--> `Two trips at different timestamps must be two activity entries.`  [INFERRED]
   app/models.py → tests/test_progress_grouping.py
-- `Route` --uses--> `Pytest fixtures for transit-explorer backend smoke tests.  Strategy: - create`  [INFERRED]
-  app/models.py → tests/conftest.py
-- `Route` --uses--> `Return headers with a fake bearer token; patch Firebase verification     so any`  [INFERRED]
-  app/models.py → tests/conftest.py
-- `Stop` --uses--> `Pytest fixtures for transit-explorer backend smoke tests.  Strategy: - create`  [INFERRED]
-  app/models.py → tests/conftest.py
 
 ## Hyperedges (group relationships)
 - **Automated Deployment Pipeline** — github_actions, fly_io, vercel [EXTRACTED 1.00]
@@ -74,16 +74,16 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.04
-Nodes (9): ErrorBoundary, Leaflet Map Library, MapLegend(), formatDuration(), PickOverlay(), React Framework, React-Leaflet, cleanLabel() (+1 more)
+Cohesion: 0.03
+Nodes (13): App(), cleanLabel(), getRouteDisplayText(), useAuth(), ErrorBoundary, Leaflet Map Library, MapLegend(), formatDuration() (+5 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.15
-Nodes (48): get_activity(), get_leaderboard(), List routes with total possible segment counts (cached client-side)., Top users by total segments. Supports period filter and pagination.      Query p, Public, read-only view of another explorer's progress.      Returns the same sha, Rich stats payload: totals, achievements, top routes, 14d sparkline, rank., Recent rides, collapsed by adjacent hops in same direction (30-min window)., Liveness probe + DB connectivity + per-agency data-load status. (+40 more)
+Cohesion: 0.16
+Nodes (55): get_activity(), get_leaderboard(), List routes with total possible segment counts (cached client-side)., Top users by total segments. Supports period filter and pagination.      Query p, Remove same-name + co-located duplicate stops from a direction list.      Preser, Public, read-only view of another explorer's progress.      Returns the same sha, Top users by total segments. Supports period filter and pagination.      Query p, Public, read-only view of another explorer's progress.      Returns the same sha (+47 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.12
-Nodes (27): bulk_delete_segments(), debug_directions(), _diff_achievements(), _evaluate_achievements(), get_me(), get_progress(), get_route(), get_routes() (+19 more)
+Cohesion: 0.11
+Nodes (29): bulk_delete_segments(), debug_directions(), _dedupe_direction_stop_ids(), _diff_achievements(), _evaluate_achievements(), get_me(), get_progress(), get_route() (+21 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.07
@@ -98,20 +98,20 @@ Cohesion: 0.12
 Nodes (4): cached(), fetchRouteDetail(), fetchRoutes(), fetchStops()
 
 ### Community 6 - "Community 6"
+Cohesion: 0.24
+Nodes (9): distSq(), getTripStats(), nearestIndex(), pointToSegmentDistSq(), readTripTimes(), recordTripTime(), sliceOneStopPair(), slicePolylineByStops() (+1 more)
+
+### Community 7 - "Community 7"
 Cohesion: 0.22
 Nodes (8): Verify a Firebase ID token and return the decoded claims., Decorator that requires a valid Firebase auth token.      Sets g.current_user to, require_auth(), verify_firebase_token(), get_engine(), get_engine_url(), run_migrations_online(), Flask Framework
 
-### Community 7 - "Community 7"
-Cohesion: 0.27
-Nodes (6): distSq(), getTripStats(), nearestIndex(), pointToSegmentDistSq(), readTripTimes(), recordTripTime()
-
 ### Community 8 - "Community 8"
-Cohesion: 0.2
-Nodes (4): If pair_keys[0] was already marked, duration_ms must still land on     the firs, duration_ms on a fresh multi-hop mark attaches to the first new row., test_mark_segments_attaches_duration_to_first_new_row(), test_mark_segments_persists_duration_on_first_row()
+Cohesion: 0.22
+Nodes (9): Tests for the trip-grouping behaviour of /me/progress and /me/activity.  These, Insert 2 trips on the seeded route, intentionally inserting hops     out of rou, Two trips at different timestamps must be two activity entries., Even when rows were inserted in shuffled order, /me/progress     should return, Two POST-shaped trips at distinct timestamps should produce two     activity en, _seed_one_shuffled_trip(), test_activity_groups_one_entry_per_trip(), test_activity_separates_distinct_timestamps() (+1 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.38
-Nodes (4): App(), cleanLabel(), getRouteDisplayText(), useAuth()
+Cohesion: 0.2
+Nodes (4): If pair_keys[0] was already marked, duration_ms must still land on     the firs, duration_ms on a fresh multi-hop mark attaches to the first new row., test_mark_segments_attaches_duration_to_first_new_row(), test_mark_segments_persists_duration_on_first_row()
 
 ### Community 10 - "Community 10"
 Cohesion: 0.33
@@ -145,7 +145,7 @@ Nodes (2): groupIntoJourneys(), makeJourney()
 Cohesion: 0.67
 Nodes (3): Firebase Auth, Firebase Keys Not Secrets Rationale, Google Sign-In
 
-### Community 21 - "Community 21"
+### Community 23 - "Community 23"
 Cohesion: 1.0
 Nodes (1): Vite Bundler
 
@@ -198,7 +198,7 @@ Nodes (1): Vite (logo)
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 18`** (3 nodes): `groupIntoJourneys()`, `makeJourney()`, `journeyGrouping.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 21`** (2 nodes): `vite.config.js`, `Vite Bundler`
+- **Thin community `Community 23`** (2 nodes): `vite.config.js`, `Vite Bundler`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 24`** (2 nodes): `SQLite Database`, `SQLite for Single-Instance Rationale`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -224,17 +224,17 @@ Nodes (1): Vite (logo)
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `React Framework` connect `Community 0` to `Community 9`, `Community 10`?**
-  _High betweenness centrality (0.057) - this node is a cross-community bridge._
-- **Why does `Flask Framework` connect `Community 6` to `Community 2`, `Community 3`, `Community 4`?**
+- **Why does `React Framework` connect `Community 0` to `Community 10`?**
+  _High betweenness centrality (0.053) - this node is a cross-community bridge._
+- **Why does `UserSegment` connect `Community 1` to `Community 8`, `Community 2`?**
   _High betweenness centrality (0.040) - this node is a cross-community bridge._
-- **Why does `mark_segments()` connect `Community 2` to `Community 1`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
-- **Are the 41 inferred relationships involving `User` (e.g. with `Verify a Firebase ID token and return the decoded claims.` and `Decorator that requires a valid Firebase auth token.      Sets g.current_user to`) actually correct?**
-  _`User` has 41 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 38 inferred relationships involving `UserSegment` (e.g. with `Liveness probe + DB connectivity + per-agency data-load status.` and `List routes with total possible segment counts (cached client-side).`) actually correct?**
-  _`UserSegment` has 38 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 33 inferred relationships involving `Route` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
-  _`Route` has 33 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 33 inferred relationships involving `Stop` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
-  _`Stop` has 33 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Flask Framework` connect `Community 7` to `Community 2`, `Community 3`, `Community 4`?**
+  _High betweenness centrality (0.039) - this node is a cross-community bridge._
+- **Are the 53 inferred relationships involving `User` (e.g. with `Verify a Firebase ID token and return the decoded claims.` and `Decorator that requires a valid Firebase auth token.      Sets g.current_user to`) actually correct?**
+  _`User` has 53 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 49 inferred relationships involving `Route` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
+  _`Route` has 49 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 50 inferred relationships involving `UserSegment` (e.g. with `Liveness probe + DB connectivity + per-agency data-load status.` and `List routes with total possible segment counts (cached client-side).`) actually correct?**
+  _`UserSegment` has 50 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 49 inferred relationships involving `Stop` (e.g. with `Refresh transit data for the requested agencies (TTL gated).` and `Liveness probe + DB connectivity + per-agency data-load status.`) actually correct?**
+  _`Stop` has 49 INFERRED edges - model-reasoned connections that need verification._
