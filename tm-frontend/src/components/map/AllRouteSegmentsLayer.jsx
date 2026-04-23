@@ -16,9 +16,14 @@ function AllRouteSegmentsLayer({
       <Polyline
         key={seg.key}
         positions={seg.positions}
-        color={done ? "#22c55e" : seg.color}
-        weight={done ? 5 : 3}
-        opacity={done ? 0.85 : 0.45}
+        // See RouteSegmentsLayer: react-leaflet v5 only reactively updates
+        // styling via `pathOptions`; direct color/weight/opacity props are
+        // applied at mount only.
+        pathOptions={{
+          color: done ? "#22c55e" : seg.color,
+          weight: done ? 5 : 3,
+          opacity: done ? 0.85 : 0.45,
+        }}
       >
         {routeInfo && (
           <Tooltip sticky pane="tooltipPane">

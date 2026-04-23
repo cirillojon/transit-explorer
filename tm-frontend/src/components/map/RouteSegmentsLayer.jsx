@@ -23,13 +23,19 @@ function RouteSegmentsLayer({
         `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`;
     const isHovered = hoverSeg === seg.key;
     const isFresh = recentlyDone.has(seg.key);
+    const color = isHighlighted ? "#facc15" : done ? "#22c55e" : routeColor;
+    const weight = isHighlighted ? 8 : done ? 6 : isHovered ? 6 : 4;
+    const opacity = isHighlighted ? 1 : done ? 1 : isHovered ? 0.95 : 0.55;
     return (
       <React.Fragment key={seg.key}>
         <Polyline
           positions={seg.positions}
-          color={isHighlighted ? "#facc15" : done ? "#22c55e" : routeColor}
-          weight={isHighlighted ? 8 : done ? 6 : isHovered ? 6 : 4}
-          opacity={isHighlighted ? 1 : done ? 1 : isHovered ? 0.95 : 0.55}
+          // react-leaflet v5 only reactively updates style via `pathOptions`;
+          // passing color/weight/opacity as direct props applies them at
+          // mount only and skips later updates, so a polyline that turns
+          // "done" after the initial render would otherwise stay the route
+          // color until the layer is remounted.
+          pathOptions={{ color, weight, opacity }}
           eventHandlers={{
             click: () => onSegmentClick(seg),
             mouseover: () => setHoverSeg(seg.key),
