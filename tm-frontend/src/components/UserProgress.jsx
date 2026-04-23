@@ -357,9 +357,7 @@ function UserProgress({
                   onClick={() => {
                     const nextExpanded = isExpanded ? null : rp.route_id;
                     setExpandedRoute(nextExpanded);
-                    if (nextExpanded) {
-                      onSelectRoute?.(rp.route_id);
-                    }
+                    onSelectRoute?.(nextExpanded);
                   }}
                 >
                   <span

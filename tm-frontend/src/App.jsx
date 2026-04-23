@@ -105,6 +105,10 @@ function App() {
 
   const handleSelectRouteFromProgress = useCallback(
     (routeId) => {
+      if (!routeId) {
+        setSelectedRoute(null);
+        return;
+      }
       const route = routes.find((r) => r.id === routeId);
       if (route) {
         setSelectedRoute(route);
