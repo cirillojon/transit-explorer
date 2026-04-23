@@ -195,6 +195,45 @@ def _dedupe_direction_stop_ids(stop_ids, stops_by_id):
     return out
 
 
+def _deduped_stop_ids_per_direction(route_ids):
+    """Return ``{(route_id, direction_id): deduped_stop_ids}`` for the given
+    route IDs, applying the same dedupe rules as ``get_route``.
+
+    Progress denominators MUST use these deduped counts. The frontend only
+    ever shows users hops between deduped stops — if we count the raw
+    OBA stop list (which can include same-name twins from the opposite
+    direction tacked onto the end, e.g. Sound Transit 1 Line), a user who
+    marks every visible hop tops out at <100% completion. See bug report:
+    "1 Line marked entirely done shows 96%".
+    """
+    if not route_ids:
+        return {}
+    dirs = (
+        RouteDirection.query
+        .filter(RouteDirection.route_id.in_(route_ids))
+        .all()
+    )
+    raw_per_dir = {}
+    all_stop_ids = set()
+    for d in dirs:
+        try:
+            sids = json.loads(d.stop_ids_json or '[]')
+        except (ValueError, TypeError):
+            sids = []
+        if not isinstance(sids, list):
+            sids = []
+        raw_per_dir[(d.route_id, d.direction_id)] = sids
+        all_stop_ids.update(sids)
+    stops_by_id = (
+        {s.id: s for s in Stop.query.filter(Stop.id.in_(all_stop_ids)).all()}
+        if all_stop_ids else {}
+    )
+    return {
+        key: _dedupe_direction_stop_ids(sids, stops_by_id)
+        for key, sids in raw_per_dir.items()
+    }
+
+
 @api_blueprint.route('/stops')
 def get_stops():
     stops = Stop.query.all()
@@ -280,6 +319,7 @@ def get_user_profile(user_id):
         dirs = RouteDirection.query.filter(
             RouteDirection.route_id.in_(route_ids)
         ).all()
+        deduped_per_dir = _deduped_stop_ids_per_direction(route_ids)
         dir_name_map = {}
         totals_per_route = {rid: 0 for rid in route_ids}
         dirs_per_route = {rid: [] for rid in route_ids}
@@ -287,10 +327,7 @@ def get_user_profile(user_id):
             dir_name_map[(d.route_id, d.direction_id)] = (
                 d.direction_name or d.direction_id
             )
-            try:
-                stop_ids = json.loads(d.stop_ids_json or '[]')
-            except Exception:
-                stop_ids = []
+            stop_ids = deduped_per_dir.get((d.route_id, d.direction_id), [])
             count = max(0, len(stop_ids) - 1)
             totals_per_route[d.route_id] = (
                 totals_per_route.get(d.route_id, 0) + count
@@ -561,15 +598,13 @@ def get_progress():
     routes_by_id = {r.id: r for r in Route.query.filter(Route.id.in_(route_ids)).all()}
 
     dirs = RouteDirection.query.filter(RouteDirection.route_id.in_(route_ids)).all()
+    deduped_per_dir = _deduped_stop_ids_per_direction(route_ids)
     dir_name_map = {}
     totals_per_route = {rid: 0 for rid in route_ids}
     dirs_per_route = {rid: [] for rid in route_ids}
     for d in dirs:
         dir_name_map[(d.route_id, d.direction_id)] = d.direction_name or d.direction_id
-        try:
-            stop_ids = json.loads(d.stop_ids_json or '[]')
-        except Exception:
-            stop_ids = []
+        stop_ids = deduped_per_dir.get((d.route_id, d.direction_id), [])
         count = max(0, len(stop_ids) - 1)
         totals_per_route[d.route_id] = totals_per_route.get(d.route_id, 0) + count
         dirs_per_route[d.route_id].append({
@@ -814,16 +849,23 @@ def bulk_delete_segments():
 # ─── Helpers ──────────────────────────────────────────────────────────
 
 def _route_segment_counts():
-    """{route_id: total_possible_segments} computed in a single query."""
+    """{route_id: total_possible_segments} computed in a single pass.
+
+    Uses the same dedupe rules as ``get_route`` so per-route totals here
+    match the hops the frontend actually exposes (see
+    ``_deduped_stop_ids_per_direction`` for why this matters).
+    """
+    route_ids = [
+        rid for (rid,) in (
+            RouteDirection.query
+            .with_entities(RouteDirection.route_id)
+            .distinct()
+            .all()
+        )
+    ]
     out = {}
-    for d in RouteDirection.query.with_entities(
-        RouteDirection.route_id, RouteDirection.stop_ids_json
-    ).all():
-        try:
-            n = max(0, len(json.loads(d.stop_ids_json or '[]')) - 1)
-        except Exception:
-            n = 0
-        out[d.route_id] = out.get(d.route_id, 0) + n
+    for (rid, _did), sids in _deduped_stop_ids_per_direction(route_ids).items():
+        out[rid] = out.get(rid, 0) + max(0, len(sids) - 1)
     return out
 
 
