@@ -113,8 +113,8 @@ function App() {
       if (route) {
         setSelectedRoute(route);
         setAllProgressDetails(null);
-        // On mobile the sidebar covers the map; close it so the route is visible.
-        setSidebarOpen(false);
+        // Keep the sidebar open on mobile — the user wants the route highlighted
+        // on the map but shouldn't lose the in-progress details card.
       }
     },
     [routes],
