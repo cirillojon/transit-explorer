@@ -81,5 +81,69 @@ def data_check_schema():
     sys.exit(1)
 
 
+segments_cli = AppGroup(
+    "segments", help="Maintenance commands for user-marked segments."
+)
+
+
+@segments_cli.command("clean-phantom-hops")
+@click.option("--dry-run/--no-dry-run", default=True,
+              help="When true (default), only report what would be deleted.")
+def segments_clean_phantom_hops(dry_run):
+    """Delete UserSegment rows whose endpoints aren't a consecutive hop in
+    the deduped stop sequence the frontend renders.
+
+    Earlier versions of mark_segments expanded a marked range over the raw
+    OBA stop list, which on routes like Sound Transit 1 Line includes a
+    same-name twin platform tacked onto the wrong direction's tail.
+    Crossing such a duplicate produced rows that no user can ever toggle
+    off and that inflate progress totals. New marks no longer create
+    these, but existing rows need a one-time cleanup.
+    """
+    from app.models import RouteDirection, UserSegment
+    from app.routes.api import (
+        _deduped_stop_ids_per_direction,
+        _valid_hops_per_direction,
+    )
+
+    route_ids = [
+        rid for (rid,) in (
+            RouteDirection.query
+            .with_entities(RouteDirection.route_id)
+            .distinct()
+            .all()
+        )
+    ]
+    valid_hops = _valid_hops_per_direction(
+        _deduped_stop_ids_per_direction(route_ids)
+    )
+
+    bad = []
+    for seg in UserSegment.query.all():
+        hops = valid_hops.get((seg.route_id, seg.direction_id), set())
+        if (seg.from_stop_id, seg.to_stop_id) not in hops:
+            bad.append(seg)
+
+    click.echo(f"Found {len(bad)} phantom UserSegment rows.")
+    if not bad:
+        return
+    if dry_run:
+        for s in bad[:20]:
+            click.echo(
+                f"  user={s.user_id} route={s.route_id} dir={s.direction_id} "
+                f"{s.from_stop_id} -> {s.to_stop_id}"
+            )
+        if len(bad) > 20:
+            click.echo(f"  ... and {len(bad) - 20} more")
+        click.echo("Re-run with --no-dry-run to delete.")
+        return
+
+    for s in bad:
+        db.session.delete(s)
+    db.session.commit()
+    click.echo(f"Deleted {len(bad)} phantom UserSegment rows.")
+
+
 def register_cli(app):
     app.cli.add_command(data_cli)
+    app.cli.add_command(segments_cli)

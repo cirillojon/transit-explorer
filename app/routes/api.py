@@ -725,8 +725,8 @@ def mark_segments():
         return jsonify({'error': 'Invalid route/direction'}), 404
 
     try:
-        stop_ids = json.loads(direction.stop_ids_json) if direction.stop_ids_json else []
-        if not isinstance(stop_ids, list):
+        raw_stop_ids = json.loads(direction.stop_ids_json) if direction.stop_ids_json else []
+        if not isinstance(raw_stop_ids, list):
             raise ValueError('stop_ids_json is not a list')
     except (ValueError, TypeError):
         logger.warning(
@@ -734,6 +734,14 @@ def mark_segments():
             route_id, direction_id,
         )
         return jsonify({'error': 'Route data unavailable, please retry'}), 503
+
+    # Expand the requested range over the SAME deduped sequence the frontend
+    # renders. If we expanded over the raw OBA list (which can include
+    # same-name twin platforms tacked onto the wrong direction's tail),
+    # crossing a duplicate would insert a phantom hop that no user can ever
+    # toggle off — inflating progress totals (the "53/50" / "47/50" bugs).
+    deduped_map = _deduped_stop_ids_per_direction([route_id])
+    stop_ids = deduped_map.get((route_id, direction_id), raw_stop_ids) or raw_stop_ids
     try:
         from_idx = stop_ids.index(from_stop_id)
         to_idx = stop_ids.index(to_stop_id)
