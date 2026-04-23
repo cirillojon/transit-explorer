@@ -65,6 +65,7 @@ function UserProgress({
   highlightedSegment,
   onClearHighlight,
   onShowAllRoutes,
+  onSelectRoute,
 }) {
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [expandedRide, setExpandedRide] = useState(null);
@@ -353,9 +354,13 @@ function UserProgress({
                 <button
                   type="button"
                   className="progress-route-header"
-                  onClick={() =>
-                    setExpandedRoute(isExpanded ? null : rp.route_id)
-                  }
+                  onClick={() => {
+                    const nextExpanded = isExpanded ? null : rp.route_id;
+                    setExpandedRoute(nextExpanded);
+                    if (nextExpanded) {
+                      onSelectRoute?.(rp.route_id);
+                    }
+                  }}
                 >
                   <span
                     className="route-color-bar"

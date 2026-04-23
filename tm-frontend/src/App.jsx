@@ -103,6 +103,19 @@ function App() {
     }
   }, []);
 
+  const handleSelectRouteFromProgress = useCallback(
+    (routeId) => {
+      const route = routes.find((r) => r.id === routeId);
+      if (route) {
+        setSelectedRoute(route);
+        setAllProgressDetails(null);
+        // On mobile the sidebar covers the map; close it so the route is visible.
+        setSidebarOpen(false);
+      }
+    },
+    [routes],
+  );
+
   const loadUserData = useCallback(async () => {
     if (!user) return;
     try {
@@ -420,6 +433,7 @@ function App() {
               highlightedSegment={highlightedSegment}
               onClearHighlight={() => setHighlightedSegment(null)}
               onShowAllRoutes={handleShowAllProgressRoutes}
+              onSelectRoute={handleSelectRouteFromProgress}
             />
           )}
 
