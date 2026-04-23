@@ -127,7 +127,25 @@ def get_route(route_id):
         stop_ids.update(direction['stop_ids'])
 
     stops = Stop.query.filter(Stop.id.in_(stop_ids)).all() if stop_ids else []
-    result['stops'] = {s.id: s.to_dict() for s in stops}
+    stops_by_id = {s.id: s for s in stops}
+    result['stops'] = {sid: s.to_dict() for sid, s in stops_by_id.items()}
+
+    # OBA's stopGroupings sometimes appends a stop from one direction onto the
+    # tail (or head) of the opposite direction's stopIds — e.g. on the Sound
+    # Transit 1 Line, the southbound SeaTac platform `40_99904` is appended at
+    # the END of the "Lynnwood City Center" direction after the Lynnwood
+    # terminus. That breaks the boarding -> alighting "is downstream?" check
+    # because the user's boarding stop ends up at the highest index in its
+    # direction, making every other stop look "behind" it. Strip these
+    # duplicates: within a single direction, drop a later occurrence of any
+    # stop that shares the same name AND is geographically near (~500m) an
+    # earlier kept stop. Keep the first occurrence so the natural trip order
+    # — and the polyline alignment — is preserved.
+    for direction in result['directions']:
+        direction['stop_ids'] = _dedupe_direction_stop_ids(
+            direction.get('stop_ids') or [], stops_by_id
+        )
+
     result['total_segments'] = sum(
         max(0, len(d['stop_ids']) - 1) for d in result['directions']
     )
@@ -135,6 +153,46 @@ def get_route(route_id):
     resp = make_response(jsonify(result))
     resp.headers['Cache-Control'] = 'public, max-age=300'
     return resp
+
+
+def _dedupe_direction_stop_ids(stop_ids, stops_by_id):
+    """Remove same-name + co-located duplicate stops from a direction list.
+
+    Preserves the first occurrence so the natural trip order is unchanged.
+    Stops missing from `stops_by_id` are passed through untouched.
+    """
+    # ~0.005 deg ≈ 500m at Seattle latitudes — generous enough to catch
+    # twin platforms across the street, tight enough to never collapse two
+    # genuinely different stops with a colliding name.
+    COORD_TOL = 0.005
+    # Index prior coords by normalized name so we only compare against
+    # stops that could actually be a duplicate, instead of scanning every
+    # previously-kept stop on the route (was O(n²) per direction).
+    kept_by_name = {}  # name_key -> list of (lat, lon)
+    out = []
+    for sid in stop_ids:
+        s = stops_by_id.get(sid)
+        if s is None:
+            out.append(sid)
+            continue
+        name_key = (s.name or '').strip().lower()
+        is_dup = False
+        if name_key:
+            prior = kept_by_name.get(name_key)
+            if prior:
+                for prev_lat, prev_lon in prior:
+                    if (
+                        abs(s.lat - prev_lat) < COORD_TOL
+                        and abs(s.lon - prev_lon) < COORD_TOL
+                    ):
+                        is_dup = True
+                        break
+        if is_dup:
+            continue
+        if name_key:
+            kept_by_name.setdefault(name_key, []).append((s.lat, s.lon))
+        out.append(sid)
+    return out
 
 
 @api_blueprint.route('/stops')

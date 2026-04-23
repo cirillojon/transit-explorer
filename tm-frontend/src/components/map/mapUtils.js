@@ -181,46 +181,109 @@ function nearestIndex(line, point) {
  * have a clickable polyline.
  */
 export function slicePolylineByStops(line, stopPositions) {
+  return slicePolylineByStopsWithFallbacks(line, [], stopPositions);
+}
+
+/**
+ * Slice geometry for one stop pair against a single polyline using
+ * pre-computed snap results.
+ *
+ * `snapA` / `snapB` come from `nearestIndex(line, stopPositions[i])` and
+ * are cached per (polyline, stop) so we don't re-scan the full polyline
+ * for every hop and every fallback.
+ *
+ * `allowReverse` controls what happens when stopB snaps to an EARLIER
+ * polyline index than stopA. For the direction's own polyline this means
+ * the data is malformed (a stop is in the wrong place in stop_ids) and we
+ * skip rather than draw a long wrong-direction line. For a fallback
+ * polyline from the OPPOSITE direction, reverse-order is expected — both
+ * polylines trace the same physical track from opposite ends — so we walk
+ * the slice backwards and the result still flows from stopA to stopB.
+ */
+function sliceOneStopPair(line, pa, pb, snapA, snapB, allowReverse) {
+  if (!line || line.length === 0) return null;
+  if (
+    snapA.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ ||
+    snapB.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ
+  ) {
+    return null;
+  }
+  if (snapB.index < snapA.index) {
+    if (!allowReverse) return null;
+    // Walk the polyline backwards between the two snaps so the resulting
+    // points still flow stopA -> stopB visually.
+    const mid = line.slice(snapB.index + 1, snapA.index).reverse();
+    return [pa, ...mid, pb];
+  }
+  return [pa, ...line.slice(snapA.index + 1, snapB.index), pb];
+}
+
+/**
+ * Like `slicePolylineByStops`, but with a list of fallback polylines that
+ * are tried (in order, allowing reverse traversal) when the primary
+ * polyline can't render a hop. This handles the case where one direction's
+ * polyline is truncated or missing — e.g. on Sound Transit's 1 Line, OBA
+ * returns a complete polyline for the southbound direction but a truncated
+ * one for the northbound direction that doesn't reach the southern stops.
+ * Both directions trace the same physical track, so we can fall back to
+ * the other direction's polyline to keep stops visually connected.
+ */
+export function slicePolylineByStopsWithFallbacks(
+  primaryLine,
+  fallbackLines,
+  stopPositions,
+) {
   if (stopPositions.length < 2) return [];
-  if (line.length === 0) {
-    // No polyline at all → no segments are drawable.
+  const safeFallbacks = (fallbackLines || []).filter((l) => l && l.length > 0);
+  if (
+    (!primaryLine || primaryLine.length === 0) &&
+    safeFallbacks.length === 0
+  ) {
+    // No geometry at all → nothing is drawable.
     return new Array(stopPositions.length - 1).fill(null);
   }
 
-  const snaps = stopPositions.map((sp) => nearestIndex(line, sp));
+  // Snap each stop ONCE per polyline up front. `nearestIndex` scans the
+  // full polyline, so without caching we'd pay that cost twice per hop
+  // (once per endpoint) and again for every fallback line — quadratic-ish
+  // in the number of stops on long routes. With caching it's O(stops × lines).
+  const snapPrimary =
+    primaryLine && primaryLine.length > 0
+      ? stopPositions.map((sp) => nearestIndex(primaryLine, sp))
+      : null;
+  const snapFallbacks = safeFallbacks.map((line) =>
+    stopPositions.map((sp) => nearestIndex(line, sp)),
+  );
 
   const segments = [];
-  for (let i = 0; i < snaps.length - 1; i++) {
-    const a = snaps[i];
-    const b = snaps[i + 1];
-    const aOff = a.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ;
-    const bOff = b.dSq > OFF_ROUTE_THRESHOLD_DEG_SQ;
-
-    if (aOff || bOff) {
-      segments.push(null);
-      continue;
+  for (let i = 0; i < stopPositions.length - 1; i++) {
+    const pa = stopPositions[i];
+    const pb = stopPositions[i + 1];
+    let seg = null;
+    if (snapPrimary) {
+      seg = sliceOneStopPair(
+        primaryLine,
+        pa,
+        pb,
+        snapPrimary[i],
+        snapPrimary[i + 1],
+        false,
+      );
     }
-
-    // Strictly-backwards snap means one of the stops is on a different
-    // part of the polyline than its order suggests (e.g. a malformed
-    // trailing stop that happens to be close to a mid-route vertex).
-    // Drawing the slice would paint a long wrong-direction line across
-    // the map. Skip rather than fabricate. Equal indices are allowed so
-    // densely-spaced stops sharing a vertex still render.
-    if (b.index < a.index) {
-      segments.push(null);
-      continue;
+    if (seg === null) {
+      for (let f = 0; f < safeFallbacks.length; f++) {
+        seg = sliceOneStopPair(
+          safeFallbacks[f],
+          pa,
+          pb,
+          snapFallbacks[f][i],
+          snapFallbacks[f][i + 1],
+          true,
+        );
+        if (seg !== null) break;
+      }
     }
-
-    const start = a.index;
-    const end = b.index;
-    // Use the real stop coordinates as endpoints so adjacent segments butt
-    // exactly together with no visual gap from snap rounding.
-    segments.push([
-      stopPositions[i],
-      ...line.slice(start + 1, end),
-      stopPositions[i + 1],
-    ]);
+    segments.push(seg);
   }
   return segments;
 }
