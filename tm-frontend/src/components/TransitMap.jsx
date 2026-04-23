@@ -790,14 +790,21 @@ function TransitMap({
   };
 
   // Click a polyline directly to mark just that one hop.
-  const handleSegmentClick = (seg) => {
-    if (marking) return;
-    if (effectiveCompleted.has(seg.key)) {
-      showToast("Already marked", "info");
-      return;
-    }
-    submitMark(seg.directionId, seg.fromStopId, seg.toStopId);
-  };
+  const handleSegmentClick = useCallback(
+    (seg) => {
+      if (marking) return;
+      if (effectiveCompleted.has(seg.key)) {
+        showToast("Already marked", "info");
+        return;
+      }
+      submitMark(seg.directionId, seg.fromStopId, seg.toStopId);
+    },
+    // submitMark / showToast are defined in the same component scope; they
+    // close over the latest state already, so we only re-create this when
+    // the things `handleSegmentClick` itself reads change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [marking, effectiveCompleted],
+  );
 
   // Undo the boarding pick (Escape key or button).
   const undoBoarding = () => {

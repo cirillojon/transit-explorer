@@ -13,7 +13,7 @@ function PickOverlay({
   // Reset to expanded whenever a new boarding pick begins.
   useEffect(() => {
     setCollapsed(false);
-  }, [pickState?.fromId]);
+  }, [pickState?.fromStopId]);
 
   if (marking) {
     return (

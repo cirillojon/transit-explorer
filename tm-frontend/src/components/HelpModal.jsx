@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 /**
  * Onboarding / how-to-use-the-map modal. Shown automatically the first
@@ -6,13 +6,20 @@ import React, { useEffect } from "react";
  * floating "?" button on the map.
  */
 function HelpModal({ open, onClose, onDontShowAgain, showDontShowAgain = false }) {
+  const closeBtnRef = useRef(null);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Move focus into the modal so keyboard users aren't stranded behind it.
+    const id = requestAnimationFrame(() => closeBtnRef.current?.focus());
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(id);
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -27,6 +34,7 @@ function HelpModal({ open, onClose, onDontShowAgain, showDontShowAgain = false }
     >
       <div className="help-modal" onClick={(e) => e.stopPropagation()}>
         <button
+          ref={closeBtnRef}
           type="button"
           className="help-modal-close"
           onClick={onClose}
