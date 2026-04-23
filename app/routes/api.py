@@ -234,6 +234,22 @@ def _deduped_stop_ids_per_direction(route_ids):
     }
 
 
+def _valid_hops_per_direction(deduped_per_dir):
+    """Return ``{(route_id, direction_id): {(from_stop_id, to_stop_id), ...}}``
+    for every consecutive hop in the deduped stop sequence.
+
+    Used to filter ``UserSegment`` rows so we never count (or display) a
+    completed hop whose endpoints aren't adjacent in the deduped list the
+    user actually sees. Without this, a long-range mark that expanded
+    across a now-deduped twin platform inflates ``completed_segments``
+    above ``total_segments`` (the "53 / 50" bug).
+    """
+    out = {}
+    for key, sids in deduped_per_dir.items():
+        out[key] = {(a, b) for a, b in zip(sids, sids[1:])}
+    return out
+
+
 @api_blueprint.route('/stops')
 def get_stops():
     stops = Stop.query.all()
@@ -320,6 +336,7 @@ def get_user_profile(user_id):
             RouteDirection.route_id.in_(route_ids)
         ).all()
         deduped_per_dir = _deduped_stop_ids_per_direction(route_ids)
+        valid_hops_per_dir = _valid_hops_per_direction(deduped_per_dir)
         dir_name_map = {}
         totals_per_route = {rid: 0 for rid in route_ids}
         dirs_per_route = {rid: [] for rid in route_ids}
@@ -355,6 +372,9 @@ def get_user_profile(user_id):
                     'directions': dirs_per_route.get(rid, []),
                     'segments': [],
                 }
+            valid_hops = valid_hops_per_dir.get((rid, seg.direction_id), set())
+            if (seg.from_stop_id, seg.to_stop_id) not in valid_hops:
+                continue
             by_route[rid]['completed_segments'] += 1
             seg_dict = seg.to_dict()
             seg_dict['direction_name'] = dir_name_map.get(
@@ -364,7 +384,8 @@ def get_user_profile(user_id):
 
         for data in by_route.values():
             total = data['total_segments']
-            completed = data['completed_segments']
+            completed = min(data['completed_segments'], total) if total > 0 else 0
+            data['completed_segments'] = completed
             data['completion_pct'] = (
                 round(completed / total * 100, 1) if total > 0 else 0
             )
@@ -599,6 +620,7 @@ def get_progress():
 
     dirs = RouteDirection.query.filter(RouteDirection.route_id.in_(route_ids)).all()
     deduped_per_dir = _deduped_stop_ids_per_direction(route_ids)
+    valid_hops_per_dir = _valid_hops_per_direction(deduped_per_dir)
     dir_name_map = {}
     totals_per_route = {rid: 0 for rid in route_ids}
     dirs_per_route = {rid: [] for rid in route_ids}
@@ -630,6 +652,14 @@ def get_progress():
                 'directions': dirs_per_route.get(rid, []),
                 'segments': [],
             }
+        # Only count + surface hops that are a consecutive pair in the deduped
+        # stop sequence. Without this filter, phantom hops created when the
+        # backend expanded a long range across now-deduped twin platforms
+        # (e.g. the trailing SeaTac platform on 1 Line) would inflate
+        # `completed_segments` past `total_segments` ("53 / 50").
+        valid_hops = valid_hops_per_dir.get((rid, seg.direction_id), set())
+        if (seg.from_stop_id, seg.to_stop_id) not in valid_hops:
+            continue
         by_route[rid]['completed_segments'] += 1
         seg_dict = seg.to_dict()
         seg_dict['direction_name'] = dir_name_map.get((rid, seg.direction_id), seg.direction_id)
@@ -637,7 +667,8 @@ def get_progress():
 
     for data in by_route.values():
         total = data['total_segments']
-        completed = data['completed_segments']
+        completed = min(data['completed_segments'], total) if total > 0 else 0
+        data['completed_segments'] = completed
         data['completion_pct'] = round(completed / total * 100, 1) if total > 0 else 0
 
         # Re-sort each route's segments along the route's stop sequence so
