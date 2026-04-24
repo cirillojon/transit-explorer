@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { fetchUserProfile } from "../services/api";
 import { groupIntoJourneys } from "./journeyGrouping";
 
+/**
+ * Comparator for sorting route progress entries: completion_pct DESC,
+ * then completed_segments DESC (matching the backend sort key).
+ * Missing or non-numeric values are treated as 0.
+ */
 function sortByCompletion(a, b) {
   const completionDiff =
     (Number(b?.completion_pct) || 0) - (Number(a?.completion_pct) || 0);
