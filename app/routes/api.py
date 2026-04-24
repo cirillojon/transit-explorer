@@ -1,12 +1,13 @@
 import os
 from flask import Blueprint, jsonify, request, g, make_response, current_app, abort
 from sqlalchemy import func, distinct, desc
+from sqlalchemy.exc import IntegrityError
 from app.models import Route, Stop, RouteDirection, RouteStop, User, UserSegment
 from app import db, limiter
 from app.auth import require_auth
 from app.validators import (
     validate_id, validate_direction_id, validate_notes, validate_id_list,
-    validate_duration_ms,
+    validate_duration_ms, validate_completed_at,
 )
 from datetime import datetime, timedelta
 import json
@@ -15,6 +16,22 @@ import logging
 logger = logging.getLogger(__name__)
 
 api_blueprint = Blueprint('api', __name__)
+
+# Allowed `period` values for the leaderboard. Centralized so the
+# validation and the SQL filter can't drift apart.
+_LEADERBOARD_PERIODS = {'all', 'week', 'month'}
+
+# Hard cap on rows pulled by /me/activity, regardless of the requested
+# `limit`. Protects against memory blowup on highly active users.
+_ACTIVITY_ROW_CAP = 1500
+
+
+@api_blueprint.before_request
+def _init_request_caches():
+    # Per-request memo for `_deduped_stop_ids_per_direction`. Multiple
+    # endpoints (and helpers within a single endpoint) call it with
+    # overlapping route-id sets; the cache turns repeats into O(1) hits.
+    g._dedupe_cache = {}
 
 
 # ─── Achievement definitions ─────────────────────────────────────────
@@ -77,11 +94,20 @@ def health():
 
 
 @api_blueprint.route('/debug/directions')
+@limiter.limit("10 per minute")
 def debug_directions():
-    # Only available in non-production environments to avoid leaking schema
-    # internals to unauthenticated callers.
+    # Defense in depth: in production we 404 unconditionally so the
+    # endpoint's existence is not leaked. Outside production we still
+    # require a valid Firebase token so a misconfigured FLASK_ENV alone
+    # can't expose schema internals.
     if os.getenv('FLASK_ENV', '').lower() == 'production':
         abort(404)
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Missing or invalid Authorization header'}), 401
+    from app.auth import verify_firebase_token
+    if not verify_firebase_token(auth_header[7:]):
+        return jsonify({'error': 'Invalid or expired token'}), 401
     total = RouteDirection.query.count()
     with_polylines = RouteDirection.query.filter(
         RouteDirection.encoded_polyline != None,  # noqa: E711
@@ -97,6 +123,7 @@ def debug_directions():
 
 
 @api_blueprint.route('/routes')
+@limiter.limit("60 per minute")
 def get_routes():
     """List routes with total possible segment counts (cached client-side)."""
     try:
@@ -118,6 +145,7 @@ def get_routes():
 
 
 @api_blueprint.route('/routes/<string:route_id>')
+@limiter.limit("120 per minute")
 def get_route(route_id):
     route = db.get_or_404(Route, route_id)
     result = route.to_dict_full()
@@ -205,9 +233,22 @@ def _deduped_stop_ids_per_direction(route_ids):
     direction tacked onto the end, e.g. Sound Transit 1 Line), a user who
     marks every visible hop tops out at <100% completion. See bug report:
     "1 Line marked entirely done shows 96%".
+
+    Per-request memoization: ``/me/progress``, ``/me/stats``, public
+    profile, and the segment-mark hot path all call this helper with
+    overlapping route-id sets. We cache results on ``flask.g`` keyed by
+    the frozenset of route ids so a single request never recomputes the
+    same dedupe.
     """
     if not route_ids:
         return {}
+    try:
+        cache = g._dedupe_cache  # type: ignore[attr-defined]
+    except (AttributeError, RuntimeError):
+        cache = None
+    cache_key = frozenset(route_ids)
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
     dirs = (
         RouteDirection.query
         .filter(RouteDirection.route_id.in_(route_ids))
@@ -228,10 +269,13 @@ def _deduped_stop_ids_per_direction(route_ids):
         {s.id: s for s in Stop.query.filter(Stop.id.in_(all_stop_ids)).all()}
         if all_stop_ids else {}
     )
-    return {
+    out = {
         key: _dedupe_direction_stop_ids(sids, stops_by_id)
         for key, sids in raw_per_dir.items()
     }
+    if cache is not None:
+        cache[cache_key] = out
+    return out
 
 
 def _valid_hops_per_direction(deduped_per_dir):
@@ -251,12 +295,48 @@ def _valid_hops_per_direction(deduped_per_dir):
 
 
 @api_blueprint.route('/stops')
+@limiter.limit("30 per minute")
 def get_stops():
-    stops = Stop.query.all()
-    return jsonify({'stops': [s.to_dict() for s in stops]})
+    """Paginated stop list.
+
+    Query params:
+      - limit: default 1000, max 5000
+      - offset: default 0
+      - route_id: optional, filter to stops on a single route (across all
+        directions)
+    """
+    try:
+        limit = min(max(int(request.args.get('limit', 1000)), 1), 5000)
+        offset = max(int(request.args.get('offset', 0)), 0)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid limit/offset'}), 400
+
+    raw_route_id = request.args.get('route_id')
+    q = Stop.query
+    if raw_route_id:
+        try:
+            route_id = validate_id(raw_route_id, 'route_id')
+        except ValueError as ve:
+            return jsonify({'error': str(ve)}), 400
+        q = (
+            q.join(RouteStop, RouteStop.stop_id == Stop.id)
+            .filter(RouteStop.route_id == route_id)
+            .distinct()
+        )
+
+    total = q.count()
+    rows = q.order_by(Stop.id).offset(offset).limit(limit).all()
+    return jsonify({
+        'stops': [s.to_dict() for s in rows],
+        'limit': limit,
+        'offset': offset,
+        'total': total,
+        'next_offset': offset + len(rows) if (offset + len(rows)) < total else None,
+    })
 
 
 @api_blueprint.route('/leaderboard')
+@limiter.limit("60 per minute")
 def get_leaderboard():
     """Top users by total segments. Supports period filter and pagination.
 
@@ -266,6 +346,10 @@ def get_leaderboard():
       - offset: default 0
     """
     period = request.args.get('period', 'all').lower()
+    if period not in _LEADERBOARD_PERIODS:
+        return jsonify({
+            'error': f"period must be one of {sorted(_LEADERBOARD_PERIODS)}"
+        }), 400
     try:
         limit = min(max(int(request.args.get('limit', 50)), 1), 100)
         offset = max(int(request.args.get('offset', 0)), 0)
@@ -289,7 +373,9 @@ def get_leaderboard():
     elif period == 'month':
         q = q.filter(UserSegment.completed_at >= datetime.utcnow() - timedelta(days=30))
 
-    q = q.group_by(User.id).order_by(desc('total_segments'))
+    # Deterministic tie-breaker on User.id so equal segment counts don't
+    # flicker between calls (was: db-default ordering).
+    q = q.group_by(User.id).order_by(desc('total_segments'), User.id)
     rows = q.offset(offset).limit(limit).all()
 
     leaderboard = []
@@ -313,6 +399,7 @@ def get_leaderboard():
 
 
 @api_blueprint.route('/users/<int:user_id>/profile')
+@limiter.limit("60 per minute")
 def get_user_profile(user_id):
     """Public, read-only view of another explorer's progress.
 
@@ -417,6 +504,7 @@ def get_user_profile(user_id):
 
 @api_blueprint.route('/me')
 @require_auth
+@limiter.limit("120 per minute")
 def get_me():
     user = g.current_user
     summary = _user_summary(user.id)
@@ -427,6 +515,7 @@ def get_me():
 
 @api_blueprint.route('/me/stats')
 @require_auth
+@limiter.limit("60 per minute")
 def get_stats():
     """Rich stats payload: totals, achievements, top routes, 14d sparkline, rank."""
     user = g.current_user
@@ -512,6 +601,7 @@ def get_stats():
 
 @api_blueprint.route('/me/activity')
 @require_auth
+@limiter.limit("60 per minute")
 def get_activity():
     """Recent rides, one entry per logged trip.
 
@@ -527,12 +617,15 @@ def get_activity():
         limit = 20
 
     # Pull enough rows that `limit` distinct trips can be formed even when
-    # individual trips contain many hops. 50 hops/trip is a generous cap.
+    # individual trips contain many hops. 50 hops/trip is a generous cap,
+    # and `_ACTIVITY_ROW_CAP` is a hard ceiling so a user with thousands
+    # of segments can't OOM the worker on a single request.
+    pull = min(limit * 50, _ACTIVITY_ROW_CAP)
     segs = (
         UserSegment.query
         .filter_by(user_id=user.id)
         .order_by(desc(UserSegment.completed_at), UserSegment.id)
-        .limit(limit * 50)
+        .limit(pull)
         .all()
     )
 
@@ -601,6 +694,7 @@ def get_activity():
 
 @api_blueprint.route('/me/progress')
 @require_auth
+@limiter.limit("60 per minute")
 def get_progress():
     """Per-route completion summary. Constant-query: O(1) DB calls regardless of N."""
     user = g.current_user
@@ -720,6 +814,7 @@ def mark_segments():
         to_stop_id = validate_id(data.get('to_stop_id'), 'to_stop_id')
         notes = validate_notes(data.get('notes'))
         duration_ms = validate_duration_ms(data.get('duration_ms'))
+        client_completed_at = validate_completed_at(data.get('completed_at'))
     except ValueError as ve:
         return jsonify({'error': str(ve)}), 400
 
@@ -731,6 +826,20 @@ def mark_segments():
     ).first()
     if not direction:
         return jsonify({'error': 'Invalid route/direction'}), 404
+
+    # Validate that both stops exist as real Stop rows up-front so the
+    # error tells the caller which problem they have ("unknown stop" vs
+    # "stop not on this route"). Index-lookup further down only catches
+    # the latter.
+    known_stops = {
+        sid for (sid,) in db.session.query(Stop.id)
+        .filter(Stop.id.in_([from_stop_id, to_stop_id])).all()
+    }
+    missing = [s for s in (from_stop_id, to_stop_id) if s not in known_stops]
+    if missing:
+        return jsonify({
+            'error': f"unknown stop_id(s): {missing}"
+        }), 400
 
     try:
         raw_stop_ids = json.loads(direction.stop_ids_json) if direction.stop_ids_json else []
@@ -773,7 +882,7 @@ def mark_segments():
         existing = {(e.from_stop_id, e.to_stop_id) for e in existing_rows}
 
     created = []
-    now = datetime.utcnow()
+    now = client_completed_at or datetime.utcnow()
     # Attach the measured trip duration + notes to the first row we actually
     # create (not the first pair_key), so duration isn't silently dropped
     # when pair_keys[0] was already marked on an earlier ride.
@@ -781,17 +890,32 @@ def mark_segments():
     for (a, b) in pair_keys:
         if (a, b) in existing:
             continue
-        segment = UserSegment(
-            user_id=user.id,
-            route_id=route_id,
-            direction_id=direction_id,
-            from_stop_id=a,
-            to_stop_id=b,
-            completed_at=now,
-            notes=notes if first_new else '',
-            duration_ms=duration_ms if first_new else None,
-        )
-        db.session.add(segment)
+        # Each insert runs inside its own SAVEPOINT so a concurrent
+        # request that races us through the existence check above and
+        # inserts the same (user, route, dir, from, to) tuple first
+        # raises an IntegrityError we can swallow idempotently — instead
+        # of bubbling up as a 500 and rolling back every prior insert
+        # in this same loop. Without this, two parallel "mark this
+        # ride" requests double-fail.
+        sp = db.session.begin_nested()
+        try:
+            segment = UserSegment(
+                user_id=user.id,
+                route_id=route_id,
+                direction_id=direction_id,
+                from_stop_id=a,
+                to_stop_id=b,
+                completed_at=now,
+                notes=notes if first_new else '',
+                duration_ms=duration_ms if first_new else None,
+            )
+            db.session.add(segment)
+            db.session.flush()
+            sp.commit()
+        except IntegrityError:
+            sp.rollback()
+            existing.add((a, b))
+            continue
         created.append(segment)
         first_new = False
 
@@ -809,9 +933,44 @@ def mark_segments():
     }), 201
 
 
+@api_blueprint.route('/me/segments/<int:segment_id>', methods=['PATCH'])
+@require_auth
+@limiter.limit("30 per minute")
+def patch_segment(segment_id):
+    """Atomic partial update for a single segment row.
+
+    Body fields are optional — only those present are updated:
+      - notes (string, max 500)
+      - duration_ms (int >= 0, or null to clear)
+
+    This avoids the lost-update race the legacy split notes/duration
+    PUT endpoints have when both fields are edited concurrently.
+    """
+    user = g.current_user
+    segment = UserSegment.query.filter_by(id=segment_id, user_id=user.id).first()
+    if not segment:
+        return jsonify({'error': 'Segment not found'}), 404
+    data = request.get_json(silent=True) or {}
+    if not data:
+        return jsonify({'error': 'no fields to update'}), 400
+    try:
+        if 'notes' in data:
+            segment.notes = validate_notes(data.get('notes'))
+        if 'duration_ms' in data:
+            segment.duration_ms = validate_duration_ms(data.get('duration_ms'))
+    except ValueError as ve:
+        return jsonify({'error': str(ve)}), 400
+    db.session.commit()
+    return jsonify(segment.to_dict())
+
+
 @api_blueprint.route('/me/segments/<int:segment_id>/notes', methods=['PUT'])
 @require_auth
+@limiter.limit("30 per minute")
 def update_segment_notes(segment_id):
+    """Legacy notes-only update. Prefer PATCH /me/segments/<id> for
+    new clients — retained so the frontend doesn't need to ship in
+    lockstep with this backend release."""
     user = g.current_user
     segment = UserSegment.query.filter_by(id=segment_id, user_id=user.id).first()
     if not segment:
@@ -827,6 +986,7 @@ def update_segment_notes(segment_id):
 
 @api_blueprint.route('/me/segments/<int:segment_id>/duration', methods=['PUT'])
 @require_auth
+@limiter.limit("30 per minute")
 def update_segment_duration(segment_id):
     """Edit (or clear) the measured trip duration on a single segment row.
 
@@ -850,6 +1010,7 @@ def update_segment_duration(segment_id):
 
 @api_blueprint.route('/me/segments/<int:segment_id>', methods=['DELETE'])
 @require_auth
+@limiter.limit("30 per minute")
 def delete_segment(segment_id):
     user = g.current_user
     segment = UserSegment.query.filter_by(id=segment_id, user_id=user.id).first()
@@ -888,7 +1049,7 @@ def bulk_delete_segments():
     else:
         return jsonify({'error': 'Provide ids[] or route_id with confirm=true'}), 400
 
-    deleted = q.delete(synchronize_session=False)
+    deleted = q.delete(synchronize_session='fetch')
     db.session.commit()
     return jsonify({'deleted': deleted})
 
@@ -979,6 +1140,12 @@ def _evaluate_achievements(summary):
 
 
 def _diff_achievements(before, after):
-    """Achievements that flipped locked→unlocked between two summary snapshots."""
-    bset = {a['id'] for a in _evaluate_achievements(before) if a['unlocked']}
-    return [a for a in _evaluate_achievements(after) if a['unlocked'] and a['id'] not in bset]
+    """Achievements that flipped locked→unlocked between two summary snapshots.
+
+    Computes ``_evaluate_achievements`` exactly once per snapshot to keep
+    the hot path on POST /me/segments cheap.
+    """
+    before_eval = _evaluate_achievements(before)
+    after_eval = _evaluate_achievements(after)
+    bset = {a['id'] for a in before_eval if a['unlocked']}
+    return [a for a in after_eval if a['unlocked'] and a['id'] not in bset]

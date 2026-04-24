@@ -66,7 +66,11 @@ def init_sentry() -> bool:
 
 
 def set_sentry_user(firebase_uid: str | None, email: str | None = None) -> None:
-    """Attach the current user to outgoing Sentry events for this scope."""
+    """Attach the current user to outgoing Sentry events for this scope.
+
+    `email` parameter is accepted for backwards compatibility but is
+    intentionally ignored to keep PII out of error reports.
+    """
     try:
         import sentry_sdk
     except ImportError:
@@ -74,4 +78,4 @@ def set_sentry_user(firebase_uid: str | None, email: str | None = None) -> None:
     if not firebase_uid:
         sentry_sdk.set_user(None)
         return
-    sentry_sdk.set_user({"id": firebase_uid, "email": email or None})
+    sentry_sdk.set_user({"id": firebase_uid})

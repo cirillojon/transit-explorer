@@ -44,13 +44,21 @@ log() { printf '[start] %s\n' "$*" >&2; }
 # ─── Materialize Firebase service-account JSON from a secret ──
 # Mirrors the historical gunicorn_startup.sh behaviour so existing
 # Fly secrets keep working.
+#
+# Atomic write: stage the file in $DATA_DIR with mode 600 BEFORE moving
+# it into place. Avoids a TOCTOU window where a concurrent reader could
+# see the file at default umask permissions in between `>` and `chmod`.
 materialize_firebase_creds() {
   if [ -n "${GOOGLE_APPLICATION_CREDENTIALS_JSON:-}" ]; then
     : "${GOOGLE_APPLICATION_CREDENTIALS:=/app/service-account.json}"
     export GOOGLE_APPLICATION_CREDENTIALS
     if [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
-      printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_JSON" \
-        > "$GOOGLE_APPLICATION_CREDENTIALS"
+      local stage
+      stage=$(mktemp "${DATA_DIR}/.sa.XXXXXX")
+      # Restrict before writing the secret payload.
+      chmod 600 "$stage"
+      printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > "$stage"
+      mv "$stage" "$GOOGLE_APPLICATION_CREDENTIALS"
       chmod 600 "$GOOGLE_APPLICATION_CREDENTIALS" || true
       log "wrote Firebase credentials to $GOOGLE_APPLICATION_CREDENTIALS"
     fi

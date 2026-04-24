@@ -13,7 +13,13 @@ class User(db.Model):
     avatar_url = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    segments = db.relationship('UserSegment', backref='user', lazy='dynamic')
+    segments = db.relationship(
+        'UserSegment',
+        backref='user',
+        lazy='select',
+        cascade='all, delete-orphan',
+        passive_deletes=False,
+    )
 
     def to_dict(self):
         return {
@@ -30,7 +36,7 @@ class Route(db.Model):
     __tablename__ = 'routes'
 
     id = db.Column(db.String(50), primary_key=True)
-    agency_id = db.Column(db.String(50))
+    agency_id = db.Column(db.String(50), index=True)
     short_name = db.Column(db.String(50))
     long_name = db.Column(db.String(255))
     description = db.Column(db.String(500))
@@ -39,8 +45,27 @@ class Route(db.Model):
     text_color = db.Column(db.String(6))
     url = db.Column(db.String(500))
 
-    directions = db.relationship('RouteDirection', backref='route', lazy='dynamic')
-    route_stops = db.relationship('RouteStop', backref='route', lazy='dynamic')
+    directions = db.relationship(
+        'RouteDirection',
+        backref='route',
+        lazy='select',
+        cascade='all, delete-orphan',
+    )
+    route_stops = db.relationship(
+        'RouteStop',
+        backref='route',
+        lazy='select',
+        cascade='all, delete-orphan',
+    )
+    user_segments = db.relationship(
+        'UserSegment',
+        backref='route_obj',
+        lazy='select',
+        cascade='all, delete-orphan',
+        # `route_obj` backref avoids clashing with the explicit `route`
+        # relationship UserSegment already declares (foreign_keys-scoped).
+        overlaps='route',
+    )
 
     def to_dict(self):
         return {
@@ -87,7 +112,9 @@ class RouteDirection(db.Model):
     __tablename__ = 'route_directions'
 
     id = db.Column(db.Integer, primary_key=True)
-    route_id = db.Column(db.String(50), db.ForeignKey('routes.id'), nullable=False)
+    route_id = db.Column(
+        db.String(50), db.ForeignKey('routes.id'), nullable=False, index=True,
+    )
     direction_id = db.Column(db.String(10), nullable=False)
     direction_name = db.Column(db.String(255))
     encoded_polyline = db.Column(db.Text)
@@ -139,8 +166,12 @@ class RouteStop(db.Model):
     __tablename__ = 'route_stops'
 
     id = db.Column(db.Integer, primary_key=True)
-    route_id = db.Column(db.String(50), db.ForeignKey('routes.id'), nullable=False)
-    stop_id = db.Column(db.String(50), db.ForeignKey('stops.id'), nullable=False)
+    route_id = db.Column(
+        db.String(50), db.ForeignKey('routes.id'), nullable=False, index=True,
+    )
+    stop_id = db.Column(
+        db.String(50), db.ForeignKey('stops.id'), nullable=False, index=True,
+    )
     direction_id = db.Column(db.String(10), nullable=False)
     stop_sequence = db.Column(db.Integer, nullable=False)
 
@@ -155,8 +186,12 @@ class UserSegment(db.Model):
     __tablename__ = 'user_segments'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    route_id = db.Column(db.String(50), db.ForeignKey('routes.id'), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('users.id'), nullable=False, index=True,
+    )
+    route_id = db.Column(
+        db.String(50), db.ForeignKey('routes.id'), nullable=False, index=True,
+    )
     direction_id = db.Column(db.String(10), nullable=False)
     from_stop_id = db.Column(db.String(50), db.ForeignKey('stops.id'), nullable=False)
     to_stop_id = db.Column(db.String(50), db.ForeignKey('stops.id'), nullable=False)
@@ -167,13 +202,20 @@ class UserSegment(db.Model):
     # row of a multi-segment run. Editable later via the API.
     duration_ms = db.Column(db.Integer, nullable=True)
 
-    route = db.relationship('Route', lazy='joined')
+    # `overlaps='user_segments,route_obj'` silences SA warnings about
+    # this `route` relationship overlapping the new `Route.user_segments`
+    # cascade collection — they intentionally point at the same FK.
+    route = db.relationship('Route', lazy='joined', overlaps='user_segments,route_obj')
     from_stop = db.relationship('Stop', foreign_keys=[from_stop_id], lazy='joined')
     to_stop = db.relationship('Stop', foreign_keys=[to_stop_id], lazy='joined')
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'route_id', 'direction_id', 'from_stop_id', 'to_stop_id',
                             name='uq_user_segment'),
+        # Hot path: dedupe + per-user-per-route lookups for /me/progress
+        # and POST /me/segments. Without this, queries hit a full table
+        # scan once user_segments grows beyond a few thousand rows.
+        db.Index('ix_user_segments_user_route_dir', 'user_id', 'route_id', 'direction_id'),
     )
 
     def to_dict(self):

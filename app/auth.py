@@ -56,13 +56,15 @@ def require_auth(f):
             )
             db.session.add(user)
             db.session.commit()
-            logger.info(f"Created new user: {user.email} (uid={firebase_uid})")
+            # Do not log email (PII). Firebase UID is sufficient for correlation.
+            logger.info("Created new user (uid=%s)", firebase_uid)
 
         g.current_user = user
         # Tag Sentry events with the Firebase UID for this request.
+        # Email intentionally NOT forwarded — keep PII out of error reports.
         try:
             from app.observability import set_sentry_user
-            set_sentry_user(user.firebase_uid, user.email)
+            set_sentry_user(user.firebase_uid)
         except Exception:
             pass
         return f(*args, **kwargs)

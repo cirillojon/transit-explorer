@@ -81,15 +81,30 @@ def create_app():
     migrations_dir = os.path.join(os.path.dirname(__file__), "migrations")
     migrate.init_app(app, db, directory=migrations_dir)
 
-    # CORS — strict in production, permissive only in development.
+    # CORS — strict in production, localhost-only in development.
+    # Wildcard origins are NEVER allowed: they make CSRF + token-stealing
+    # browser attacks trivially worse, and a misconfigured FLASK_ENV
+    # shouldn't be enough to expose the API to every site on the web.
     raw_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
     flask_env = os.getenv("FLASK_ENV", "").lower()
     if raw_origins:
         origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+        if "*" in origins:
+            raise RuntimeError(
+                "ALLOWED_ORIGINS=* is not permitted. List explicit origins."
+            )
         logger.info("CORS allowed origins: %s", origins)
     elif flask_env == "development":
-        origins = "*"
-        logger.info("FLASK_ENV=development — CORS allowing all origins.")
+        origins = [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:8880",
+            "http://127.0.0.1:8880",
+        ]
+        logger.warning(
+            "FLASK_ENV=development and ALLOWED_ORIGINS unset — "
+            "defaulting CORS to localhost dev origins: %s", origins,
+        )
     else:
         raise RuntimeError(
             "ALLOWED_ORIGINS must be set in production. "
