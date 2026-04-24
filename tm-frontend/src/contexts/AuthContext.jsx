@@ -5,6 +5,7 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
+import { setSentryUser } from "../sentry";
 
 const AuthContext = createContext(null);
 
@@ -15,6 +16,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
+      setSentryUser(firebaseUser);
       setLoading(false);
     });
     return unsubscribe;

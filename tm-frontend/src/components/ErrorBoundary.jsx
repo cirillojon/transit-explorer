@@ -1,4 +1,5 @@
 import React from "react";
+import * as Sentry from "@sentry/react";
 
 /**
  * App-level error boundary. Catches render-time exceptions from any descendant,
@@ -18,9 +19,13 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    // Surface to the developer console; in production this still goes to
-    // the browser console where users can copy it for bug reports. Hook in
-    // a real error tracker (Sentry, etc.) here later if desired.
+    // Forward to Sentry (no-op if SDK isn't initialized). Attach the React
+    // component stack as extra context for triage.
+    Sentry.withScope((scope) => {
+      scope.setExtra("componentStack", info?.componentStack);
+      if (this.props.label) scope.setTag("boundary", this.props.label);
+      Sentry.captureException(error);
+    });
     if (import.meta.env.DEV) {
       console.error("Uncaught error:", error, info);
     }
