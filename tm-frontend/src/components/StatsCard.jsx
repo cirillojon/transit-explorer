@@ -68,7 +68,20 @@ function StatsCard({ stats, profile }) {
                 >
                   {r.route_name}
                 </span>
-                <span className="top-route-segs">{r.segments} hops</span>
+                <div className="top-route-bar-wrap">
+                  <div
+                    className="top-route-bar-fill"
+                    style={{
+                      width: `${Math.min(100, r.completion_pct ?? 0)}%`,
+                      background: r.route_color
+                        ? `#${r.route_color}`
+                        : "var(--accent)",
+                    }}
+                  />
+                </div>
+                <span className="top-route-pct">
+                  {r.completion_pct != null ? `${r.completion_pct}%` : `${r.segments} hops`}
+                </span>
               </div>
             ))}
           </div>

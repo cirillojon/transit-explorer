@@ -1441,6 +1441,26 @@ button {
   font-size: 11px;
   min-width: 36px;
   text-align: center;
+  flex-shrink: 0;
+}
+.top-route-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.top-route-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+.top-route-pct {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 38px;
+  text-align: right;
 }
 .top-route-segs {
   color: var(--text-muted);
