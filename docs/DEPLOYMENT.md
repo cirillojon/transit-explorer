@@ -69,22 +69,34 @@ flyctl deploy --local-only --ha=false --strategy immediate
 
 Every response carries an `X-Request-ID` header. nginx generates one if
 the client didn't send one, and the Flask app honors safe inbound values
-(short ASCII alphanumeric + `-`/`_`, max 64 chars) or replaces unsafe
-ones with a fresh UUID4. The id is also tagged on Sentry events and
-stamped on every JSON log line as `request_id`, so a single request
-can be traced end-to-end across nginx → gunicorn → app → Sentry.
+(short ASCII alphanumeric + `-`/`_`, max 64 chars, validated by regex —
+not `str.isalnum()`, which would accept non-ASCII unicode) or replaces
+unsafe ones with a fresh UUID4. The id is also attached to Sentry events
+as a `request` context (not a tag — request ids are unbounded-cardinality
+and would blow up the tag index) and stamped on every JSON log line as
+`request_id`, so a single request can be traced end-to-end across
+nginx → gunicorn → app → Sentry.
 
 ### Backups
 
 `backup.sh` snapshots the SQLite database from a running container.
 It always emits a `<file>.sha256` sidecar so corruption is detectable
 on restore. Set `BACKUP_PASSPHRASE` to wrap the gzip in
-`openssl enc -aes-256-cbc -pbkdf2`; decrypt later with:
+`openssl enc -aes-256-cbc -pbkdf2`; this also writes a keyed
+`<file>.enc.hmac` (HMAC-SHA256 over the ciphertext using the same
+passphrase) so tampering is detectable — `openssl enc` has no AEAD/GCM
+CLI mode, and the unkeyed `.sha256` only catches accidental corruption.
+Verify the HMAC **before** decrypting:
 
 ```bash
+# Tamper check (compare against the .hmac sidecar):
+openssl dgst -sha256 -hmac "$BACKUP_PASSPHRASE" data-<ts>.db.gz.enc
+cat data-<ts>.db.gz.enc.hmac
+
+# Then decrypt:
 openssl enc -d -aes-256-cbc -pbkdf2 -in data-<ts>.db.gz.enc \
   -out data-<ts>.db.gz -pass env:BACKUP_PASSPHRASE
-sha256sum -c data-<ts>.db.gz.enc.sha256   # verify integrity first
+sha256sum -c data-<ts>.db.gz.enc.sha256   # plaintext-corruption check
 ```
 
 ### Rate limiting (per-worker semantics)

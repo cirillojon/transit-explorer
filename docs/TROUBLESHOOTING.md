@@ -70,7 +70,7 @@ domain.
 ### `429 Too Many Requests`
 
 You hit the global rate limit (120/min) or an endpoint-specific limit
-(`/api/segments` POST: 30/min, bulk delete: 10/min). The response payload:
+(`/api/me/segments` POST: 30/min, bulk delete: 10/min). The response payload:
 
 ```json
 { "error": "rate limit exceeded", "detail": "30 per 1 minute" }
@@ -147,9 +147,11 @@ flyctl logs -a transit-explorer | tail -500
 flyctl logs -a transit-explorer | grep -iE 'error|traceback|429|503'
 ```
 
-Application logs go to stdout via Python `logging`. The 500 handler logs
-full tracebacks; the response body to clients is the safe `{"error":
-"internal server error"}` only.
+Application logs go to stderr via Python `logging` (the conventional
+destination, and what `logging.basicConfig` defaults to — stdout would
+break `bin/start`'s python heredocs that capture stdout). The 500
+handler logs full tracebacks; the response body to clients is the safe
+`{"error": "internal server error"}` only.
 
 ## Backups and restore
 
