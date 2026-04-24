@@ -57,6 +57,12 @@ logger = logging.getLogger(__name__)
 
 
 def create_app():
+    # Initialize Sentry FIRST so Flask/SQLAlchemy/logging integrations
+    # patch their targets before we instantiate them. No-op if SENTRY_DSN
+    # is unset.
+    from app.observability import init_sentry
+    init_sentry()
+
     app = Flask(__name__)
 
     # Ensure the data directory exists for the default SQLite path.

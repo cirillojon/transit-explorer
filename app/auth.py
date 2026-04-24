@@ -59,6 +59,12 @@ def require_auth(f):
             logger.info(f"Created new user: {user.email} (uid={firebase_uid})")
 
         g.current_user = user
+        # Tag Sentry events with the Firebase UID for this request.
+        try:
+            from app.observability import set_sentry_user
+            set_sentry_user(user.firebase_uid, user.email)
+        except Exception:
+            pass
         return f(*args, **kwargs)
 
     return decorated

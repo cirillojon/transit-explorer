@@ -308,7 +308,75 @@ flyctl machine restart <machine-id> -a transit-explorer
 
 ---
 
-## 7. Useful URLs
+## 7. Error monitoring (Sentry)
+
+Both runtimes report to a single Sentry **organization** named `transit-explorer`, with one project per platform:
+
+| Project                       | What it captures                                                                       |
+| ----------------------------- | -------------------------------------------------------------------------------------- |
+| `transit-explorer-frontend`   | Browser JS errors, React render errors (via `ErrorBoundary`), Session Replay, web vitals. |
+| `transit-explorer-backend`    | Flask request errors, SQLAlchemy errors, ERROR-level log records.                      |
+
+Both share dashboards, alerts, and the GitHub source-code integration (commit links + suspect commits + "Open in GitHub" on stack frames).
+
+### Required env vars
+
+**Backend** — set as Fly secrets:
+
+```bash
+flyctl secrets set \
+  SENTRY_DSN="https://<key>@<id>.ingest.us.sentry.io/<project-id>" \
+  SENTRY_ENVIRONMENT="production" \
+  -a transit-explorer
+# Optional:
+#   SENTRY_RELEASE=<git-sha>           # tag events with the release
+#   SENTRY_TRACES_SAMPLE_RATE=0.1      # default 0.1 in prod, 0 elsewhere
+```
+
+**Frontend (runtime)** — set in **Vercel → Project → Settings → Environment Variables** (all three environments: Production / Preview / Development):
+
+```
+VITE_SENTRY_DSN              = https://<key>@<id>.ingest.us.sentry.io/<project-id>
+VITE_SENTRY_ENVIRONMENT      = production           (per-env: preview/development)
+VITE_SENTRY_TRACES_SAMPLE_RATE = 0.1                (optional)
+```
+
+**Frontend (build-time, source map upload)** — also in Vercel project env, **only Production + Preview**, mark `SENTRY_AUTH_TOKEN` as **Sensitive**:
+
+```
+SENTRY_AUTH_TOKEN  = sntrys_…           (Sentry → Settings → Auth Tokens; scopes: project:releases, org:read)
+SENTRY_ORG         = transit-explorer
+SENTRY_PROJECT     = transit-explorer-frontend
+```
+
+When all three are present, `vite build` generates source maps, uploads them to Sentry, then deletes them from `dist/` so they aren't served publicly. Without them, the build still works (no upload, stack traces are minified).
+
+### Verifying it works
+
+```bash
+# Backend smoke test (after deploy)
+curl -s https://transit-explorer.fly.dev/api/__sentry-debug 2>/dev/null   # expect 404 if no debug route exists
+flyctl ssh console -a transit-explorer -C 'python -c "import sentry_sdk; sentry_sdk.capture_message(\"backend smoke test\")"'
+
+# Frontend: open the deployed site, in DevTools console run:
+#   throw new Error("frontend smoke test")
+# then check Sentry → Issues for both events.
+```
+
+If events don't show up, check Sentry → Settings → Projects → [project] → **Inbound Filters** (releases without source maps and certain user agents can be filtered).
+
+### Source code integration
+
+After installing the GitHub integration (Sentry → Settings → Integrations → GitHub) and adding code mappings per project:
+
+- **Frontend** code mapping: stack root = (empty), source root = `tm-frontend/`, repo = `cirillojon/transit-explorer`, branch = `main`.
+- **Backend** code mapping: stack root = `/app/`, source root = (empty), repo = `cirillojon/transit-explorer`, branch = `main`.
+
+This unlocks "View on GitHub" on stack frames and "Suspect Commits" on issues.
+
+---
+
+## 8. Useful URLs
 
 | What                     | URL                                                                                        |
 | ------------------------ | ------------------------------------------------------------------------------------------ |
@@ -318,6 +386,7 @@ flyctl machine restart <machine-id> -a transit-explorer
 | Fly app dashboard        | https://fly.io/apps/transit-explorer                                                       |
 | Fly metrics              | https://fly.io/apps/transit-explorer/metrics                                               |
 | Vercel project dashboard | https://vercel.com/dashboard (find `transit-explorer`)                                     |
+| Sentry organization      | https://transit-explorer.sentry.io/                                                        |
 | Firebase Auth settings   | https://console.firebase.google.com/project/transit-explorer-55b66/authentication/settings |
 | OneBusAway API console   | https://api.pugetsound.onebusaway.org/                                                     |
 | GitHub repo              | https://github.com/cirillojon/transit-explorer                                             |
