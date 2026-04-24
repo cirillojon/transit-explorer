@@ -1,11 +1,11 @@
 # Graph Report - transit-explorer  (2026-04-24)
 
 ## Corpus Check
-- 74 files · ~108,015 words
+- 74 files · ~115,234 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 443 nodes · 940 edges · 23 communities detected
+- 445 nodes · 940 edges · 25 communities detected
 - Extraction: 47% EXTRACTED · 53% INFERRED · 0% AMBIGUOUS · INFERRED: 501 edges (avg confidence: 0.57)
 - Token cost: 0 input · 0 output
 
@@ -33,6 +33,8 @@
 - [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 33|Community 33]]
 - [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `RouteDirection` - 72 edges
@@ -141,26 +143,34 @@ Nodes (2): groupIntoJourneys(), makeJourney()
 
 ### Community 30 - "Community 30"
 Cohesion: 1.0
-Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
+Nodes (1): Initialize Firebase Admin SDK for token verification.
 
 ### Community 31 - "Community 31"
 Cohesion: 1.0
-Nodes (1): OBA direction_ids are typically '0' or '1' but can be agency-specific     short
+Nodes (1): User A creates a segment; user B must not be able to PATCH it.
 
 ### Community 32 - "Community 32"
 Cohesion: 1.0
-Nodes (1): Optional measured trip duration in milliseconds.      Accepts None / missing (
+Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
 
 ### Community 33 - "Community 33"
 Cohesion: 1.0
-Nodes (1): Initialize Firebase Admin SDK for token verification.
+Nodes (1): OBA direction_ids are typically '0' or '1' but can be agency-specific     short
 
 ### Community 34 - "Community 34"
+Cohesion: 1.0
+Nodes (1): Optional measured trip duration in milliseconds.      Accepts None / missing (
+
+### Community 35 - "Community 35"
+Cohesion: 1.0
+Nodes (1): Initialize Firebase Admin SDK for token verification.
+
+### Community 36 - "Community 36"
 Cohesion: 1.0
 Nodes (1): Initialize Firebase Admin SDK for token verification.
 
 ## Knowledge Gaps
-- **46 isolated node(s):** `Static fallback config. The Flask app factory reads env vars directly,     so th`, `JSON-structured logging for the Flask backend.  Why JSON: Fly's log shipper (a`, `Inject Flask `g.request_id` / `g.firebase_uid` into every record.`, `Idempotent root-logger setup. Safe to call multiple times.      Reads:`, `Per-agency snapshot of the last OneBusAway data import.      One row per agency.` (+41 more)
+- **48 isolated node(s):** `Static fallback config. The Flask app factory reads env vars directly,     so th`, `JSON-structured logging for the Flask backend.  Why JSON: Fly's log shipper (a`, `Inject Flask `g.request_id` / `g.firebase_uid` into every record.`, `Idempotent root-logger setup. Safe to call multiple times.      Reads:`, `Per-agency snapshot of the last OneBusAway data import.      One row per agency.` (+43 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **Thin community `Community 14`** (6 nodes): `Regression coverage for Phase 4 observability:  - Every response carries an X-`, `test_distinct_request_ids_per_call()`, `test_response_has_request_id_header()`, `test_safe_inbound_request_id_is_echoed()`, `test_unsafe_inbound_request_id_replaced()`, `test_request_id.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -168,26 +178,30 @@ Nodes (1): Initialize Firebase Admin SDK for token verification.
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 19`** (3 nodes): `groupIntoJourneys()`, `makeJourney()`, `journeyGrouping.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 30`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
+- **Thin community `Community 30`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 31`** (1 nodes): `OBA direction_ids are typically '0' or '1' but can be agency-specific     short`
+- **Thin community `Community 31`** (1 nodes): `User A creates a segment; user B must not be able to PATCH it.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 32`** (1 nodes): `Optional measured trip duration in milliseconds.      Accepts None / missing (`
+- **Thin community `Community 32`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 33`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+- **Thin community `Community 33`** (1 nodes): `OBA direction_ids are typically '0' or '1' but can be agency-specific     short`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+- **Thin community `Community 34`** (1 nodes): `Optional measured trip duration in milliseconds.      Accepts None / missing (`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 35`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 36`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `React` connect `Community 0` to `Community 2`, `Community 5`?**
-  _High betweenness centrality (0.249) - this node is a cross-community bridge._
+  _High betweenness centrality (0.247) - this node is a cross-community bridge._
 - **Why does `Flask` connect `Community 2` to `Community 3`, `Community 4`?**
-  _High betweenness centrality (0.183) - this node is a cross-community bridge._
+  _High betweenness centrality (0.182) - this node is a cross-community bridge._
 - **Why does `Transit Explorer` connect `Community 2` to `Community 0`?**
-  _High betweenness centrality (0.151) - this node is a cross-community bridge._
+  _High betweenness centrality (0.150) - this node is a cross-community bridge._
 - **Are the 70 inferred relationships involving `RouteDirection` (e.g. with `Flask CLI commands for Transit Explorer.  Registered in app/__init__.py via ap` and `Refresh transit routes/stops/directions from OneBusAway.`) actually correct?**
   _`RouteDirection` has 70 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 65 inferred relationships involving `Route` (e.g. with `Inspect ``httpx.HTTPStatusError`` / ``requests.HTTPError`` for     retryable sta` and `Refresh transit data for the requested agencies (TTL gated).`) actually correct?**
