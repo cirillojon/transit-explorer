@@ -122,26 +122,9 @@ def test_profile_progress_sorted_by_completion_pct_desc(app, client, fake_uid):
 
 
 def _seed_tied_routes(app, fake_uid):
-    """Create a user and two routes that tie on completion_pct but differ on
-    completed_segments, to exercise the secondary sort key.
-
-    Route C: 4 stops → 3 total, completes 2 (66.7%)
-    Route D: 3 stops → but only 2 counted after dedupe, completes 1 (50%)
-
-    We actually want equal pct: use 4 stops each, complete 2 of 3 each → 66.7%,
-    but Route C has 2 completed_segments and Route D has 1 (partial).
-    Actually let's use:
-      Route P: 6 stops → 5 segments, completes 2 (40%)  ← tie on pct
-      Route Q: 4 stops → 5 segments... hmm this is tricky with integer math.
-
-    Simplest: both routes have 4 stops (3 segments). Route P completes 2 (66.7%),
-    Route Q completes 2 (66.7%) as well — they tie on pct. Then we distinguish
-    by completed_segments which is equal too.  For the tie-break test we
-    actually need differing completed_segments at the same pct, which requires
-    different total_segments but same ratio.  Use:
-      Route P: 2 stops → 1 segment, completes 1 (100%)
-      Route Q: 4 stops → 3 segments, completes 3 (100%)
-    Both are 100%, but Q has more completed_segments → Q should come first.
+    """Create a user and two routes that both reach 100% completion but with
+    different completed_segment counts (P=1, Q=3), to exercise the secondary
+    sort key: Q must appear before P.
     """
     from app import db
     from app.models import User, Route, Stop, RouteDirection, UserSegment
