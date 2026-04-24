@@ -61,22 +61,22 @@ Technical reference for Transit Explorer. The product overview lives in
 
 ### Frontend (`tm-frontend/.env`)
 
-| Variable                            | Required | Notes                                            |
-| ----------------------------------- | -------- | ------------------------------------------------ |
-| `VITE_API_BASE_URL`                 | prod     | Full URL of the deployed backend                 |
-| `VITE_PROXY_URL`                    | dev      | Backend URL for the dev-server proxy             |
-| `VITE_FIREBASE_API_KEY`             | yes      | All `VITE_FIREBASE_*` come from Firebase console |
-| `VITE_FIREBASE_AUTH_DOMAIN`         | yes      |                                                  |
-| `VITE_FIREBASE_PROJECT_ID`          | yes      |                                                  |
-| `VITE_FIREBASE_STORAGE_BUCKET`      | yes      |                                                  |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | yes      |                                                  |
-| `VITE_FIREBASE_APP_ID`              | yes      |                                                  |
+| Variable                            | Required | Notes                                                                        |
+| ----------------------------------- | -------- | ---------------------------------------------------------------------------- |
+| `VITE_API_BASE_URL`                 | prod     | Full URL of the deployed backend                                             |
+| `VITE_PROXY_URL`                    | dev      | Backend URL for the dev-server proxy                                         |
+| `VITE_FIREBASE_API_KEY`             | yes      | All `VITE_FIREBASE_*` come from Firebase console                             |
+| `VITE_FIREBASE_AUTH_DOMAIN`         | yes      |                                                                              |
+| `VITE_FIREBASE_PROJECT_ID`          | yes      |                                                                              |
+| `VITE_FIREBASE_STORAGE_BUCKET`      | yes      |                                                                              |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | yes      |                                                                              |
+| `VITE_FIREBASE_APP_ID`              | yes      |                                                                              |
 | `VITE_SENTRY_DSN`                   | no       | Enables browser Sentry (init in `tm-frontend/src/sentry.js`); blank disables |
-| `VITE_SENTRY_ENVIRONMENT`           | no       | Sentry environment label (e.g. `production` / `preview`)         |
-| `VITE_SENTRY_TRACES_SAMPLE_RATE`    | no       | Performance traces sample rate (default `0.1`)   |
-| `SENTRY_AUTH_TOKEN`                 | build    | Build-time only; uploads source maps from `vite build` |
-| `SENTRY_ORG`                        | build    | `transit-explorer`                               |
-| `SENTRY_PROJECT`                    | build    | `transit-explorer-frontend`                      |
+| `VITE_SENTRY_ENVIRONMENT`           | no       | Sentry environment label (e.g. `production` / `preview`)                     |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE`    | no       | Performance traces sample rate (default `0.1`)                               |
+| `SENTRY_AUTH_TOKEN`                 | build    | Build-time only; uploads source maps from `vite build`                       |
+| `SENTRY_ORG`                        | build    | `transit-explorer`                                                           |
+| `SENTRY_PROJECT`                    | build    | `transit-explorer-frontend`                                                  |
 
 > The frontend `VITE_FIREBASE_*` values are **not secrets** — they're shipped in the bundle. Protect access via Firebase Auth domain restrictions and App Check, not by hiding the keys.
 
