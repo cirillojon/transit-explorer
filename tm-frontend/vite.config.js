@@ -23,19 +23,6 @@ export default defineConfig(({ mode }) => {
   const sentryUploadEnabled =
     !isDev && sentryAuthToken && sentryOrg && sentryProject;
 
-  // Build-time diagnostic so we can tell from CI logs whether the
-  // Sentry env vars made it into the build environment. Booleans only —
-  // never print the auth token.
-  // eslint-disable-next-line no-console, no-undef
-  console.log("[sentry-config]", {
-    mode,
-    isDev,
-    hasAuthToken: Boolean(sentryAuthToken),
-    org: sentryOrg || "(unset)",
-    project: sentryProject || "(unset)",
-    sentryUploadEnabled: Boolean(sentryUploadEnabled),
-  });
-
   return {
     plugins: [
       react(),

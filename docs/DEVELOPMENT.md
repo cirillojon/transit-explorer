@@ -312,10 +312,10 @@ flyctl machine restart <machine-id> -a transit-explorer
 
 Both runtimes report to a single Sentry **organization** named `transit-explorer`, with one project per platform:
 
-| Project                       | What it captures                                                                       |
-| ----------------------------- | -------------------------------------------------------------------------------------- |
-| `transit-explorer-frontend`   | Browser JS errors, React render errors (via `ErrorBoundary`), Session Replay, web vitals. |
-| `transit-explorer-backend`    | Flask request errors, SQLAlchemy errors, ERROR-level log records.                      |
+| Project                     | What it captures                                                                          |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| `transit-explorer-frontend` | Browser JS errors, React render errors (via `ErrorBoundary`), Session Replay, web vitals. |
+| `transit-explorer-backend`  | Flask request errors, SQLAlchemy errors, ERROR-level log records.                         |
 
 Both share dashboards, alerts, and the GitHub source-code integration (commit links + suspect commits + "Open in GitHub" on stack frames).
 
@@ -393,16 +393,18 @@ This unlocks "View on GitHub" on stack frames and "Suspect Commits" on issues.
 
 ---
 
-## 8. Quick reference cheat sheet
+## 9. Quick reference cheat sheet
+
+Replace `<repo>` with the absolute path to your local clone (e.g. `~/projects/transit-explorer` on macOS/Linux, or the WSL path under `/mnt/c/...` on Windows). `flyctl` is assumed to be on `$PATH` (`~/.fly/bin/flyctl` if installed via the official script).
 
 ```bash
 # Local dev
-./dev_container_update.sh 8880 # backend with Docker
-flask run --port 8880          # backend without Docker
+./dev_container_update.sh 8880     # backend with Docker
+flask run --port 8880              # backend without Docker
 npm --prefix tm-frontend run dev   # frontend
 
 # Deploy
-git push origin main           # auto-deploys backend (if backend paths changed) and frontend
+git push origin main               # auto-deploys backend (if backend paths changed) and frontend
 flyctl deploy --remote-only --ha=false --strategy immediate   # manual backend deploy from a branch
 
 # Logs / debugging
@@ -411,101 +413,103 @@ flyctl ssh console -a transit-explorer
 
 # Update prod env / secret
 flyctl secrets set KEY=value -a transit-explorer
+```
 
-# Example local deploy command from powershell:
-wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl deploy --remote-only --ha=false --strategy immediate"
+### From PowerShell (Windows) — wrap in `wsl -e bash -lc`
 
-# Example console connect from powershell:
-wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl ssh console -a transit-explorer"
+```powershell
+# Manual deploy from a branch
+wsl -e bash -lc "cd <repo> && flyctl deploy --remote-only --ha=false --strategy immediate"
 
-# Example check logs from powershell:
-wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl logs -a transit-explorer"
+# SSH console
+wsl -e bash -lc "flyctl ssh console -a transit-explorer"
 
-# View releases from powershell:
-wsl -e bash -lc "/home/jon/.fly/bin/flyctl releases -a transit-explorer"
+# Tail logs
+wsl -e bash -lc "flyctl logs -a transit-explorer"
 
-# View tables in the SQLite DB from powershell:
-PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -a transit-explorer -C 'sqlite3 /app/tm-instance/data.db .tables'"
-Connecting ... complete
-alembic_version   route_stops       stops             users
-route_directions  routes            user_segments
+# View releases
+wsl -e bash -lc "flyctl releases -a transit-explorer"
 
-# To enter interactive sqlite shell:
-wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -a transit-explorer"
-# then inside the VM:
-sqlite3 -header -column /app/tm-instance/data.db
-# now you have a full sqlite3 REPL — type any SQL, .quit to exit
+# Status / machine list
+wsl -e bash -lc "flyctl status -a transit-explorer"
+wsl -e bash -lc "flyctl machine list -a transit-explorer"
+```
 
-# Manually run pytests:
+### SQLite on the production volume
 
-C:\Users\Jonat\projects\tm-project-folder\transit-explorer\tm-frontend> wsl bash -c "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && source .venv/bin/activate && pytest tests/ -q 2>&1 | tail -50"
-..............                                                           [100%]
-14 passed in 9.91s
+```bash
+# List tables (one-shot)
+flyctl ssh console -a transit-explorer -C 'sqlite3 /app/tm-instance/data.db .tables'
+# → alembic_version  route_stops  stops  users  route_directions  routes  user_segments
 
-# Manually run npm tests:
+# Interactive REPL
+flyctl ssh console -a transit-explorer
+# inside the VM:
+sqlite3 -header -column /app/tm-instance/data.db   # type SQL, .quit to exit
+```
 
-PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer\tm-frontend> npm test -- --run
+### Tests
 
-> transit-explorer-frontend@1.0.0 test
-> vitest run --run
+```bash
+# Backend
+source .venv/bin/activate && pytest tests/ -q
 
- RUN  v2.1.9 C:/Users/Jonat/projects/tm-project-folder/transit-explorer/tm-frontend
+# Frontend
+npm --prefix tm-frontend test -- --run
+```
 
- ✓ src/test/api.test.js (4)
- ✓ src/test/ErrorBoundary.test.jsx (2) 344ms
- ✓ src/test/RouteList.test.jsx (3) 828ms
+### Snapshot production DB
 
- Test Files  3 passed (3)
-      Tests  9 passed (9)
-   Start at  17:13:45
-   Duration  5.74s (transform 421ms, setup 1.74s, collect 1.32s, tests 1.25s, environment 7.65s, prepare 1.41s)
+```bash
+# Take an online snapshot inside the VM, then SFTP it down
+flyctl ssh console -a transit-explorer -C \
+  'sqlite3 /app/tm-instance/data.db ".backup /tmp/prod-snapshot.db"'
+flyctl ssh sftp get /tmp/prod-snapshot.db ./backups/prod-snapshot.db -a transit-explorer
+```
 
-# Snapshot production DB:
+### OBA data refresh
 
-PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
->> #!/bin/bash
->> cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer
->> /home/jon/.fly/bin/flyctl ssh console -a transit-explorer -C 'sqlite3 /app/tm-instance/data.db ".backup /tmp/prod-snapshot.db"' 2>&1
->> echo EXIT=`$?
->> "@ | Out-File -Encoding ascii .\_snap.sh; wsl bash ./_snap.sh
-Connecting... complete
-EXIT=0
-PS C:\Users\Jonat\projects\tm-project-folder\transit-explorer> @"
+```bash
+# Force a refresh in production
+flyctl ssh console -a transit-explorer -C 'flask data load --force'
 
-# Check machine statuses:
+# Inspect data-load state
+flyctl ssh console -a transit-explorer -C 'flask data status'
 
-wsl -e bash -lc "cd /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer && /home/jon/.fly/bin/flyctl status -a transit-explorer"
+# Force locally
+FLASK_APP=app.py flask data load --force
+```
 
-wsl -e bash -lc "/home/jon/.fly/bin/flyctl machine list -a transit-explorer"
+### Sentry smoke tests
 
-# Force an OBA data refresh in production:
+```bash
+# Backend — confirm SDK initialized at boot
+flyctl logs -a transit-explorer | grep -i sentry
+# → ... [INFO] app.observability: Sentry initialized (env=production, ...)
 
-wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -C 'flask data load --force' -a transit-explorer"
+# Backend — send a test event
+flyctl ssh console -a transit-explorer -C \
+  'python -c "import sentry_sdk; sentry_sdk.init(dsn=__import__(\"os\").environ[\"SENTRY_DSN\"]); sentry_sdk.capture_message(\"backend smoke test\")"'
+```
 
-# Validate OBA data load status in production:
+```js
+// Frontend — paste into the deployed site's DevTools console
 
-wsl -e bash -lc "/home/jon/.fly/bin/flyctl ssh console -C 'flask data status' -a transit-explorer"
+// 1. Confirm the SDK initialized with the right DSN
+const s = window.__SENTRY__[window.__SENTRY__.version];
+s.defaultCurrentScope.getClient()?.getDsn();
 
-# Manually force load OBA data locally:
+// 2. Send an explicit test event (works from console)
+s.defaultCurrentScope
+  .getClient()
+  .captureException(new Error("manual sentry test " + Date.now()));
 
-(.venv) /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer$ FLASK_APP=app.py
-(.venv) /mnt/c/Users/Jonat/projects/tm-project-folder/transit-explorer$ flask data load --force
-2026-04-23 15:47:13,017 [INFO] app: CORS allowed origins: ['https://transit-explorer.org/']
-2026-04-23 15:47:17,029 [INFO] app.data_loader: OBA load: agencies=['1', '40'] force=True ttl=24.0h
-2026-04-23 15:47:19,114 [INFO] app.data_loader: Agency 1: 134/134 routes need refresh (force=True)
-2026-04-23 15:50:01,488 [INFO] app.data_loader: Agency 1: refresh done - 134 routes touched, total=134, error=None
-2026-04-23 15:50:01,804 [INFO] app.data_loader: Agency 40: 33/33 routes need refresh (force=True)
-2026-04-23 15:50:39,341 [INFO] app.data_loader: Agency 40: refresh done - 33 routes touched, total=33, error=None
-{
-  "1": {
-    "loaded": 134,
-    "skipped": false,
-    "error": null
-  },
-  "40": {
-    "loaded": 33,
-    "skipped": false,
-    "error": null
-  }
-}
+// 3. Async throw — exercises the global onerror handler too
+setTimeout(() => {
+  throw new Error("async sentry test " + Date.now());
+}, 100);
+
+// NOTE: `throw new Error(...)` typed directly into the console does NOT
+// trigger Sentry — DevTools-thrown errors bypass window.onerror. Use the
+// captureException or setTimeout patterns above to test from the console.
 ```
