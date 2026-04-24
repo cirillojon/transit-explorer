@@ -34,7 +34,7 @@ function ConfirmDialog({
     // (handled in the effect above), so the click handler alone is fine.
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div className="modal-backdrop" onClick={onCancel}>
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
       <div
         className="modal-card"
         onClick={(e) => e.stopPropagation()}
