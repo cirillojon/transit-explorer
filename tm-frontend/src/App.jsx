@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import TransitMap from "./components/TransitMap";
 import RouteList from "./components/RouteList";
 import UserProgress from "./components/UserProgress";
@@ -569,6 +570,7 @@ function App() {
           />
         </ErrorBoundary>
       )}
+      <Analytics />
     </div>
   );
 }
