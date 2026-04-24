@@ -13189,8 +13189,8 @@
       "source_file": "tm-frontend/src/components/map/hooks/useAllRoutesView.js",
       "source_location": "L23",
       "weight": 1.0,
-      "_src": "useallroutesview_buildallroutesegmentsfordetail",
-      "_tgt": "maputils_normalizedirectionid",
+      "_src": "maputils_normalizedirectionid",
+      "_tgt": "useallroutesview_buildallroutesegmentsfordetail",
       "source": "maputils_normalizedirectionid",
       "target": "useallroutesview_buildallroutesegmentsfordetail"
     },
@@ -13261,8 +13261,8 @@
       "source_file": "tm-frontend/src/components/map/hooks/useAllRoutesView.js",
       "source_location": "L55",
       "weight": 1.0,
-      "_src": "useallroutesview_buildallroutesegmentsfordetail",
-      "_tgt": "maputils_slicepolylinebystopswithfallbacks",
+      "_src": "maputils_slicepolylinebystopswithfallbacks",
+      "_tgt": "useallroutesview_buildallroutesegmentsfordetail",
       "source": "maputils_slicepolylinebystopswithfallbacks",
       "target": "useallroutesview_buildallroutesegmentsfordetail"
     },
