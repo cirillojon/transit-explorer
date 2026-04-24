@@ -64,7 +64,7 @@ def configure_logging() -> None:
         if getattr(h, "_te_managed", False):
             root.removeHandler(h)
 
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler(sys.stderr)
     handler._te_managed = True  # type: ignore[attr-defined]
     handler.addFilter(_RequestContextFilter())
 
