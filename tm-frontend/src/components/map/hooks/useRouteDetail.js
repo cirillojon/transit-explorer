@@ -2,6 +2,57 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchRouteDetail, invalidateCache } from "../../../services/api";
 import { normalizeDirectionId } from "../mapUtils";
 
+// Pick a compass-style arrow for a direction, biased toward N/S.
+//
+// Most transit lines run roughly north–south or east–west, but real bus
+// routes wander, so a strict 8-way compass split puts a lot of mostly-
+// vertical routes onto a diagonal arrow. We widen the N/S sectors to
+// ~80° each and shrink the E/W sectors to ~30° so anything that's
+// "mostly down" reads as ↓.
+//
+// Falls back to keyword detection on the agency-supplied direction name
+// when stops don't have coordinates.
+function directionArrowFromStops(firstStop, lastStop, label) {
+  const lat1 = firstStop?.lat;
+  const lon1 = firstStop?.lon;
+  const lat2 = lastStop?.lat;
+  const lon2 = lastStop?.lon;
+  const haveCoords = [lat1, lon1, lat2, lon2].every(
+    (v) => typeof v === "number" && Number.isFinite(v),
+  );
+  if (haveCoords) {
+    const dy = lat2 - lat1; // +north
+    // Correct longitude for latitude so a degree of lon ~ a degree of lat.
+    const meanLatRad = ((lat1 + lat2) / 2) * (Math.PI / 180);
+    const dx = (lon2 - lon1) * Math.cos(meanLatRad); // +east
+    if (Math.abs(dx) > 1e-9 || Math.abs(dy) > 1e-9) {
+      // Angle from north, in degrees, 0..180. Sign of dx picks E vs W.
+      const angle = (Math.atan2(Math.abs(dx), dy) * 180) / Math.PI;
+      const east = dx >= 0;
+      // N/S sectors: ±40° around N (0) and ±40° around S (180).
+      // E/W sectors: 75°–105° from north.
+      // Diagonals fill the gaps (40°–75° and 105°–140°).
+      if (angle <= 40) return "↑";
+      if (angle >= 140) return "↓";
+      if (angle >= 75 && angle <= 105) return east ? "→" : "←";
+      if (angle < 75) return east ? "↗" : "↖";
+      return east ? "↘" : "↙";
+    }
+  }
+  // Keyword fallback when geometry is missing or degenerate.
+  const text = (label || "").toLowerCase();
+  const has = (...words) => words.some((w) => text.includes(w));
+  if (has("north", "northbound", " nb", "n-bound")) return "↑";
+  if (has("south", "southbound", " sb", "s-bound")) return "↓";
+  if (has("east", "eastbound", " eb", "e-bound")) return "→";
+  if (has("west", "westbound", " wb", "w-bound")) return "←";
+  if (has("inbound", "downtown", "uptown bound")) return "→";
+  if (has("outbound")) return "←";
+  if (has("up")) return "↑";
+  if (has("down")) return "↓";
+  return null;
+}
+
 /**
  * Loads the full detail payload for the currently selected route and
  * tracks which direction the UI is focused on.
@@ -85,6 +136,7 @@ export default function useRouteDetail(selectedRoute, { onLoadError } = {}) {
         label: dir.direction_name || `Direction ${dir.direction_id}`,
         firstStopName: firstStop?.name || null,
         lastStopName: lastStop?.name || null,
+        arrow: directionArrowFromStops(firstStop, lastStop, dir.direction_name),
       };
     });
   }, [routeDetail]);
