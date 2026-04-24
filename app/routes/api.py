@@ -431,35 +431,42 @@ def get_stats():
     user = g.current_user
     summary = _user_summary(user.id)
 
-    # Top 5 most-ridden routes
-    top_routes_q = (
+    # Top 5 routes by completion percentage
+    per_route_done = dict(
         db.session.query(
             UserSegment.route_id,
-            func.count(UserSegment.id).label('segs'),
+            func.count(UserSegment.id),
         )
         .filter(UserSegment.user_id == user.id)
         .group_by(UserSegment.route_id)
-        .order_by(desc('segs'))
-        .limit(5)
         .all()
     )
-    if top_routes_q:
+    if per_route_done:
+        route_totals = _route_segment_counts(route_ids=list(per_route_done.keys()))
         route_meta = {
             r.id: r for r in Route.query.filter(
-                Route.id.in_([t.route_id for t in top_routes_q])
+                Route.id.in_(list(per_route_done.keys()))
             ).all()
         }
+        top_routes_data = []
+        for rid, done in per_route_done.items():
+            total = route_totals.get(rid, 0)
+            pct = round(min(done, total) / total * 100, 1) if total > 0 else 0.0
+            top_routes_data.append((rid, done, total, pct))
+        top_routes_data.sort(key=lambda x: (-x[3], -x[1]))
+        top_routes = []
+        for rid, done, total, pct in top_routes_data[:5]:
+            r = route_meta.get(rid)
+            top_routes.append({
+                'route_id': rid,
+                'route_name': (r.short_name or r.long_name) if r else rid,
+                'route_color': r.color if r else None,
+                'segments': done,
+                'total_segments': total,
+                'completion_pct': pct,
+            })
     else:
-        route_meta = {}
-    top_routes = []
-    for t in top_routes_q:
-        r = route_meta.get(t.route_id)
-        top_routes.append({
-            'route_id': t.route_id,
-            'route_name': (r.short_name or r.long_name) if r else t.route_id,
-            'route_color': r.color if r else None,
-            'segments': t.segs,
-        })
+        top_routes = []
 
     # 14-day activity sparkline
     since = datetime.utcnow() - timedelta(days=14)
