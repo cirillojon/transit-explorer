@@ -2,6 +2,21 @@ import React, { useEffect, useMemo, useState } from "react";
 import { fetchUserProfile } from "../services/api";
 import { groupIntoJourneys } from "./journeyGrouping";
 
+/**
+ * Comparator for sorting route progress entries: completion_pct DESC,
+ * then completed_segments DESC (matching the backend sort key).
+ * Missing or non-numeric values are treated as 0.
+ */
+function sortByCompletion(a, b) {
+  const completionDiff =
+    (Number(b?.completion_pct) || 0) - (Number(a?.completion_pct) || 0);
+  if (completionDiff !== 0) return completionDiff;
+  return (
+    (Number(b?.completed_segments) || 0) -
+    (Number(a?.completed_segments) || 0)
+  );
+}
+
 function PublicProfile({ userId, fallbackEntry, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -175,7 +190,9 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
 }
 
 function PPOverview({ progress, achievements }) {
-  const top = progress.slice(0, 5);
+  const top = [...progress]
+    .sort(sortByCompletion)
+    .slice(0, 5);
   if (!progress.length) {
     return (
       <div className="empty-state mini">
@@ -241,9 +258,10 @@ function PPRoutes({ progress, journeysByRoute }) {
       </div>
     );
   }
+  const sorted = [...progress].sort(sortByCompletion);
   return (
     <div className="pp-route-list">
-      {progress.map((r) => {
+      {sorted.map((r) => {
         const isOpen = openId === r.route_id;
         const journeys = journeysByRoute[r.route_id] || [];
         return (
