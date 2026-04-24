@@ -63,7 +63,7 @@ flyctl deploy --local-only --ha=false --strategy immediate
 | `SENTRY_DSN`                          | no       | Enables backend Sentry. Blank/unset disables. See [DEVELOPMENT.md §7](./DEVELOPMENT.md#7-error-monitoring-sentry). |
 | `SENTRY_ENVIRONMENT`                  | no       | Sentry environment label (defaults to `FLASK_ENV`).                                                                |
 | `SENTRY_TRACES_SAMPLE_RATE`           | no       | Performance traces sample rate (default `0.1` in prod).                                                            |
-| `LOG_FORMAT`                          | no       | `json` for structured logs (recommended in prod); `text` for local dev. Default `text`.                             |
+| `LOG_FORMAT`                          | no       | `json` for structured logs (recommended in prod); `text` for local dev. Default `text`.                            |
 
 ### Request tracing
 
