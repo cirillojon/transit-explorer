@@ -6,7 +6,11 @@
       {
         "id": "frontend_stack",
         "label": "Frontend Technology Stack",
-        "nodes": ["react", "vite", "vercel"],
+        "nodes": [
+          "react",
+          "vite",
+          "vercel"
+        ],
         "relation": "implement",
         "confidence": "EXTRACTED",
         "confidence_score": 0.95,
@@ -15,7 +19,13 @@
       {
         "id": "backend_stack",
         "label": "Backend Technology Stack",
-        "nodes": ["flask", "sqlalchemy", "gunicorn", "sqlite", "flyio"],
+        "nodes": [
+          "flask",
+          "sqlalchemy",
+          "gunicorn",
+          "sqlite",
+          "flyio"
+        ],
         "relation": "implement",
         "confidence": "EXTRACTED",
         "confidence_score": 0.95,
@@ -24,7 +34,11 @@
       {
         "id": "auth_system",
         "label": "Authentication System",
-        "nodes": ["firebase_auth", "google_signin", "react"],
+        "nodes": [
+          "firebase_auth",
+          "google_signin",
+          "react"
+        ],
         "relation": "implement",
         "confidence": "EXTRACTED",
         "confidence_score": 0.9,
@@ -33,7 +47,12 @@
       {
         "id": "data_pipeline",
         "label": "Data Loading and Storage Pipeline",
-        "nodes": ["onebusaway_api", "flask", "sqlalchemy", "sqlite"],
+        "nodes": [
+          "onebusaway_api",
+          "flask",
+          "sqlalchemy",
+          "sqlite"
+        ],
         "relation": "participate_in",
         "confidence": "EXTRACTED",
         "confidence_score": 0.9,
@@ -591,27 +610,27 @@
       "file_type": "rationale",
       "source_file": "app/observability.py",
       "source_location": "L1",
-      "id": "observability_rationale_1",
       "community": 7,
-      "norm_label": "sentry initialization for the flask backend.  kept in its own module so create"
+      "norm_label": "sentry initialization for the flask backend.  kept in its own module so create",
+      "id": "observability_rationale_1"
     },
     {
       "label": "Initialize Sentry if SENTRY_DSN is set. Returns True if initialized.",
       "file_type": "rationale",
       "source_file": "app/observability.py",
       "source_location": "L23",
-      "id": "observability_rationale_23",
       "community": 7,
-      "norm_label": "initialize sentry if sentry_dsn is set. returns true if initialized."
+      "norm_label": "initialize sentry if sentry_dsn is set. returns true if initialized.",
+      "id": "observability_rationale_23"
     },
     {
       "label": "Attach the current user to outgoing Sentry events for this scope.",
       "file_type": "rationale",
       "source_file": "app/observability.py",
       "source_location": "L69",
-      "id": "observability_rationale_69",
       "community": 7,
-      "norm_label": "attach the current user to outgoing sentry events for this scope."
+      "norm_label": "attach the current user to outgoing sentry events for this scope.",
+      "id": "observability_rationale_69"
     },
     {
       "label": "validators.py",
@@ -735,9 +754,9 @@
       "file_type": "rationale",
       "source_file": "app/__init__.py",
       "source_location": "L147",
-      "id": "init_rationale_147",
       "community": 7,
-      "norm_label": "initialize firebase admin sdk for token verification."
+      "norm_label": "initialize firebase admin sdk for token verification.",
+      "id": "init_rationale_147"
     },
     {
       "label": "env.py",
@@ -1212,81 +1231,81 @@
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L431",
-      "id": "api_rationale_431",
       "community": 1,
-      "norm_label": "rich stats payload: totals, achievements, top routes, 14d sparkline, rank."
+      "norm_label": "rich stats payload: totals, achievements, top routes, 14d sparkline, rank.",
+      "id": "api_rationale_431"
     },
     {
       "label": "Recent rides, one entry per logged trip.      A \"trip\" is the set of hops create",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L516",
-      "id": "api_rationale_516",
       "community": 1,
-      "norm_label": "recent rides, one entry per logged trip.      a \"trip\" is the set of hops create"
+      "norm_label": "recent rides, one entry per logged trip.      a \"trip\" is the set of hops create",
+      "id": "api_rationale_516"
     },
     {
       "label": "Per-route completion summary. Constant-query: O(1) DB calls regardless of N.",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L605",
-      "id": "api_rationale_605",
       "community": 1,
-      "norm_label": "per-route completion summary. constant-query: o(1) db calls regardless of n."
+      "norm_label": "per-route completion summary. constant-query: o(1) db calls regardless of n.",
+      "id": "api_rationale_605"
     },
     {
       "label": "Mark a contiguous run of segments as completed.      Returns: { created, skipped",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L709",
-      "id": "api_rationale_709",
       "community": 1,
-      "norm_label": "mark a contiguous run of segments as completed.      returns: { created, skipped"
+      "norm_label": "mark a contiguous run of segments as completed.      returns: { created, skipped",
+      "id": "api_rationale_709"
     },
     {
       "label": "Edit (or clear) the measured trip duration on a single segment row.      Pass `d",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L831",
-      "id": "api_rationale_831",
       "community": 1,
-      "norm_label": "edit (or clear) the measured trip duration on a single segment row.      pass `d"
+      "norm_label": "edit (or clear) the measured trip duration on a single segment row.      pass `d",
+      "id": "api_rationale_831"
     },
     {
       "label": "Bulk-delete by id list, or wipe a whole route (with confirm flag).",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L867",
-      "id": "api_rationale_867",
       "community": 1,
-      "norm_label": "bulk-delete by id list, or wipe a whole route (with confirm flag)."
+      "norm_label": "bulk-delete by id list, or wipe a whole route (with confirm flag).",
+      "id": "api_rationale_867"
     },
     {
       "label": "``{route_id: total_possible_segments}`` using the same dedupe rules     as ``get",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L899",
-      "id": "api_rationale_899",
       "community": 1,
-      "norm_label": "``{route_id: total_possible_segments}`` using the same dedupe rules     as ``get"
+      "norm_label": "``{route_id: total_possible_segments}`` using the same dedupe rules     as ``get",
+      "id": "api_rationale_899"
     },
     {
       "label": "Aggregate stats for a user \u2014 used by /me, /me/stats, achievement diffing.",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L925",
-      "id": "api_rationale_925",
       "community": 1,
-      "norm_label": "aggregate stats for a user \u2014 used by /me, /me/stats, achievement diffing."
+      "norm_label": "aggregate stats for a user \u2014 used by /me, /me/stats, achievement diffing.",
+      "id": "api_rationale_925"
     },
     {
       "label": "Achievements that flipped locked\u2192unlocked between two summary snapshots.",
       "file_type": "rationale",
       "source_file": "app/routes/api.py",
       "source_location": "L982",
-      "id": "api_rationale_982",
       "community": 1,
-      "norm_label": "achievements that flipped locked\u2192unlocked between two summary snapshots."
+      "norm_label": "achievements that flipped locked\u2192unlocked between two summary snapshots.",
+      "id": "api_rationale_982"
     },
     {
       "label": "__init__.py",
@@ -1680,45 +1699,45 @@
       "file_type": "rationale",
       "source_file": "tests/test_public_profile.py",
       "source_location": "L1",
-      "id": "test_public_profile_rationale_1",
       "community": 1,
-      "norm_label": "regression tests for get /api/users/<id>/profile progress ordering.  asserts tha"
+      "norm_label": "regression tests for get /api/users/<id>/profile progress ordering.  asserts tha",
+      "id": "test_public_profile_rationale_1"
     },
     {
       "label": "Create a user and two routes with different completion levels.      Route A (\"A_",
       "file_type": "rationale",
       "source_file": "tests/test_public_profile.py",
       "source_location": "L12",
-      "id": "test_public_profile_rationale_12",
       "community": 1,
-      "norm_label": "create a user and two routes with different completion levels.      route a (\"a_"
+      "norm_label": "create a user and two routes with different completion levels.      route a (\"a_",
+      "id": "test_public_profile_rationale_12"
     },
     {
       "label": "Routes with higher completion % must appear first in the progress list.",
       "file_type": "rationale",
       "source_file": "tests/test_public_profile.py",
       "source_location": "L108",
-      "id": "test_public_profile_rationale_108",
       "community": 1,
-      "norm_label": "routes with higher completion % must appear first in the progress list."
+      "norm_label": "routes with higher completion % must appear first in the progress list.",
+      "id": "test_public_profile_rationale_108"
     },
     {
       "label": "Create a user and two routes that both reach 100% completion but with     differ",
       "file_type": "rationale",
       "source_file": "tests/test_public_profile.py",
       "source_location": "L125",
-      "id": "test_public_profile_rationale_125",
       "community": 1,
-      "norm_label": "create a user and two routes that both reach 100% completion but with     differ"
+      "norm_label": "create a user and two routes that both reach 100% completion but with     differ",
+      "id": "test_public_profile_rationale_125"
     },
     {
       "label": "When two routes share the same completion_pct, the one with more     completed_s",
       "file_type": "rationale",
       "source_file": "tests/test_public_profile.py",
       "source_location": "L191",
-      "id": "test_public_profile_rationale_191",
       "community": 1,
-      "norm_label": "when two routes share the same completion_pct, the one with more     completed_s"
+      "norm_label": "when two routes share the same completion_pct, the one with more     completed_s",
+      "id": "test_public_profile_rationale_191"
     },
     {
       "label": "test_route_dedupe.py",
@@ -4669,11 +4688,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_431",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_431",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_431",
-      "confidence_score": 0.5
+      "target": "api_rationale_431"
     },
     {
       "relation": "uses",
@@ -4681,11 +4700,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_516",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_516",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_516",
-      "confidence_score": 0.5
+      "target": "api_rationale_516"
     },
     {
       "relation": "uses",
@@ -4693,11 +4712,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_605",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_605",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_605",
-      "confidence_score": 0.5
+      "target": "api_rationale_605"
     },
     {
       "relation": "uses",
@@ -4705,11 +4724,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_709",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_709",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_709",
-      "confidence_score": 0.5
+      "target": "api_rationale_709"
     },
     {
       "relation": "uses",
@@ -4717,11 +4736,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_831",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_831",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_831",
-      "confidence_score": 0.5
+      "target": "api_rationale_831"
     },
     {
       "relation": "uses",
@@ -4729,11 +4748,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_867",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_867",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_867",
-      "confidence_score": 0.5
+      "target": "api_rationale_867"
     },
     {
       "relation": "uses",
@@ -4741,11 +4760,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_899",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_899",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_899",
-      "confidence_score": 0.5
+      "target": "api_rationale_899"
     },
     {
       "relation": "uses",
@@ -4753,11 +4772,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_925",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_925",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_925",
-      "confidence_score": 0.5
+      "target": "api_rationale_925"
     },
     {
       "relation": "uses",
@@ -4765,11 +4784,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_982",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "api_rationale_982",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "api_rationale_982",
-      "confidence_score": 0.5
+      "target": "api_rationale_982"
     },
     {
       "relation": "uses",
@@ -4837,11 +4856,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_1",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "test_public_profile_rationale_1",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "test_public_profile_rationale_1",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_1"
     },
     {
       "relation": "uses",
@@ -4849,11 +4868,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_12",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "test_public_profile_rationale_12",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "test_public_profile_rationale_12",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_12"
     },
     {
       "relation": "uses",
@@ -4861,11 +4880,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_108",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "test_public_profile_rationale_108",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "test_public_profile_rationale_108",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_108"
     },
     {
       "relation": "uses",
@@ -4873,11 +4892,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_125",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "test_public_profile_rationale_125",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "test_public_profile_rationale_125",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_125"
     },
     {
       "relation": "uses",
@@ -4885,11 +4904,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_191",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "test_public_profile_rationale_191",
+      "confidence_score": 0.5,
       "source": "models_user",
-      "target": "test_public_profile_rationale_191",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_191"
     },
     {
       "relation": "calls",
@@ -4934,8 +4953,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L22",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_two_routes",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "test_public_profile_seed_two_routes",
       "source": "models_user",
       "target": "test_public_profile_seed_two_routes"
     },
@@ -4946,8 +4965,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L132",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_tied_routes",
-      "_tgt": "models_user",
+      "_src": "models_user",
+      "_tgt": "test_public_profile_seed_tied_routes",
       "source": "models_user",
       "target": "test_public_profile_seed_tied_routes"
     },
@@ -5173,11 +5192,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_431",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_431",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_431",
-      "confidence_score": 0.5
+      "target": "api_rationale_431"
     },
     {
       "relation": "uses",
@@ -5185,11 +5204,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_516",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_516",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_516",
-      "confidence_score": 0.5
+      "target": "api_rationale_516"
     },
     {
       "relation": "uses",
@@ -5197,11 +5216,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_605",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_605",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_605",
-      "confidence_score": 0.5
+      "target": "api_rationale_605"
     },
     {
       "relation": "uses",
@@ -5209,11 +5228,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_709",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_709",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_709",
-      "confidence_score": 0.5
+      "target": "api_rationale_709"
     },
     {
       "relation": "uses",
@@ -5221,11 +5240,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_831",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_831",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_831",
-      "confidence_score": 0.5
+      "target": "api_rationale_831"
     },
     {
       "relation": "uses",
@@ -5233,11 +5252,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_867",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_867",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_867",
-      "confidence_score": 0.5
+      "target": "api_rationale_867"
     },
     {
       "relation": "uses",
@@ -5245,11 +5264,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_899",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_899",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_899",
-      "confidence_score": 0.5
+      "target": "api_rationale_899"
     },
     {
       "relation": "uses",
@@ -5257,11 +5276,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_925",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_925",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_925",
-      "confidence_score": 0.5
+      "target": "api_rationale_925"
     },
     {
       "relation": "uses",
@@ -5269,11 +5288,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_982",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "api_rationale_982",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "api_rationale_982",
-      "confidence_score": 0.5
+      "target": "api_rationale_982"
     },
     {
       "relation": "uses",
@@ -5329,11 +5348,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_1",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "test_public_profile_rationale_1",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "test_public_profile_rationale_1",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_1"
     },
     {
       "relation": "uses",
@@ -5341,11 +5360,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_12",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "test_public_profile_rationale_12",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "test_public_profile_rationale_12",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_12"
     },
     {
       "relation": "uses",
@@ -5353,11 +5372,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_108",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "test_public_profile_rationale_108",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "test_public_profile_rationale_108",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_108"
     },
     {
       "relation": "uses",
@@ -5365,11 +5384,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_125",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "test_public_profile_rationale_125",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "test_public_profile_rationale_125",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_125"
     },
     {
       "relation": "uses",
@@ -5377,11 +5396,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_191",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "test_public_profile_rationale_191",
+      "confidence_score": 0.5,
       "source": "models_route",
-      "target": "test_public_profile_rationale_191",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_191"
     },
     {
       "relation": "uses",
@@ -5438,8 +5457,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L32",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_two_routes",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "test_public_profile_seed_two_routes",
       "source": "models_route",
       "target": "test_public_profile_seed_two_routes"
     },
@@ -5450,8 +5469,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L142",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_tied_routes",
-      "_tgt": "models_route",
+      "_src": "models_route",
+      "_tgt": "test_public_profile_seed_tied_routes",
       "source": "models_route",
       "target": "test_public_profile_seed_tied_routes"
     },
@@ -5713,11 +5732,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_431",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_431",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_431",
-      "confidence_score": 0.5
+      "target": "api_rationale_431"
     },
     {
       "relation": "uses",
@@ -5725,11 +5744,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_516",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_516",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_516",
-      "confidence_score": 0.5
+      "target": "api_rationale_516"
     },
     {
       "relation": "uses",
@@ -5737,11 +5756,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_605",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_605",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_605",
-      "confidence_score": 0.5
+      "target": "api_rationale_605"
     },
     {
       "relation": "uses",
@@ -5749,11 +5768,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_709",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_709",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_709",
-      "confidence_score": 0.5
+      "target": "api_rationale_709"
     },
     {
       "relation": "uses",
@@ -5761,11 +5780,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_831",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_831",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_831",
-      "confidence_score": 0.5
+      "target": "api_rationale_831"
     },
     {
       "relation": "uses",
@@ -5773,11 +5792,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_867",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_867",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_867",
-      "confidence_score": 0.5
+      "target": "api_rationale_867"
     },
     {
       "relation": "uses",
@@ -5785,11 +5804,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_899",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_899",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_899",
-      "confidence_score": 0.5
+      "target": "api_rationale_899"
     },
     {
       "relation": "uses",
@@ -5797,11 +5816,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_925",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_925",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_925",
-      "confidence_score": 0.5
+      "target": "api_rationale_925"
     },
     {
       "relation": "uses",
@@ -5809,11 +5828,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_982",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "api_rationale_982",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "api_rationale_982",
-      "confidence_score": 0.5
+      "target": "api_rationale_982"
     },
     {
       "relation": "uses",
@@ -5869,11 +5888,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_1",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "test_public_profile_rationale_1",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "test_public_profile_rationale_1",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_1"
     },
     {
       "relation": "uses",
@@ -5881,11 +5900,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_12",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "test_public_profile_rationale_12",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "test_public_profile_rationale_12",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_12"
     },
     {
       "relation": "uses",
@@ -5893,11 +5912,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_108",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "test_public_profile_rationale_108",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "test_public_profile_rationale_108",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_108"
     },
     {
       "relation": "uses",
@@ -5905,11 +5924,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_125",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "test_public_profile_rationale_125",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "test_public_profile_rationale_125",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_125"
     },
     {
       "relation": "uses",
@@ -5917,11 +5936,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_191",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "test_public_profile_rationale_191",
+      "confidence_score": 0.5,
       "source": "models_stop",
-      "target": "test_public_profile_rationale_191",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_191"
     },
     {
       "relation": "uses",
@@ -5978,8 +5997,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L44",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_two_routes",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "test_public_profile_seed_two_routes",
       "source": "models_stop",
       "target": "test_public_profile_seed_two_routes"
     },
@@ -5990,8 +6009,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L147",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_tied_routes",
-      "_tgt": "models_stop",
+      "_src": "models_stop",
+      "_tgt": "test_public_profile_seed_tied_routes",
       "source": "models_stop",
       "target": "test_public_profile_seed_tied_routes"
     },
@@ -6229,11 +6248,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_431",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_431",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_431",
-      "confidence_score": 0.5
+      "target": "api_rationale_431"
     },
     {
       "relation": "uses",
@@ -6241,11 +6260,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_516",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_516",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_516",
-      "confidence_score": 0.5
+      "target": "api_rationale_516"
     },
     {
       "relation": "uses",
@@ -6253,11 +6272,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_605",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_605",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_605",
-      "confidence_score": 0.5
+      "target": "api_rationale_605"
     },
     {
       "relation": "uses",
@@ -6265,11 +6284,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_709",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_709",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_709",
-      "confidence_score": 0.5
+      "target": "api_rationale_709"
     },
     {
       "relation": "uses",
@@ -6277,11 +6296,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_831",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_831",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_831",
-      "confidence_score": 0.5
+      "target": "api_rationale_831"
     },
     {
       "relation": "uses",
@@ -6289,11 +6308,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_867",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_867",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_867",
-      "confidence_score": 0.5
+      "target": "api_rationale_867"
     },
     {
       "relation": "uses",
@@ -6301,11 +6320,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_899",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_899",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_899",
-      "confidence_score": 0.5
+      "target": "api_rationale_899"
     },
     {
       "relation": "uses",
@@ -6313,11 +6332,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_925",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_925",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_925",
-      "confidence_score": 0.5
+      "target": "api_rationale_925"
     },
     {
       "relation": "uses",
@@ -6325,11 +6344,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_982",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "api_rationale_982",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "api_rationale_982",
-      "confidence_score": 0.5
+      "target": "api_rationale_982"
     },
     {
       "relation": "uses",
@@ -6385,11 +6404,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_1",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "test_public_profile_rationale_1",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "test_public_profile_rationale_1",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_1"
     },
     {
       "relation": "uses",
@@ -6397,11 +6416,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_12",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "test_public_profile_rationale_12",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "test_public_profile_rationale_12",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_12"
     },
     {
       "relation": "uses",
@@ -6409,11 +6428,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_108",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "test_public_profile_rationale_108",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "test_public_profile_rationale_108",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_108"
     },
     {
       "relation": "uses",
@@ -6421,11 +6440,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_125",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "test_public_profile_rationale_125",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "test_public_profile_rationale_125",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_125"
     },
     {
       "relation": "uses",
@@ -6433,11 +6452,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_191",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "test_public_profile_rationale_191",
+      "confidence_score": 0.5,
       "source": "models_routedirection",
-      "target": "test_public_profile_rationale_191",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_191"
     },
     {
       "relation": "uses",
@@ -6494,8 +6513,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L47",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_two_routes",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "test_public_profile_seed_two_routes",
       "source": "models_routedirection",
       "target": "test_public_profile_seed_two_routes"
     },
@@ -6506,8 +6525,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L150",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_tied_routes",
-      "_tgt": "models_routedirection",
+      "_src": "models_routedirection",
+      "_tgt": "test_public_profile_seed_tied_routes",
       "source": "models_routedirection",
       "target": "test_public_profile_seed_tied_routes"
     },
@@ -6733,11 +6752,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_431",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_431",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_431",
-      "confidence_score": 0.5
+      "target": "api_rationale_431"
     },
     {
       "relation": "uses",
@@ -6745,11 +6764,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_516",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_516",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_516",
-      "confidence_score": 0.5
+      "target": "api_rationale_516"
     },
     {
       "relation": "uses",
@@ -6757,11 +6776,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_605",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_605",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_605",
-      "confidence_score": 0.5
+      "target": "api_rationale_605"
     },
     {
       "relation": "uses",
@@ -6769,11 +6788,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_709",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_709",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_709",
-      "confidence_score": 0.5
+      "target": "api_rationale_709"
     },
     {
       "relation": "uses",
@@ -6781,11 +6800,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_831",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_831",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_831",
-      "confidence_score": 0.5
+      "target": "api_rationale_831"
     },
     {
       "relation": "uses",
@@ -6793,11 +6812,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_867",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_867",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_867",
-      "confidence_score": 0.5
+      "target": "api_rationale_867"
     },
     {
       "relation": "uses",
@@ -6805,11 +6824,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_899",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_899",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_899",
-      "confidence_score": 0.5
+      "target": "api_rationale_899"
     },
     {
       "relation": "uses",
@@ -6817,11 +6836,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_925",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_925",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_925",
-      "confidence_score": 0.5
+      "target": "api_rationale_925"
     },
     {
       "relation": "uses",
@@ -6829,11 +6848,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_982",
-      "_tgt": "models_routestop",
+      "_src": "models_routestop",
+      "_tgt": "api_rationale_982",
+      "confidence_score": 0.5,
       "source": "models_routestop",
-      "target": "api_rationale_982",
-      "confidence_score": 0.5
+      "target": "api_rationale_982"
     },
     {
       "relation": "uses",
@@ -7045,11 +7064,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_431",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_431",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_431",
-      "confidence_score": 0.5
+      "target": "api_rationale_431"
     },
     {
       "relation": "uses",
@@ -7057,11 +7076,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_516",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_516",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_516",
-      "confidence_score": 0.5
+      "target": "api_rationale_516"
     },
     {
       "relation": "uses",
@@ -7069,11 +7088,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_605",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_605",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_605",
-      "confidence_score": 0.5
+      "target": "api_rationale_605"
     },
     {
       "relation": "uses",
@@ -7081,11 +7100,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_709",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_709",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_709",
-      "confidence_score": 0.5
+      "target": "api_rationale_709"
     },
     {
       "relation": "uses",
@@ -7093,11 +7112,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_831",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_831",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_831",
-      "confidence_score": 0.5
+      "target": "api_rationale_831"
     },
     {
       "relation": "uses",
@@ -7105,11 +7124,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_867",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_867",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_867",
-      "confidence_score": 0.5
+      "target": "api_rationale_867"
     },
     {
       "relation": "uses",
@@ -7117,11 +7136,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_899",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_899",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_899",
-      "confidence_score": 0.5
+      "target": "api_rationale_899"
     },
     {
       "relation": "uses",
@@ -7129,11 +7148,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_925",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_925",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_925",
-      "confidence_score": 0.5
+      "target": "api_rationale_925"
     },
     {
       "relation": "uses",
@@ -7141,11 +7160,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L4",
       "weight": 0.8,
-      "_src": "api_rationale_982",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "api_rationale_982",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "api_rationale_982",
-      "confidence_score": 0.5
+      "target": "api_rationale_982"
     },
     {
       "relation": "uses",
@@ -7213,11 +7232,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_1",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "test_public_profile_rationale_1",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "test_public_profile_rationale_1",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_1"
     },
     {
       "relation": "uses",
@@ -7225,11 +7244,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_12",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "test_public_profile_rationale_12",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "test_public_profile_rationale_12",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_12"
     },
     {
       "relation": "uses",
@@ -7237,11 +7256,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_108",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "test_public_profile_rationale_108",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "test_public_profile_rationale_108",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_108"
     },
     {
       "relation": "uses",
@@ -7249,11 +7268,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_125",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "test_public_profile_rationale_125",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "test_public_profile_rationale_125",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_125"
     },
     {
       "relation": "uses",
@@ -7261,11 +7280,11 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L130",
       "weight": 0.8,
-      "_src": "test_public_profile_rationale_191",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "test_public_profile_rationale_191",
+      "confidence_score": 0.5,
       "source": "models_usersegment",
-      "target": "test_public_profile_rationale_191",
-      "confidence_score": 0.5
+      "target": "test_public_profile_rationale_191"
     },
     {
       "relation": "calls",
@@ -7322,8 +7341,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L84",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_two_routes",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "test_public_profile_seed_two_routes",
       "source": "models_usersegment",
       "target": "test_public_profile_seed_two_routes"
     },
@@ -7334,8 +7353,8 @@
       "source_file": "tests/test_public_profile.py",
       "source_location": "L174",
       "weight": 1.0,
-      "_src": "test_public_profile_seed_tied_routes",
-      "_tgt": "models_usersegment",
+      "_src": "models_usersegment",
+      "_tgt": "test_public_profile_seed_tied_routes",
       "source": "models_usersegment",
       "target": "test_public_profile_seed_tied_routes"
     },
@@ -7561,11 +7580,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_431",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_431",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_431",
-      "confidence_score": 0.5
+      "target": "api_rationale_431"
     },
     {
       "relation": "uses",
@@ -7573,11 +7592,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_516",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_516",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_516",
-      "confidence_score": 0.5
+      "target": "api_rationale_516"
     },
     {
       "relation": "uses",
@@ -7585,11 +7604,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_605",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_605",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_605",
-      "confidence_score": 0.5
+      "target": "api_rationale_605"
     },
     {
       "relation": "uses",
@@ -7597,11 +7616,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_709",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_709",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_709",
-      "confidence_score": 0.5
+      "target": "api_rationale_709"
     },
     {
       "relation": "uses",
@@ -7609,11 +7628,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_831",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_831",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_831",
-      "confidence_score": 0.5
+      "target": "api_rationale_831"
     },
     {
       "relation": "uses",
@@ -7621,11 +7640,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_867",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_867",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_867",
-      "confidence_score": 0.5
+      "target": "api_rationale_867"
     },
     {
       "relation": "uses",
@@ -7633,11 +7652,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_899",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_899",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_899",
-      "confidence_score": 0.5
+      "target": "api_rationale_899"
     },
     {
       "relation": "uses",
@@ -7645,11 +7664,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_925",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_925",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_925",
-      "confidence_score": 0.5
+      "target": "api_rationale_925"
     },
     {
       "relation": "uses",
@@ -7657,11 +7676,11 @@
       "source_file": "app/routes/api.py",
       "source_location": "L54",
       "weight": 0.8,
-      "_src": "api_rationale_982",
-      "_tgt": "models_dataload",
+      "_src": "models_dataload",
+      "_tgt": "api_rationale_982",
+      "confidence_score": 0.5,
       "source": "models_dataload",
-      "target": "api_rationale_982",
-      "confidence_score": 0.5
+      "target": "api_rationale_982"
     },
     {
       "relation": "uses",
@@ -8030,8 +8049,8 @@
       "source_file": "app/__init__.py",
       "source_location": "L64",
       "weight": 1.0,
-      "_src": "init_create_app",
-      "_tgt": "observability_init_sentry",
+      "_src": "observability_init_sentry",
+      "_tgt": "init_create_app",
       "source": "observability_init_sentry",
       "target": "init_create_app"
     },
@@ -12444,7 +12463,11 @@
     {
       "id": "frontend_stack",
       "label": "Frontend Technology Stack",
-      "nodes": ["react", "vite", "vercel"],
+      "nodes": [
+        "react",
+        "vite",
+        "vercel"
+      ],
       "relation": "implement",
       "confidence": "EXTRACTED",
       "confidence_score": 0.95,
@@ -12453,7 +12476,13 @@
     {
       "id": "backend_stack",
       "label": "Backend Technology Stack",
-      "nodes": ["flask", "sqlalchemy", "gunicorn", "sqlite", "flyio"],
+      "nodes": [
+        "flask",
+        "sqlalchemy",
+        "gunicorn",
+        "sqlite",
+        "flyio"
+      ],
       "relation": "implement",
       "confidence": "EXTRACTED",
       "confidence_score": 0.95,
@@ -12462,7 +12491,11 @@
     {
       "id": "auth_system",
       "label": "Authentication System",
-      "nodes": ["firebase_auth", "google_signin", "react"],
+      "nodes": [
+        "firebase_auth",
+        "google_signin",
+        "react"
+      ],
       "relation": "implement",
       "confidence": "EXTRACTED",
       "confidence_score": 0.9,
@@ -12471,7 +12504,12 @@
     {
       "id": "data_pipeline",
       "label": "Data Loading and Storage Pipeline",
-      "nodes": ["onebusaway_api", "flask", "sqlalchemy", "sqlite"],
+      "nodes": [
+        "onebusaway_api",
+        "flask",
+        "sqlalchemy",
+        "sqlite"
+      ],
       "relation": "participate_in",
       "confidence": "EXTRACTED",
       "confidence_score": 0.9,
