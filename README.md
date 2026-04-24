@@ -142,6 +142,6 @@ This project is licensed under the PolyForm Noncommercial 1.0.0 license.
 
 You may use, modify, and share this software for noncommercial purposes only. Commercial use is not permitted without prior written permission from the copyright holder.
 
-See the **[LICENSE](LICENSE)** file for details.
+See the **[LICENSE](LICENSE.md)** file for details.
 
 For commercial licensing inquiries, contact cirillojon
