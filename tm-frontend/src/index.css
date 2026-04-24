@@ -1073,6 +1073,9 @@ button {
   color: rgba(4, 21, 31, 0.78);
 }
 .direction-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
@@ -1080,6 +1083,22 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+.direction-tab-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.direction-tab.active .direction-tab-arrow,
+.direction-tab.locked .direction-tab-arrow {
+  color: inherit;
 }
 .direction-tab-sub {
   font-size: 11px;
