@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 function ConfirmDialog({
   open,
@@ -10,19 +10,47 @@ function ConfirmDialog({
   onConfirm,
   onCancel,
 }) {
+  const cancelBtnRef = useRef(null);
+
+  // Escape to dismiss + initial focus on the safe (cancel) button so a
+  // stray Enter doesn't accidentally confirm a destructive action.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") onCancel?.();
+    };
+    window.addEventListener("keydown", onKey);
+    // Focus the cancel button on the next frame so the dialog is mounted.
+    const id = requestAnimationFrame(() => cancelBtnRef.current?.focus());
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(id);
+    };
+  }, [open, onCancel]);
+
   if (!open) return null;
   return (
+    // Backdrop click-to-cancel. Keyboard users dismiss with Escape
+    // (handled in the effect above), so the click handler alone is fine.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div className="modal-backdrop" onClick={onCancel}>
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
       <div
         className="modal-card"
         onClick={(e) => e.stopPropagation()}
-        role="dialog"
+        role={danger ? "alertdialog" : "dialog"}
         aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        aria-describedby={message ? "confirm-dialog-msg" : undefined}
       >
-        <h3>{title}</h3>
-        {message && <p className="modal-msg">{message}</p>}
+        <h3 id="confirm-dialog-title">{title}</h3>
+        {message && (
+          <p id="confirm-dialog-msg" className="modal-msg">
+            {message}
+          </p>
+        )}
         <div className="modal-actions">
-          <button className="modal-btn" onClick={onCancel}>
+          <button ref={cancelBtnRef} className="modal-btn" onClick={onCancel}>
             {cancelLabel}
           </button>
           <button

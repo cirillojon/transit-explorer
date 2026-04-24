@@ -1,12 +1,12 @@
 # Graph Report - transit-explorer  (2026-04-23)
 
 ## Corpus Check
-- 60 files · ~95,965 words
+- 67 files · ~98,681 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 384 nodes · 845 edges · 32 communities detected
-- Extraction: 42% EXTRACTED · 58% INFERRED · 0% AMBIGUOUS · INFERRED: 491 edges (avg confidence: 0.54)
+- 397 nodes · 866 edges · 33 communities detected
+- Extraction: 42% EXTRACTED · 58% INFERRED · 0% AMBIGUOUS · INFERRED: 500 edges (avg confidence: 0.54)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -29,10 +29,10 @@
 - [[_COMMUNITY_Community 18|Community 18]]
 - [[_COMMUNITY_Community 19|Community 19]]
 - [[_COMMUNITY_Community 20|Community 20]]
-- [[_COMMUNITY_Community 22|Community 22]]
-- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 23|Community 23]]
 - [[_COMMUNITY_Community 26|Community 26]]
-- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 27|Community 27]]
 - [[_COMMUNITY_Community 35|Community 35]]
 - [[_COMMUNITY_Community 36|Community 36]]
 - [[_COMMUNITY_Community 37|Community 37]]
@@ -42,6 +42,7 @@
 - [[_COMMUNITY_Community 41|Community 41]]
 - [[_COMMUNITY_Community 42|Community 42]]
 - [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `RouteDirection` - 73 edges
@@ -51,7 +52,7 @@
 5. `Stop` - 68 edges
 6. `DataLoad` - 59 edges
 7. `RouteStop` - 57 edges
-8. `React Framework` - 25 edges
+8. `React Framework` - 32 edges
 9. `mark_segments()` - 11 edges
 10. `_deduped_stop_ids_per_direction()` - 8 edges
 
@@ -77,20 +78,20 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.15
-Nodes (67): get_activity(), get_leaderboard(), List routes with total possible segment counts (cached client-side)., Top users by total segments. Supports period filter and pagination.      Query p, Remove same-name + co-located duplicate stops from a direction list.      Preser, Public, read-only view of another explorer's progress.      Returns the same sha, Top users by total segments. Supports period filter and pagination.      Query p, Return ``{(route_id, direction_id): {(from_stop_id, to_stop_id), ...}}``     for (+59 more)
+Cohesion: 0.03
+Nodes (17): ErrorBoundary, Leaflet Map Library, MapLegend(), formatDuration(), PickOverlay(), React Framework, React-Leaflet, cleanLabel() (+9 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.03
-Nodes (13): App(), cleanLabel(), getRouteDisplayText(), useAuth(), ErrorBoundary, Leaflet Map Library, MapLegend(), formatDuration() (+5 more)
+Cohesion: 0.15
+Nodes (67): get_activity(), get_leaderboard(), List routes with total possible segment counts (cached client-side)., Top users by total segments. Supports period filter and pagination.      Query p, Return ``{(route_id, direction_id): deduped_stop_ids}`` for the given     route, Public, read-only view of another explorer's progress.      Returns the same sha, Top users by total segments. Supports period filter and pagination.      Query p, Return ``{(route_id, direction_id): {(from_stop_id, to_stop_id), ...}}``     for (+59 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.11
 Nodes (33): bulk_delete_segments(), debug_directions(), _dedupe_direction_stop_ids(), _deduped_stop_ids_per_direction(), _diff_achievements(), _evaluate_achievements(), get_me(), get_progress() (+25 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.07
-Nodes (22): Verify a Firebase ID token and return the decoded claims., Decorator that requires a valid Firebase auth token.      Sets g.current_user to, require_auth(), verify_firebase_token(), register_cli(), app(), auth_headers(), Pytest fixtures for transit-explorer backend smoke tests.  Strategy: - create (+14 more)
+Cohesion: 0.06
+Nodes (18): add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, add route_directions.encoded_polylines_json  Revision ID: c7e4a2d18b55 Revise, register_cli(), app(), auth_headers(), Pytest fixtures for transit-explorer backend smoke tests.  Strategy: - create, Return headers with a fake bearer token; patch Firebase verification     so any (+10 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.13
@@ -101,12 +102,12 @@ Cohesion: 0.12
 Nodes (4): cached(), fetchRouteDetail(), fetchRoutes(), fetchStops()
 
 ### Community 6 - "Community 6"
-Cohesion: 0.15
-Nodes (4): add user_segments.duration_ms  Revision ID: a1c2e4f9b701 Revises: f838d5f10e8, add data_loads table  Revision ID: b3d09f1e2c44 Revises: a1c2e4f9b701 Create, add route_directions.encoded_polylines_json  Revision ID: c7e4a2d18b55 Revise, SQLAlchemy ORM
+Cohesion: 0.23
+Nodes (11): distSq(), getTripStats(), nearestIndex(), normalizeDirectionId(), pointToSegmentDistSq(), readTripTimes(), recordTripTime(), sliceOneStopPair() (+3 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.24
-Nodes (9): distSq(), getTripStats(), nearestIndex(), pointToSegmentDistSq(), readTripTimes(), recordTripTime(), sliceOneStopPair(), slicePolylineByStops() (+1 more)
+Cohesion: 0.22
+Nodes (8): Verify a Firebase ID token and return the decoded claims., Decorator that requires a valid Firebase auth token.      Sets g.current_user to, require_auth(), verify_firebase_token(), get_engine(), get_engine_url(), run_migrations_online(), Flask Framework
 
 ### Community 8 - "Community 8"
 Cohesion: 0.22
@@ -117,56 +118,56 @@ Cohesion: 0.2
 Nodes (4): If pair_keys[0] was already marked, duration_ms must still land on     the firs, duration_ms on a fresh multi-hop mark attaches to the first new row., test_mark_segments_attaches_duration_to_first_new_row(), test_mark_segments_persists_duration_on_first_row()
 
 ### Community 10 - "Community 10"
-Cohesion: 0.28
-Nodes (7): Regression test: /me/progress totals must match the deduped hops the frontend a, _seed_one_line(), test_progress_total_uses_deduped_stop_count(), test_route_segment_counts_helper_dedupes(), Regression tests for the duplicate-stop dedupe in GET /api/routes/<id>.  Backg, _seed_route_with_trailing_dup(), test_get_route_dedupes_trailing_duplicate_platform()
+Cohesion: 0.38
+Nodes (4): App(), cleanLabel(), getRouteDisplayText(), useAuth()
 
 ### Community 11 - "Community 11"
-Cohesion: 0.33
-Nodes (2): groupIntoJourneys(), makeJourney()
-
-### Community 12 - "Community 12"
 Cohesion: 0.43
 Nodes (7): Achievements & Badges, Gamification, Leaderboard System, Mobile-First UX, Route Tracking, Segment Logging, Transit Explorer
 
-### Community 13 - "Community 13"
+### Community 12 - "Community 12"
 Cohesion: 0.33
 Nodes (7): Interactive Map View (UI), Progress Tracking (UI), Route Segment (UI), Transit Routes List (UI), Seattle Map Geography, Transit Stop (UI), Transit Explorer App (UI)
 
-### Community 14 - "Community 14"
+### Community 13 - "Community 13"
 Cohesion: 0.4
 Nodes (5): fetch_routes_for_agency(), fetch_stops_for_route(), get_client(), Fetch all routes for a given agency., Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP
 
+### Community 14 - "Community 14"
+Cohesion: 0.6
+Nodes (4): Regression test: /me/progress totals must match the deduped hops the frontend a, _seed_one_line(), test_progress_total_uses_deduped_stop_count(), test_route_segment_counts_helper_dedupes()
+
 ### Community 17 - "Community 17"
+Cohesion: 0.67
+Nodes (3): Regression tests for the duplicate-stop dedupe in GET /api/routes/<id>.  Backg, _seed_route_with_trailing_dup(), test_get_route_dedupes_trailing_duplicate_platform()
+
+### Community 18 - "Community 18"
 Cohesion: 0.5
 Nodes (4): Fly.io (Backend Hosting), GitHub Actions (CI/CD), Single Machine Deployment Rationale, Vercel (Frontend Hosting)
 
-### Community 18 - "Community 18"
+### Community 19 - "Community 19"
 Cohesion: 0.67
 Nodes (2): Config, Static fallback config. The Flask app factory reads env vars directly,     so th
 
-### Community 19 - "Community 19"
+### Community 20 - "Community 20"
 Cohesion: 1.0
 Nodes (2): groupIntoJourneys(), makeJourney()
 
-### Community 20 - "Community 20"
+### Community 21 - "Community 21"
 Cohesion: 0.67
 Nodes (3): Firebase Auth, Firebase Keys Not Secrets Rationale, Google Sign-In
 
-### Community 22 - "Community 22"
+### Community 23 - "Community 23"
 Cohesion: 1.0
 Nodes (1): Vite Bundler
 
-### Community 25 - "Community 25"
+### Community 26 - "Community 26"
 Cohesion: 1.0
 Nodes (2): SQLite Database, SQLite for Single-Instance Rationale
 
-### Community 26 - "Community 26"
+### Community 27 - "Community 27"
 Cohesion: 1.0
 Nodes (2): Frontend Favicon, React Logo (asset)
-
-### Community 34 - "Community 34"
-Cohesion: 1.0
-Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
 
 ### Community 35 - "Community 35"
 Cohesion: 1.0
@@ -174,81 +175,83 @@ Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row 
 
 ### Community 36 - "Community 36"
 Cohesion: 1.0
-Nodes (1): Initialize Firebase Admin SDK for token verification.
+Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
 
 ### Community 37 - "Community 37"
 Cohesion: 1.0
-Nodes (1): PostgreSQL Database
+Nodes (1): Initialize Firebase Admin SDK for token verification.
 
 ### Community 38 - "Community 38"
 Cohesion: 1.0
-Nodes (1): Gunicorn WSGI Server
+Nodes (1): PostgreSQL Database
 
 ### Community 39 - "Community 39"
 Cohesion: 1.0
-Nodes (1): OneBusAway API
+Nodes (1): Gunicorn WSGI Server
 
 ### Community 40 - "Community 40"
 Cohesion: 1.0
-Nodes (1): CARTO Basemap Tiles
+Nodes (1): OneBusAway API
 
 ### Community 41 - "Community 41"
 Cohesion: 1.0
-Nodes (1): In-Process Loader Design Rationale
+Nodes (1): CARTO Basemap Tiles
 
 ### Community 42 - "Community 42"
 Cohesion: 1.0
-Nodes (1): Leaderboard Ranking (UI)
+Nodes (1): In-Process Loader Design Rationale
 
 ### Community 43 - "Community 43"
+Cohesion: 1.0
+Nodes (1): Leaderboard Ranking (UI)
+
+### Community 44 - "Community 44"
 Cohesion: 1.0
 Nodes (1): Vite (logo)
 
 ## Knowledge Gaps
 - **41 isolated node(s):** `Static fallback config. The Flask app factory reads env vars directly,     so th`, `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`, `Fetch all routes for a given agency.`, `Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP`, `Lightweight request-payload validators.  Kept dependency-free so we don't pull` (+36 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 11`** (7 nodes): `groupIntoJourneys()`, `makeJourney()`, `PPAchievements()`, `PPOverview()`, `PPRoutes()`, `PublicProfile()`, `PublicProfile.jsx`
+- **Thin community `Community 19`** (3 nodes): `config.py`, `Config`, `Static fallback config. The Flask app factory reads env vars directly,     so th`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 18`** (3 nodes): `config.py`, `Config`, `Static fallback config. The Flask app factory reads env vars directly,     so th`
+- **Thin community `Community 20`** (3 nodes): `groupIntoJourneys()`, `makeJourney()`, `journeyGrouping.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 19`** (3 nodes): `groupIntoJourneys()`, `makeJourney()`, `journeyGrouping.js`
+- **Thin community `Community 23`** (2 nodes): `vite.config.js`, `Vite Bundler`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 22`** (2 nodes): `vite.config.js`, `Vite Bundler`
+- **Thin community `Community 26`** (2 nodes): `SQLite Database`, `SQLite for Single-Instance Rationale`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 25`** (2 nodes): `SQLite Database`, `SQLite for Single-Instance Rationale`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 26`** (2 nodes): `Frontend Favicon`, `React Logo (asset)`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
+- **Thin community `Community 27`** (2 nodes): `Frontend Favicon`, `React Logo (asset)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 35`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 36`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+- **Thin community `Community 36`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (1 nodes): `PostgreSQL Database`
+- **Thin community `Community 37`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (1 nodes): `Gunicorn WSGI Server`
+- **Thin community `Community 38`** (1 nodes): `PostgreSQL Database`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (1 nodes): `OneBusAway API`
+- **Thin community `Community 39`** (1 nodes): `Gunicorn WSGI Server`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (1 nodes): `CARTO Basemap Tiles`
+- **Thin community `Community 40`** (1 nodes): `OneBusAway API`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 41`** (1 nodes): `In-Process Loader Design Rationale`
+- **Thin community `Community 41`** (1 nodes): `CARTO Basemap Tiles`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 42`** (1 nodes): `Leaderboard Ranking (UI)`
+- **Thin community `Community 42`** (1 nodes): `In-Process Loader Design Rationale`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (1 nodes): `Vite (logo)`
+- **Thin community `Community 43`** (1 nodes): `Leaderboard Ranking (UI)`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 44`** (1 nodes): `Vite (logo)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `UserSegment` connect `Community 0` to `Community 8`, `Community 2`, `Community 4`?**
+- **Why does `React Framework` connect `Community 0` to `Community 10`?**
   _High betweenness centrality (0.055) - this node is a cross-community bridge._
-- **Why does `React Framework` connect `Community 1` to `Community 11`?**
-  _High betweenness centrality (0.045) - this node is a cross-community bridge._
-- **Why does `SQLAlchemy ORM` connect `Community 6` to `Community 2`, `Community 3`?**
-  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+- **Why does `UserSegment` connect `Community 1` to `Community 8`, `Community 2`, `Community 4`?**
+  _High betweenness centrality (0.051) - this node is a cross-community bridge._
+- **Why does `SQLAlchemy ORM` connect `Community 3` to `Community 2`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
 - **Are the 71 inferred relationships involving `RouteDirection` (e.g. with `Flask CLI commands for Transit Explorer.  Registered in app/__init__.py via ap` and `Refresh transit routes/stops/directions from OneBusAway.`) actually correct?**
   _`RouteDirection` has 71 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 70 inferred relationships involving `UserSegment` (e.g. with `Flask CLI commands for Transit Explorer.  Registered in app/__init__.py via ap` and `Refresh transit routes/stops/directions from OneBusAway.`) actually correct?**

@@ -40,6 +40,11 @@ export function AuthProvider({ children }) {
   );
 }
 
+// useAuth lives alongside the provider for ergonomic imports. The
+// react-refresh rule wants component-only files; splitting just to
+// satisfy it would hurt readability without affecting fast-refresh in
+// practice (the hook is referentially stable).
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

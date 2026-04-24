@@ -1,52 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchUserProfile } from "../services/api";
-
-/* Group consecutive same-direction hops into a single "ride". Mirrors the
- * grouping used in UserProgress so the public view feels familiar. */
-function groupIntoJourneys(segments) {
-  if (!segments?.length) return [];
-  const sorted = [...segments].sort(
-    (a, b) => new Date(a.completed_at) - new Date(b.completed_at),
-  );
-  const journeys = [];
-  let run = [sorted[0]];
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = run[run.length - 1];
-    const cur = sorted[i];
-    if (
-      cur.direction_id === prev.direction_id &&
-      cur.from_stop_id === prev.to_stop_id
-    ) {
-      run.push(cur);
-    } else {
-      journeys.push(makeJourney(run));
-      run = [cur];
-    }
-  }
-  journeys.push(makeJourney(run));
-  return journeys.reverse();
-}
-
-function makeJourney(segs) {
-  const first = segs[0];
-  const last = segs[segs.length - 1];
-  return {
-    key: `${first.direction_id}-${first.from_stop_id}-${last.to_stop_id}-${first.completed_at}`,
-    directionId: first.direction_id,
-    directionName: first.direction_name || first.direction_id,
-    boardStop: first.from_stop_name || first.from_stop_id,
-    alightStop: last.to_stop_name || last.to_stop_id,
-    stopCount: segs.length + 1,
-    date: new Date(first.completed_at).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year:
-        new Date(first.completed_at).getFullYear() !== new Date().getFullYear()
-          ? "numeric"
-          : undefined,
-    }),
-  };
-}
+import { groupIntoJourneys } from "./journeyGrouping";
 
 function PublicProfile({ userId, fallbackEntry, onClose }) {
   const [data, setData] = useState(null);
@@ -88,13 +42,13 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
     data?.total_segments ?? fallbackEntry?.total_segments ?? 0;
   const totalRoutes = data?.total_routes ?? fallbackEntry?.total_routes ?? 0;
   const completedRoutes = data?.completed_routes ?? 0;
-  const progress = data?.progress || [];
+  const progress = useMemo(() => data?.progress || [], [data]);
   const achievements = data?.achievements || [];
 
   const journeysByRoute = useMemo(() => {
     const map = {};
     for (const rp of progress) {
-      map[rp.route_id] = groupIntoJourneys(rp.segments);
+      map[rp.route_id] = groupIntoJourneys(rp.segments, rp.directions);
     }
     return map;
   }, [progress]);
@@ -102,6 +56,9 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
   const unlocked = achievements.filter((a) => a.unlocked);
 
   return (
+    // Backdrop click-to-close. Keyboard users dismiss with Escape
+    // (handled by the parent), so a click handler alone is intentional.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div
       className="public-profile-overlay"
       role="dialog"
@@ -171,7 +128,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
               </div>
             </div>
 
-            <nav className="pp-tabs" role="tablist">
+            <div className="pp-tabs" role="tablist">
               {[
                 { key: "overview", label: "Overview" },
                 { key: "routes", label: `Routes (${progress.length})` },
@@ -191,7 +148,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
                   {t.label}
                 </button>
               ))}
-            </nav>
+            </div>
 
             <div className="pp-body">
               {view === "overview" && (
@@ -222,7 +179,7 @@ function PPOverview({ progress, achievements }) {
   if (!progress.length) {
     return (
       <div className="empty-state mini">
-        This explorer hasn't logged any rides yet.
+        This explorer hasn&apos;t logged any rides yet.
       </div>
     );
   }
@@ -236,9 +193,7 @@ function PPOverview({ progress, achievements }) {
               <span
                 className="pp-route-pill"
                 style={{
-                  background: r.route_color
-                    ? `#${r.route_color}`
-                    : "#64748b",
+                  background: r.route_color ? `#${r.route_color}` : "#64748b",
                 }}
               >
                 {r.route_name}
@@ -248,9 +203,7 @@ function PPOverview({ progress, achievements }) {
                   className="pp-route-mini-fill"
                   style={{
                     width: `${Math.min(100, r.completion_pct)}%`,
-                    background: r.route_color
-                      ? `#${r.route_color}`
-                      : "#60a5fa",
+                    background: r.route_color ? `#${r.route_color}` : "#60a5fa",
                   }}
                 />
               </div>
@@ -284,7 +237,7 @@ function PPRoutes({ progress, journeysByRoute }) {
   if (!progress.length) {
     return (
       <div className="empty-state mini">
-        This explorer hasn't logged any rides yet.
+        This explorer hasn&apos;t logged any rides yet.
       </div>
     );
   }
@@ -304,9 +257,7 @@ function PPRoutes({ progress, journeysByRoute }) {
               <span
                 className="pp-route-pill"
                 style={{
-                  background: r.route_color
-                    ? `#${r.route_color}`
-                    : "#64748b",
+                  background: r.route_color ? `#${r.route_color}` : "#64748b",
                 }}
               >
                 {r.route_name}
@@ -328,9 +279,7 @@ function PPRoutes({ progress, journeysByRoute }) {
                 className="pp-route-bar-fill"
                 style={{
                   width: `${Math.min(100, r.completion_pct)}%`,
-                  background: r.route_color
-                    ? `#${r.route_color}`
-                    : "#60a5fa",
+                  background: r.route_color ? `#${r.route_color}` : "#60a5fa",
                 }}
               />
             </div>
