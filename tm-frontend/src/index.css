@@ -90,6 +90,7 @@ button {
 .app {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   background: var(--bg);
@@ -2857,6 +2858,18 @@ button {
   }
   .leaflet-bottom.leaflet-right .leaflet-control-attribution {
     border-radius: 0 4px 0 0;
+  }
+
+  /* Prevent iOS Safari from treating swipes on non-scrollable fixed/absolute
+     overlays as document-level scroll gestures (rubber-band bounce). */
+  .mobile-sidebar-toggle,
+  .mobile-current-route,
+  .pick-overlay,
+  .map-hero-hint,
+  .map-help-button,
+  .map-toast,
+  .popup-toast-stack {
+    touch-action: none;
   }
 }
 
