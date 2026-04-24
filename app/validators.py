@@ -74,11 +74,16 @@ def validate_duration_ms(value, field="duration_ms", required=False):
     return iv
 
 
-def validate_id_list(value, field, max_len=MAX_BULK_IDS):
+def validate_id_list(value, field):
+    """Validate a list of positive integer IDs (e.g. for bulk delete).
+
+    Always capped at ``MAX_BULK_IDS`` so a malicious client can't OOM
+    the worker by POSTing a million-element array.
+    """
     if not isinstance(value, list):
         raise ValueError(f"{field} must be a list")
-    if len(value) > max_len:
-        raise ValueError(f"{field} exceeds {max_len} entries")
+    if len(value) > MAX_BULK_IDS:
+        raise ValueError(f"{field} exceeds {MAX_BULK_IDS} entries")
     out = []
     for i, item in enumerate(value):
         if not isinstance(item, int) or item <= 0:

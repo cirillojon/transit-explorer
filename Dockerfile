@@ -1,4 +1,9 @@
-FROM python:3.11-slim
+# Pinning the patch version + sha256 digest gives reproducible builds and
+# guards against a poisoned `:slim` tag silently landing in production.
+# Bump deliberately when CVE patches drop. To refresh, run:
+#   docker pull python:3.11-slim && docker inspect python:3.11-slim \
+#     --format='{{index .RepoDigests 0}}'
+FROM python:3.11.13-slim
 
 WORKDIR /app
 

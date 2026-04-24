@@ -39,10 +39,11 @@ Technical reference for Transit Explorer. The product overview lives in
 | `FIREBASE_PROJECT_ID`                 | fallback | `""`                            | Used when no service-account file is mounted                                             |
 | `SQLALCHEMY_DATABASE_URI`             | no       | `sqlite:///tm-instance/data.db` | Override to point at Postgres                                                            |
 | `ALLOWED_ORIGINS`                     | prod     | `""`                            | Comma-separated origin allow-list for `/api/*`; blank denies browser origins outside dev |
-| `FLASK_ENV`                           | no       | `production`                    | If set to `development` and `ALLOWED_ORIGINS` is blank, CORS falls back to `*`           |
+| `FLASK_ENV`                           | no       | `production`                    | In `development` with `ALLOWED_ORIGINS` blank, CORS defaults to localhost dev origins (5173, 8880). Wildcard `*` is **never** allowed and fails fast on boot. |
 | `FLASK_PORT`                          | no       | `5000` / `8880` in Docker       | Port the server binds                                                                    |
 | `FLASK_DEBUG`                         | no       | `0`                             | Used by `flask run` in local development                                                 |
 | `LOG_LEVEL`                           | no       | `INFO`                          | `DEBUG` / `INFO` / `WARNING` / `ERROR`                                                   |
+| `LOG_FORMAT`                          | no       | `text`                          | `json` for structured logs (Fly/Loki/Datadog ingest); `text` for human-friendly local dev |
 | `WEB_CONCURRENCY`                     | no       | `4`                             | Gunicorn workers; raise if you scale the Fly machine up                                  |
 | `GUNICORN_TIMEOUT`                    | no       | `30`                            | Per-request timeout for gunicorn (seconds)                                               |
 | `SKIP_DB_UPGRADE`                     | no       | `0`                             | Set `1` to skip the `bin/start` boot-time `flask db upgrade`                             |
@@ -92,15 +93,16 @@ All endpoints under `/api`. Endpoints marked 🔒 require an `Authorization: Bea
 | GET       | `/api/debug/directions`                    | Debug-only summary of route-direction/polyline coverage                             |
 | GET       | `/api/routes`                              | All routes with computed `total_segments` (cached 5 minutes)                        |
 | GET       | `/api/routes/<route_id>`                   | Route detail with directions, encoded polylines, stop map, and `total_segments`     |
-| GET       | `/api/stops`                               | All loaded stops                                                                    |
-| GET       | `/api/leaderboard?period=all\|week\|month` | Top users with pagination via `limit` and `offset`                                  |
+| GET       | `/api/stops`                               | Paginated stop list. Query: `limit` (default 1000, max 5000), `offset`, optional `route_id` filter |
+| GET       | `/api/leaderboard?period=all\|week\|month` | Top users with pagination via `limit` and `offset`. Invalid `period` returns 400. Tie-broken by user id for deterministic ordering. |
 | 🔒 GET    | `/api/me`                                  | Current user profile plus summary totals                                            |
 | 🔒 GET    | `/api/me/progress`                         | Per-route completion summary with segment detail                                    |
 | 🔒 GET    | `/api/me/stats`                            | Rank, 14-day sparkline, top routes, and achievements                                |
 | 🔒 GET    | `/api/me/activity`                         | Recent journeys collapsed across adjacent hops in the same direction                |
-| 🔒 POST   | `/api/me/segments`                         | Mark a contiguous run of hops; returns `created`, `skipped`, `segments`, and totals |
-| 🔒 PUT    | `/api/me/segments/<segment_id>/notes`      | Update notes on a previously logged segment                                         |
-| 🔒 PUT    | `/api/me/segments/<segment_id>/duration`   | Update the recorded ride duration on a logged segment                               |
+| 🔒 POST   | `/api/me/segments`                         | Mark a contiguous run of hops; returns `created`, `skipped`, `segments`, and totals. Optional `completed_at` (ISO-8601, must be within ±24h of server time) for backdating. |
+| 🔒 PATCH  | `/api/me/segments/<segment_id>`            | Atomic partial update of `notes` and/or `duration_ms` on a logged segment. Preferred over the legacy split PUTs below. |
+| 🔒 PUT    | `/api/me/segments/<segment_id>/notes`      | Legacy notes-only update; retained for client compatibility                          |
+| 🔒 PUT    | `/api/me/segments/<segment_id>/duration`   | Legacy duration-only update; retained for client compatibility                       |
 | 🔒 DELETE | `/api/me/segments/<segment_id>`            | Delete a single logged segment                                                      |
 | 🔒 DELETE | `/api/me/segments/bulk`                    | Bulk-delete by `ids[]`, or wipe an entire route with `route_id` + `confirm=true`    |
 

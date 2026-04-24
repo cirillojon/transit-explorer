@@ -16,6 +16,18 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
+      - name: Guard — no committed service-account.json
+        # Tracking a Firebase service-account.json in git would leak a
+        # private key the moment the repo is public/forked. Allow only
+        # the .env.example placeholder reference; everything else fails.
+        run: |
+          set -e
+          if git ls-files | grep -E '(^|/)service-account(\.[^/]+)?\.json$' > /tmp/sa-hits.txt; then
+            echo "❌ committed service-account JSON detected:"
+            cat /tmp/sa-hits.txt
+            exit 1
+          fi
+          echo "✓ no service-account JSON tracked in git"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

@@ -26,11 +26,10 @@ services:
       - tm_data:/app/tm-instance
       - ./service-account.json:/run/secrets/firebase.json:ro
     healthcheck:
-      test:
-        - CMD
-        - python3
-        - -c
-        - "import urllib.request,sys; urllib.request.urlopen('http://localhost:8880/api/health',timeout=3); sys.exit(0)"
+      # curl is already installed in the image (Dockerfile apt step) and
+      # gives a clearer signal than urllib's `URLError` traceback when
+      # the backend is reachable but returning non-2xx.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8880/api/health"]
       interval: 30s
       timeout: 5s
       retries: 5
