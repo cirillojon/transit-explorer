@@ -175,7 +175,9 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
 }
 
 function PPOverview({ progress, achievements }) {
-  const top = progress.slice(0, 5);
+  const top = [...progress]
+    .sort((a, b) => b.completion_pct - a.completion_pct)
+    .slice(0, 5);
   if (!progress.length) {
     return (
       <div className="empty-state mini">
@@ -241,9 +243,10 @@ function PPRoutes({ progress, journeysByRoute }) {
       </div>
     );
   }
+  const sorted = [...progress].sort((a, b) => b.completion_pct - a.completion_pct);
   return (
     <div className="pp-route-list">
-      {progress.map((r) => {
+      {sorted.map((r) => {
         const isOpen = openId === r.route_id;
         const journeys = journeysByRoute[r.route_id] || [];
         return (

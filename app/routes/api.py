@@ -392,11 +392,7 @@ def get_user_profile(user_id):
 
         progress_list = sorted(
             by_route.values(),
-            key=lambda x: (
-                x['completion_pct'] >= 100,
-                -x['completion_pct'],
-                -x['completed_segments'],
-            ),
+            key=lambda x: (-x['completion_pct'], -x['completed_segments']),
         )
 
     return jsonify({
