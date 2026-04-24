@@ -183,8 +183,9 @@ organization (`transit-explorer.sentry.io`). If events aren't showing up:
      should print `SENTRY_DSN`.
    - Frontend: open the deployed site, in DevTools console run
      ```js
-     window.__SENTRY__[window.__SENTRY__.version]
-       .defaultCurrentScope.getClient()?.getDsn();
+     window.__SENTRY__[window.__SENTRY__.version].defaultCurrentScope
+       .getClient()
+       ?.getDsn();
      ```
      `undefined` → DSN was missing at build time. Vercel env vars only
      apply to **new** builds — redeploy without build cache after
@@ -199,7 +200,7 @@ organization (`transit-explorer.sentry.io`). If events aren't showing up:
 4. **Vercel ↔ Sentry integration gotcha.** Installing the Vercel
    integration creates/edits non-`VITE_`-prefixed vars (`SENTRY_DSN`,
    `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`) and may link
-   the project to a *different* Sentry project than the one you set up
+   the project to a _different_ Sentry project than the one you set up
    manually. After adding or removing the integration, verify
    `VITE_SENTRY_DSN` is still present in Vercel env vars and points at
    `transit-explorer-frontend`, then redeploy without build cache.
