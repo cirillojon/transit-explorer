@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * Auto-dismissing toast state.
  *
  * Returns the current toast (or null) and a stable `showToast(msg, kind)`
- * setter. Replays clear the previous timer so rapid toasts don't dismiss
- * each other prematurely. The interval is cleared on unmount.
+ * setter. Repeated calls clear the previous timer so rapid toasts don't
+ * dismiss each other prematurely. The interval is cleared on unmount.
  */
 export default function useToast(durationMs = 2500) {
   const [toast, setToast] = useState(null);

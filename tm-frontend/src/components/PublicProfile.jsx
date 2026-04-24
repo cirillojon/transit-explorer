@@ -48,7 +48,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
   const journeysByRoute = useMemo(() => {
     const map = {};
     for (const rp of progress) {
-      map[rp.route_id] = groupIntoJourneys(rp.segments);
+      map[rp.route_id] = groupIntoJourneys(rp.segments, rp.directions);
     }
     return map;
   }, [progress]);

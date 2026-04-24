@@ -57,7 +57,8 @@ class ErrorBoundary extends React.Component {
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: "0.4rem" }}>
-              ⚠️ Something went wrong loading {label}.
+              <span aria-hidden="true">⚠️ </span>
+              Something went wrong loading {label}.
             </div>
             <div style={{ opacity: 0.85, marginBottom: "0.75rem" }}>
               The rest of the app should still work. Try again, or reload if it

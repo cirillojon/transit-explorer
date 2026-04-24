@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchRouteDetail, invalidateCache } from "../../../services/api";
 import { normalizeDirectionId } from "../mapUtils";
 
@@ -23,6 +23,14 @@ export default function useRouteDetail(selectedRoute, { onLoadError } = {}) {
   const [routeDetail, setRouteDetail] = useState(null);
   const [activeDirection, setActiveDirection] = useState(null);
 
+  // Keep the latest onLoadError in a ref so the fetch effect doesn't
+  // need it in its deps — otherwise an inline arrow from the caller
+  // would re-trigger the fetch on every render.
+  const onLoadErrorRef = useRef(onLoadError);
+  useEffect(() => {
+    onLoadErrorRef.current = onLoadError;
+  }, [onLoadError]);
+
   useEffect(() => {
     if (!selectedRoute) {
       setRouteDetail(null);
@@ -43,14 +51,11 @@ export default function useRouteDetail(selectedRoute, { onLoadError } = {}) {
       })
       .catch(() => {
         if (cancelled) return;
-        onLoadError?.();
+        onLoadErrorRef.current?.();
       });
     return () => {
       cancelled = true;
     };
-    // onLoadError is intentionally excluded — it's a stable showToast in
-    // practice and including it would refetch the route every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRoute]);
 
   const directionChoices = useMemo(() => {
