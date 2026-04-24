@@ -2,6 +2,7 @@ import json
 import os
 import time
 import logging
+import httpx
 import requests
 from datetime import datetime, timedelta, timezone
 
@@ -17,11 +18,24 @@ REQUEST_DELAY = 0.8
 MAX_RETRIES = 5
 COMMIT_BATCH = 25
 
+# Both `requests` (legacy paths) and `httpx` (oba_service.py) raise their
+# own connection-error hierarchies. Treat both as retryable so a single
+# transient blip doesn't fail the whole agency refresh.
 _RETRYABLE_EXCEPTIONS = (
     requests.RequestException,
+    httpx.HTTPError,
     TimeoutError,
     ConnectionError,
 )
+
+
+def _is_retryable_status(exc) -> bool:
+    """Inspect ``httpx.HTTPStatusError`` / ``requests.HTTPError`` for
+    retryable status codes (429, 502, 503, 504) without resorting to
+    fragile string matching against the exception message."""
+    resp = getattr(exc, 'response', None)
+    code = getattr(resp, 'status_code', None) or getattr(resp, 'status', None)
+    return code in (429, 502, 503, 504)
 
 
 def _utcnow():
@@ -33,6 +47,15 @@ def _call_with_backoff(fn, *args, label=""):
         try:
             return fn(*args)
         except _RETRYABLE_EXCEPTIONS as e:
+            # Inspect HTTP status when present — a 4xx that isn't 429
+            # should fail fast (e.g. 401 OBA key, 404 route id) rather
+            # than burn through MAX_RETRIES * exponential backoff.
+            resp = getattr(e, 'response', None)
+            code = getattr(resp, 'status_code', None) or getattr(resp, 'status', None)
+            if code is not None and 400 <= code < 500 and code != 429:
+                logger.error("Non-retryable HTTP %s on %s: %s",
+                             code, label, str(e)[:200])
+                raise
             if attempt < MAX_RETRIES - 1:
                 wait = 2 ** attempt
                 logger.warning("Retryable error on %s: %s, waiting %ss (attempt %d/%d)",
@@ -41,17 +64,17 @@ def _call_with_backoff(fn, *args, label=""):
             else:
                 raise
         except Exception as e:
-            err_str = str(e)
-            is_retryable = ("429" in err_str
-                            or "timeout" in err_str.lower()
-                            or "timed out" in err_str.lower())
-            if is_retryable and attempt < MAX_RETRIES - 1:
+            # Last-resort retry for SDK-wrapped errors that don't
+            # subclass requests/httpx — same status-code probe as above,
+            # falling back to keyword sniffing only when the exception
+            # exposes no structured response.
+            if _is_retryable_status(e) and attempt < MAX_RETRIES - 1:
                 wait = 2 ** attempt
                 logger.warning("Retryable error on %s: %s, waiting %ss (attempt %d/%d)",
-                               label, err_str[:80], wait, attempt + 1, MAX_RETRIES)
+                               label, str(e)[:80], wait, attempt + 1, MAX_RETRIES)
                 time.sleep(wait)
-            else:
-                raise
+                continue
+            raise
 
 
 def load_transit_data(agency_ids=None, force=False, ttl_hours=None):
@@ -61,6 +84,14 @@ def load_transit_data(agency_ids=None, force=False, ttl_hours=None):
             ttl_hours = float(os.getenv("OBA_REFRESH_TTL_HOURS", "24"))
         except ValueError:
             ttl_hours = 24.0
+    # Negative or zero TTL would either spin the loader forever (0)
+    # or yield undefined behaviour (negative). Clamp + warn loudly.
+    if ttl_hours <= 0:
+        logger.warning(
+            "OBA_REFRESH_TTL_HOURS=%s is invalid; falling back to 24h",
+            ttl_hours,
+        )
+        ttl_hours = 24.0
     targets = list(agency_ids) if agency_ids else list(AGENCIES)
     logger.info("OBA load: agencies=%s force=%s ttl=%sh", targets, force, ttl_hours)
     results = {}
@@ -120,6 +151,11 @@ def _refresh_agency(agency_id, *, force, ttl_hours):
     pending = 0
     for route_data in to_load:
         route_id = route_data['id']
+        # Wrap each route's writes in a SAVEPOINT so a single failed
+        # route doesn't roll back previously-successful sibling routes
+        # that share the current COMMIT_BATCH window. Without this,
+        # one bad fetch can erase 24 successful routes.
+        sp = db.session.begin_nested()
         try:
             _upsert_route(route_data)
             time.sleep(REQUEST_DELAY)
@@ -127,6 +163,7 @@ def _refresh_agency(agency_id, *, force, ttl_hours):
                 fetch_stops_for_route, route_id,
                 label=f"stops-for-route/{route_id}")
             _process_route_stops(route_id, stops_data)
+            sp.commit()
             loaded += 1
             pending += 1
             if pending >= COMMIT_BATCH:
@@ -134,7 +171,10 @@ def _refresh_agency(agency_id, *, force, ttl_hours):
                 pending = 0
         except Exception as e:
             logger.exception("Agency %s: error on route %s", agency_id, route_id)
-            db.session.rollback()
+            try:
+                sp.rollback()
+            except Exception:
+                db.session.rollback()
             error = str(e)
             continue
 

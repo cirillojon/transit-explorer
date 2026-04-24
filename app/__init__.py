@@ -14,11 +14,13 @@ hacking), set `AUTO_UPGRADE_ON_BOOT=1` to run `flask db upgrade` from
 within create_app(). This is OFF by default and not used in CI/prod.
 """
 import os
+import re
+import uuid
 import logging
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -43,17 +45,19 @@ limiter = Limiter(
 )
 
 # ─── Logging ─────────────────────────────────────────────────────────
-_log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(
-    level=getattr(logging, _log_level, logging.INFO),
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+from app.logging_config import configure_logging  # noqa: E402
+configure_logging()
 _flask_env = os.getenv("FLASK_ENV", "").lower()
 _werkzeug_level = logging.INFO if _flask_env != "production" else logging.WARNING
 logging.getLogger("werkzeug").setLevel(_werkzeug_level)
 for _noisy in ("urllib3", "httpx", "httpcore"):
     logging.getLogger(_noisy).setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
+# ASCII-only request id: alphanumerics, dash, underscore; 1-64 chars.
+# Intentionally stricter than `str.isalnum()`, which accepts unicode
+# letters/digits and would defeat log correlation.
+_SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
 def create_app():
@@ -81,15 +85,30 @@ def create_app():
     migrations_dir = os.path.join(os.path.dirname(__file__), "migrations")
     migrate.init_app(app, db, directory=migrations_dir)
 
-    # CORS — strict in production, permissive only in development.
+    # CORS — strict in production, localhost-only in development.
+    # Wildcard origins are NEVER allowed: they make CSRF + token-stealing
+    # browser attacks trivially worse, and a misconfigured FLASK_ENV
+    # shouldn't be enough to expose the API to every site on the web.
     raw_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
     flask_env = os.getenv("FLASK_ENV", "").lower()
     if raw_origins:
         origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+        if "*" in origins:
+            raise RuntimeError(
+                "ALLOWED_ORIGINS=* is not permitted. List explicit origins."
+            )
         logger.info("CORS allowed origins: %s", origins)
     elif flask_env == "development":
-        origins = "*"
-        logger.info("FLASK_ENV=development — CORS allowing all origins.")
+        origins = [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:8880",
+            "http://127.0.0.1:8880",
+        ]
+        logger.warning(
+            "FLASK_ENV=development and ALLOWED_ORIGINS unset — "
+            "defaulting CORS to localhost dev origins: %s", origins,
+        )
     else:
         raise RuntimeError(
             "ALLOWED_ORIGINS must be set in production. "
@@ -137,6 +156,37 @@ def create_app():
             "error": "Rate limit exceeded",
             "detail": getattr(e, "description", "too many requests"),
         }), 429
+
+    # ─── Request tracing ──────────────────────────────────────
+    # nginx generates and forwards `X-Request-ID`. We honor an inbound
+    # value if (and only if) it looks safe — short, ASCII alphanumeric +
+    # dash/underscore. Note: we use an explicit ASCII regex rather than
+    # `str.isalnum()`, which returns True for many non-ASCII unicode
+    # letters/digits and would break log correlation + header safety.
+    # Otherwise we mint a fresh UUID4 so a malicious client can't poison
+    # logs with control chars or unbounded strings. The id is echoed on
+    # the response and attached to Sentry events as a context value
+    # (NOT a tag — request ids are unbounded-cardinality and would
+    # blow up Sentry's tag index).
+    @app.before_request
+    def _attach_request_id():
+        incoming = request.headers.get("X-Request-ID", "")
+        if incoming and _SAFE_REQUEST_ID.match(incoming):
+            g.request_id = incoming
+        else:
+            g.request_id = uuid.uuid4().hex
+        try:
+            import sentry_sdk
+            sentry_sdk.set_context("request", {"id": g.request_id})
+        except ImportError:
+            pass
+
+    @app.after_request
+    def _echo_request_id(response):
+        rid = getattr(g, "request_id", None)
+        if rid:
+            response.headers["X-Request-ID"] = rid
+        return response
 
     # Boot timestamp is handy for /api/health.
     app.boot_at = datetime.now(timezone.utc).replace(tzinfo=None)
