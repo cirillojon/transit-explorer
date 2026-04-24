@@ -4,6 +4,7 @@ import RouteList from "./components/RouteList";
 import UserProgress from "./components/UserProgress";
 import Leaderboard from "./components/Leaderboard";
 import PublicProfile from "./components/PublicProfile";
+import ErrorBoundary from "./components/ErrorBoundary";
 import {
   fetchRoutes,
   fetchProgress,
@@ -135,7 +136,6 @@ function App() {
       setActivity(act);
     } catch (err) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error("Failed to load user data:", err);
       }
     }
@@ -212,6 +212,24 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     let timer;
+    let attempt = 0;
+    const MAX_ATTEMPTS = 8;
+    const BASE_DELAY = 3000;
+    const MAX_DELAY = 60000;
+    const scheduleRetry = () => {
+      attempt += 1;
+      if (attempt >= MAX_ATTEMPTS) {
+        setError(
+          "Transit data is taking longer than expected to load. Please refresh the page to try again.",
+        );
+        setLoading(false);
+        return;
+      }
+      // Exponential backoff with jitter: 3s, 6s, 12s, 24s … capped at 60s.
+      const exp = Math.min(BASE_DELAY * 2 ** (attempt - 1), MAX_DELAY);
+      const delay = exp / 2 + Math.random() * (exp / 2);
+      timer = setTimeout(() => !cancelled && loadRoutes(), delay);
+    };
     const loadRoutes = async () => {
       try {
         setLoading(true);
@@ -221,15 +239,16 @@ function App() {
         if (!routesData?.length) {
           setError("Transit data is loading on the server. Retrying…");
           setLoading(false);
-          timer = setTimeout(() => !cancelled && loadRoutes(), 5000);
+          scheduleRetry();
           return;
         }
+        attempt = 0;
         setRoutes(routesData);
       } catch {
         if (cancelled) return;
         setError("Transit data is loading on the server. Retrying…");
         setLoading(false);
-        timer = setTimeout(() => !cancelled && loadRoutes(), 5000);
+        scheduleRetry();
         return;
       } finally {
         if (!cancelled) setLoading(false);
@@ -374,10 +393,18 @@ function App() {
           <span
             className="clear"
             role="button"
+            tabIndex={0}
             aria-label="Clear selected route"
             onClick={(e) => {
               e.stopPropagation();
               setSelectedRoute(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedRoute(null);
+              }
             }}
           >
             ✕
@@ -386,6 +413,9 @@ function App() {
       )}
 
       {sidebarOpen && (
+        // Decorative backdrop — keyboard users close the sidebar via the
+        // toolbar toggle button, not the backdrop itself.
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
         <div
           className="sidebar-backdrop"
           onClick={() => setSidebarOpen(false)}
@@ -459,34 +489,40 @@ function App() {
           {error && <div className="error">{error}</div>}
 
           {activeTab === "routes" && (
-            <RouteList
-              routes={routes}
-              progress={progress}
-              selectedRoute={selectedRoute}
-              onSelectRoute={handleSelectRoute}
-            />
+            <ErrorBoundary compact label="the route list">
+              <RouteList
+                routes={routes}
+                progress={progress}
+                selectedRoute={selectedRoute}
+                onSelectRoute={handleSelectRoute}
+              />
+            </ErrorBoundary>
           )}
 
           {activeTab === "progress" && (
-            <UserProgress
-              progress={progress}
-              stats={stats}
-              profile={profile}
-              activity={activity}
-              onRefresh={loadUserData}
-              onViewSegment={handleViewSegment}
-              highlightedSegment={highlightedSegment}
-              onClearHighlight={() => setHighlightedSegment(null)}
-              onShowAllRoutes={handleShowAllProgressRoutes}
-              onSelectRoute={handleSelectRouteFromProgress}
-            />
+            <ErrorBoundary compact label="your progress">
+              <UserProgress
+                progress={progress}
+                stats={stats}
+                profile={profile}
+                activity={activity}
+                onRefresh={loadUserData}
+                onViewSegment={handleViewSegment}
+                highlightedSegment={highlightedSegment}
+                onClearHighlight={() => setHighlightedSegment(null)}
+                onShowAllRoutes={handleShowAllProgressRoutes}
+                onSelectRoute={handleSelectRouteFromProgress}
+              />
+            </ErrorBoundary>
           )}
 
           {activeTab === "leaderboard" && (
-            <Leaderboard
-              currentUserStats={stats}
-              onSelectUser={(entry) => setViewingUser(entry)}
-            />
+            <ErrorBoundary compact label="the leaderboard">
+              <Leaderboard
+                currentUserStats={stats}
+                onSelectUser={(entry) => setViewingUser(entry)}
+              />
+            </ErrorBoundary>
           )}
         </div>
 
@@ -502,16 +538,18 @@ function App() {
         </div>
       </aside>
 
-      <TransitMap
-        selectedRoute={selectedRoute}
-        completedSegments={completedSegments}
-        onSegmentsMarked={handleSegmentsMarked}
-        highlightedSegment={highlightedSegment}
-        onClearHighlight={() => setHighlightedSegment(null)}
-        onUnlockToast={pushToast}
-        allProgressDetails={allProgressDetails}
-        onClearAllProgress={() => setAllProgressDetails(null)}
-      />
+      <ErrorBoundary compact label="the map">
+        <TransitMap
+          selectedRoute={selectedRoute}
+          completedSegments={completedSegments}
+          onSegmentsMarked={handleSegmentsMarked}
+          highlightedSegment={highlightedSegment}
+          onClearHighlight={() => setHighlightedSegment(null)}
+          onUnlockToast={pushToast}
+          allProgressDetails={allProgressDetails}
+          onClearAllProgress={() => setAllProgressDetails(null)}
+        />
+      </ErrorBoundary>
 
       {/* Stacked achievement popup toasts */}
       <div className="popup-toast-stack">
@@ -523,11 +561,13 @@ function App() {
       </div>
 
       {viewingUser && (
-        <PublicProfile
-          userId={viewingUser.user_id}
-          fallbackEntry={viewingUser}
-          onClose={() => setViewingUser(null)}
-        />
+        <ErrorBoundary compact label="this profile">
+          <PublicProfile
+            userId={viewingUser.user_id}
+            fallbackEntry={viewingUser}
+            onClose={() => setViewingUser(null)}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );

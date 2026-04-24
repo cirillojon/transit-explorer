@@ -114,7 +114,7 @@ function StopMarkersLayer({
             <>
               <br />
               <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                Behind boarding — can&apos;t alight here
+                Behind boarding — can&apos;t get off here
               </span>
             </>
           )}

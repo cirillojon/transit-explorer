@@ -1,23 +1,38 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 /**
  * Onboarding / how-to-use-the-map modal. Shown automatically the first
  * time a signed-in user lands on the app, and re-openable from the
  * floating "?" button on the map.
  */
-function HelpModal({ open, onClose, onDontShowAgain, showDontShowAgain = false }) {
+function HelpModal({
+  open,
+  onClose,
+  onDontShowAgain,
+  showDontShowAgain = false,
+}) {
+  const closeBtnRef = useRef(null);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Move focus into the modal so keyboard users aren't stranded behind it.
+    const id = requestAnimationFrame(() => closeBtnRef.current?.focus());
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(id);
+    };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
+    // Backdrop is the dialog itself; Escape closes it (see effect above),
+    // so click-to-close on the overlay doesn't need a keyboard handler.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div
       className="help-modal-backdrop"
       role="dialog"
@@ -25,8 +40,10 @@ function HelpModal({ open, onClose, onDontShowAgain, showDontShowAgain = false }
       aria-labelledby="help-modal-title"
       onClick={onClose}
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="help-modal" onClick={(e) => e.stopPropagation()}>
         <button
+          ref={closeBtnRef}
           type="button"
           className="help-modal-close"
           onClick={onClose}
