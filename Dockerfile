@@ -1,7 +1,10 @@
-# Pinning the patch version + sha256 digest gives reproducible builds and
-# guards against a poisoned `:slim` tag silently landing in production.
-# Bump deliberately when CVE patches drop. To refresh, run:
-#   docker pull python:3.11-slim && docker inspect python:3.11-slim \
+# Pinning the patch version (rather than the floating `:3.11-slim` tag)
+# limits unexpected base-image churn and makes builds easier to bisect
+# when CVE patches drop. For *fully* reproducible builds (i.e. immune to
+# a tag being re-pushed upstream) also append the sha256 digest:
+#   FROM python:3.11.13-slim@sha256:<digest>
+# To look up the current digest:
+#   docker pull python:3.11.13-slim && docker inspect python:3.11.13-slim \
 #     --format='{{index .RepoDigests 0}}'
 FROM python:3.11.13-slim
 

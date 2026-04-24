@@ -14,6 +14,14 @@ set -euo pipefail
 #   openssl enc -d -aes-256-cbc -pbkdf2 -in <file>.gz.enc -out <file>.gz \
 #     -pass env:BACKUP_PASSPHRASE
 #
+# AES-CBC provides confidentiality but NOT authenticated integrity, and
+# `openssl enc` has no AEAD/GCM mode in its CLI. To detect tampering of
+# encrypted backups we additionally write a keyed HMAC-SHA256 sidecar
+# (`<file>.hmac`) using the same passphrase. Verify before decrypting:
+#   openssl dgst -sha256 -hmac "$BACKUP_PASSPHRASE" <file>.enc
+# and compare against `<file>.enc.hmac`. The unkeyed `.sha256` is only
+# useful for catching accidental corruption — it is NOT a tamper check.
+#
 # A SHA-256 manifest is always written alongside the backup so a
 # corrupted snapshot is detectable on restore (compare with
 # `sha256sum -c <file>.sha256`).
@@ -57,14 +65,18 @@ docker exec "$CONTAINER" rm -f "$TMP_IN_CTR" || true
 gzip -f "$PLAIN"
 
 # Optional symmetric encryption. PBKDF2 + AES-256-CBC is the openssl
-# default since 1.1.1 — no streaming/AEAD, but adequate for at-rest
-# backups. Remove the plaintext .gz once the .enc is on disk.
+# default since 1.1.1 — confidentiality only, no AEAD. To detect
+# tampering we also emit a keyed HMAC-SHA256 sidecar below.
 if [ -n "$PASSPHRASE" ]; then
     openssl enc -aes-256-cbc -pbkdf2 -salt \
         -in "$OUT" -out "${OUT}.enc" \
         -pass env:BACKUP_PASSPHRASE
     rm -f "$OUT"
     OUT="${OUT}.enc"
+    # Keyed MAC over the ciphertext. This is what should be checked
+    # before decrypting; the unkeyed sha256 only catches bit rot.
+    openssl dgst -sha256 -hmac "$PASSPHRASE" "$OUT" \
+        | awk '{print $2}' > "${OUT}.hmac"
 fi
 
 # Always emit a sha256 sidecar so corruption is detectable on restore.
@@ -72,12 +84,17 @@ fi
 
 echo "Wrote $(du -h "$OUT" | cut -f1) -> $OUT"
 echo "SHA256: $(cat "${OUT}.sha256")"
+if [ -n "$PASSPHRASE" ]; then
+    echo "HMAC  : $(cat "${OUT}.hmac")"
+fi
 
 # Prune old backups (and their sidecars). Keep the manifests in lockstep
-# with the data files so we don't leave orphan .sha256 entries behind.
+# with the data files so we don't leave orphan .sha256/.hmac entries
+# behind.
 if [ "$RETAIN" -gt 0 ]; then
     find "$BACKUP_DIR" \
         \( -name 'data-*.db.gz' -o -name 'data-*.db.gz.enc' \
-           -o -name 'data-*.db.gz.sha256' -o -name 'data-*.db.gz.enc.sha256' \) \
+           -o -name 'data-*.db.gz.sha256' -o -name 'data-*.db.gz.enc.sha256' \
+           -o -name 'data-*.db.gz.enc.hmac' \) \
         -type f -mtime "+$RETAIN" -print -delete || true
 fi

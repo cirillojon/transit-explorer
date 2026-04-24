@@ -14,6 +14,7 @@ hacking), set `AUTO_UPGRADE_ON_BOOT=1` to run `flask db upgrade` from
 within create_app(). This is OFF by default and not used in CI/prod.
 """
 import os
+import re
 import uuid
 import logging
 from datetime import datetime, timezone
@@ -52,6 +53,11 @@ logging.getLogger("werkzeug").setLevel(_werkzeug_level)
 for _noisy in ("urllib3", "httpx", "httpcore"):
     logging.getLogger(_noisy).setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
+# ASCII-only request id: alphanumerics, dash, underscore; 1-64 chars.
+# Intentionally stricter than `str.isalnum()`, which accepts unicode
+# letters/digits and would defeat log correlation.
+_SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
 def create_app():
@@ -154,21 +160,24 @@ def create_app():
     # ─── Request tracing ──────────────────────────────────────
     # nginx generates and forwards `X-Request-ID`. We honor an inbound
     # value if (and only if) it looks safe — short, ASCII alphanumeric +
-    # dash. Otherwise we mint a fresh UUID4 so a malicious client can't
-    # poison logs with control chars or unbounded strings. The id is
-    # echoed on the response and tagged on Sentry events.
+    # dash/underscore. Note: we use an explicit ASCII regex rather than
+    # `str.isalnum()`, which returns True for many non-ASCII unicode
+    # letters/digits and would break log correlation + header safety.
+    # Otherwise we mint a fresh UUID4 so a malicious client can't poison
+    # logs with control chars or unbounded strings. The id is echoed on
+    # the response and attached to Sentry events as a context value
+    # (NOT a tag — request ids are unbounded-cardinality and would
+    # blow up Sentry's tag index).
     @app.before_request
     def _attach_request_id():
         incoming = request.headers.get("X-Request-ID", "")
-        if incoming and len(incoming) <= 64 and all(
-            c.isalnum() or c in "-_" for c in incoming
-        ):
+        if incoming and _SAFE_REQUEST_ID.match(incoming):
             g.request_id = incoming
         else:
             g.request_id = uuid.uuid4().hex
         try:
             import sentry_sdk
-            sentry_sdk.set_tag("request_id", g.request_id)
+            sentry_sdk.set_context("request", {"id": g.request_id})
         except ImportError:
             pass
 

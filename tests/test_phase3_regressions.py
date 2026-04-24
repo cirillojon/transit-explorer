@@ -46,7 +46,8 @@ def test_stops_pagination_rejects_garbage(client):
 
 def test_mark_segments_accepts_recent_completed_at(client, auth_headers, seeded_route):
     stops = seeded_route["stops"]
-    ts = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+    sent_dt = datetime.now(timezone.utc) - timedelta(hours=3)
+    ts = sent_dt.isoformat()
     r = client.post(
         "/api/me/segments",
         json={
@@ -60,9 +61,17 @@ def test_mark_segments_accepts_recent_completed_at(client, auth_headers, seeded_
     )
     assert r.status_code == 201
     seg = r.get_json()["segments"][0]
-    # Persisted as naive UTC; parse and compare loosely.
+    # Persisted as naive UTC. The server MUST honor the client-supplied
+    # timestamp (within tight tolerance), not silently overwrite it with
+    # `now()` — otherwise the backdating feature is a no-op.
     persisted = datetime.fromisoformat(seg["completed_at"].replace("Z", ""))
-    assert abs((persisted - datetime.utcnow()).total_seconds()) < 4 * 3600
+    sent_naive_utc = sent_dt.astimezone(timezone.utc).replace(tzinfo=None)
+    delta = abs((persisted - sent_naive_utc).total_seconds())
+    assert delta < 5, (
+        f"server appears to have ignored client completed_at: "
+        f"sent={sent_naive_utc.isoformat()} persisted={persisted.isoformat()} "
+        f"delta={delta}s"
+    )
 
 
 def test_mark_segments_rejects_far_past_completed_at(client, auth_headers, seeded_route):
