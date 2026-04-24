@@ -136,7 +136,6 @@ function App() {
       setActivity(act);
     } catch (err) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error("Failed to load user data:", err);
       }
     }
@@ -394,10 +393,18 @@ function App() {
           <span
             className="clear"
             role="button"
+            tabIndex={0}
             aria-label="Clear selected route"
             onClick={(e) => {
               e.stopPropagation();
               setSelectedRoute(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedRoute(null);
+              }
             }}
           >
             ✕
@@ -406,6 +413,9 @@ function App() {
       )}
 
       {sidebarOpen && (
+        // Decorative backdrop — keyboard users close the sidebar via the
+        // toolbar toggle button, not the backdrop itself.
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
         <div
           className="sidebar-backdrop"
           onClick={() => setSidebarOpen(false)}

@@ -664,6 +664,12 @@ function UserProgress({
                                     }
                                     placeholder="Write a note about this ride..."
                                     rows={2}
+                                    // Auto-focus the inline note editor so
+                                    // typing starts immediately when the user
+                                    // clicks "Add note". Acceptable here
+                                    // because the textarea only mounts in
+                                    // direct response to user action.
+                                    // eslint-disable-next-line jsx-a11y/no-autofocus
                                     autoFocus
                                   />
                                   <div className="note-edit-actions">

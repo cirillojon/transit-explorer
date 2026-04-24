@@ -42,7 +42,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
     data?.total_segments ?? fallbackEntry?.total_segments ?? 0;
   const totalRoutes = data?.total_routes ?? fallbackEntry?.total_routes ?? 0;
   const completedRoutes = data?.completed_routes ?? 0;
-  const progress = data?.progress || [];
+  const progress = useMemo(() => data?.progress || [], [data]);
   const achievements = data?.achievements || [];
 
   const journeysByRoute = useMemo(() => {
@@ -61,6 +61,9 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
       role="dialog"
       aria-modal="true"
       aria-label={`${user.display_name || "Explorer"}'s progress`}
+      // Backdrop click-to-close. Keyboard users dismiss with Escape
+      // (handled by the parent), so a click handler alone is intentional.
+      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
       }}
@@ -125,7 +128,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
               </div>
             </div>
 
-            <nav className="pp-tabs" role="tablist">
+            <div className="pp-tabs" role="tablist">
               {[
                 { key: "overview", label: "Overview" },
                 { key: "routes", label: `Routes (${progress.length})` },
@@ -176,7 +179,7 @@ function PPOverview({ progress, achievements }) {
   if (!progress.length) {
     return (
       <div className="empty-state mini">
-        This explorer hasn't logged any rides yet.
+        This explorer hasn&apos;t logged any rides yet.
       </div>
     );
   }
@@ -234,7 +237,7 @@ function PPRoutes({ progress, journeysByRoute }) {
   if (!progress.length) {
     return (
       <div className="empty-state mini">
-        This explorer hasn't logged any rides yet.
+        This explorer hasn&apos;t logged any rides yet.
       </div>
     );
   }

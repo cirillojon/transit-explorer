@@ -30,6 +30,9 @@ function HelpModal({
   if (!open) return null;
 
   return (
+    // Backdrop is the dialog itself; Escape closes it (see effect above),
+    // so click-to-close on the overlay doesn't need a keyboard handler.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div
       className="help-modal-backdrop"
       role="dialog"
@@ -37,6 +40,7 @@ function HelpModal({
       aria-labelledby="help-modal-title"
       onClick={onClose}
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="help-modal" onClick={(e) => e.stopPropagation()}>
         <button
           ref={closeBtnRef}

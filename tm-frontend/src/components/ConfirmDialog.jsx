@@ -30,9 +30,13 @@ function ConfirmDialog({
 
   if (!open) return null;
   return (
+    // Backdrop click-to-cancel. Keyboard users dismiss with Escape
+    // (handled in the effect above), so the click handler alone is fine.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div className="modal-backdrop" onClick={onCancel}>
       <div
         className="modal-card"
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
         onClick={(e) => e.stopPropagation()}
         role={danger ? "alertdialog" : "dialog"}
         aria-modal="true"

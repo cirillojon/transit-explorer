@@ -22,7 +22,6 @@ class ErrorBoundary extends React.Component {
     // the browser console where users can copy it for bug reports. Hook in
     // a real error tracker (Sentry, etc.) here later if desired.
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.error("Uncaught error:", error, info);
     }
   }

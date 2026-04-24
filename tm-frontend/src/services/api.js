@@ -19,7 +19,7 @@ api.interceptors.request.use(async (config) => {
     try {
       const token = await user.getIdToken();
       config.headers.Authorization = `Bearer ${token}`;
-    } catch (e) {
+    } catch {
       // token fetch failed — request will go un-authed and 401
     }
   }
