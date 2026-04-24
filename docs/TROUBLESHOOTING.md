@@ -173,6 +173,31 @@ flyctl machine restart <machine-id> -a transit-explorer
 
 Always make a copy of the bad DB before overwriting — don't `rm` it.
 
+## Sentry isn't receiving events
+
+First stop for any unhandled error or 5xx investigation is the Sentry
+organization (`transit-explorer.sentry.io`). If events aren't showing up:
+
+1. Confirm the DSN env var is set in the right place:
+   - Backend: `flyctl ssh console -a transit-explorer -C 'env | grep SENTRY'`
+     should print `SENTRY_DSN`.
+   - Frontend: open the deployed site, in DevTools console run
+     `import.meta.env.VITE_SENTRY_DSN` (or check the bundle). Vercel env
+     vars only apply to **new** builds — redeploy after changing them.
+2. `SENTRY_TRACES_SAMPLE_RATE` must be `> 0` for performance events; errors
+   are sent regardless.
+3. Smoke-test directly:
+   ```bash
+   flyctl ssh console -a transit-explorer \
+     -C 'python -c "import sentry_sdk; sentry_sdk.capture_message(\"smoke\")"'
+   ```
+   Frontend: `throw new Error("smoke")` in DevTools.
+4. Check Sentry → Settings → Projects → [project] → **Inbound Filters**
+   (releases without source maps and certain user agents can be filtered).
+
+See [DEVELOPMENT.md §7](./DEVELOPMENT.md#7-error-monitoring-sentry) for the
+full configuration reference.
+
 ## Frontend stuck on a stale build
 
 Vercel caches aggressively. Force a fresh deploy:

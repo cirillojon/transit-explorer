@@ -54,6 +54,7 @@ stay essentially free to host.
 | Storage  | SQLite on a mounted volume (Postgres-ready via `SQLALCHEMY_DATABASE_URI`) |
 | Hosting  | Vercel (frontend) · Fly.io (backend) · Firebase (auth)                    |
 | CI/CD    | GitHub Actions → Fly deploy · Vercel auto-deploy on push                  |
+| Monitoring | Sentry (frontend + backend; errors, traces, source-mapped stacks)       |
 
 ---
 

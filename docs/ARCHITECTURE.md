@@ -22,6 +22,7 @@ Technical reference for Transit Explorer. The product overview lives in
 
 - **Backend** boots through `bin/start prod`: it runs `flask db upgrade` + a schema-drift check under a flock, then spawns a background `flask data load --loop` (the in-process OBA loader) before exec'ing gunicorn with `--preload`. `create_app()` itself does no data fetching or migrations; it just wires extensions and blueprints.
 - **Frontend** is a single-page React app. Tile layer from CARTO, polylines from Google encoded polyline format, auth via Firebase Google sign-in.
+- **Observability:** Sentry is initialized early in both runtimes — backend via `app/observability.py` (called from `create_app()`), frontend via `tm-frontend/src/sentry.js` (imported from `main.jsx`). Both are no-ops when the relevant DSN env var is unset.
 - **Persistence:** SQLite on a mounted volume. The schema is small enough that this works comfortably for a single-instance deployment; switch to Postgres only if you outgrow it.
 
 ---
@@ -53,6 +54,10 @@ Technical reference for Transit Explorer. The product overview lives in
 | `RATELIMIT_STORAGE_URI`               | no       | `memory://`                     | Flask-Limiter storage backend. Use `redis://...` for cross-worker global limits          |
 | `RATELIMIT_ENABLED`                   | no       | `True`                          | Set `False` (case-insensitive) to disable all rate limiting — used by tests              |
 | `DATABASE_URL`                        | no       | —                               | Legacy fallback only; `SQLALCHEMY_DATABASE_URI` takes precedence                         |
+| `SENTRY_DSN`                          | no       | —                               | Enables Sentry error reporting (initialized in `app/observability.py`); blank disables   |
+| `SENTRY_ENVIRONMENT`                  | no       | `FLASK_ENV`                     | Override the Sentry environment label                                                    |
+| `SENTRY_RELEASE`                      | no       | —                               | Tag events with a release identifier (e.g. git SHA)                                      |
+| `SENTRY_TRACES_SAMPLE_RATE`           | no       | `0.1` prod / `0` else           | Performance traces sample rate                                                           |
 
 ### Frontend (`tm-frontend/.env`)
 
@@ -66,6 +71,12 @@ Technical reference for Transit Explorer. The product overview lives in
 | `VITE_FIREBASE_STORAGE_BUCKET`      | yes      |                                                  |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | yes      |                                                  |
 | `VITE_FIREBASE_APP_ID`              | yes      |                                                  |
+| `VITE_SENTRY_DSN`                   | no       | Enables browser Sentry (init in `tm-frontend/src/sentry.js`); blank disables |
+| `VITE_SENTRY_ENVIRONMENT`           | no       | Sentry environment label (e.g. `production` / `preview`)         |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE`    | no       | Performance traces sample rate (default `0.1`)   |
+| `SENTRY_AUTH_TOKEN`                 | build    | Build-time only; uploads source maps from `vite build` |
+| `SENTRY_ORG`                        | build    | `transit-explorer`                               |
+| `SENTRY_PROJECT`                    | build    | `transit-explorer-frontend`                      |
 
 > The frontend `VITE_FIREBASE_*` values are **not secrets** — they're shipped in the bundle. Protect access via Firebase Auth domain restrictions and App Check, not by hiding the keys.
 

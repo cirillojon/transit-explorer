@@ -59,6 +59,9 @@ flyctl deploy --local-only --ha=false --strategy immediate
 | `OBA_REFRESH_TTL_HOURS`               | no       | In-process loader refresh cadence (default `24`). Set in `fly.toml [env]`.                     |
 | `RUN_INPROC_LOADER`                   | no       | Set `0` to disable the bin/start prod background loader loop (default `1`).                    |
 | `AUTO_UPGRADE_ON_BOOT`                | no       | If `1`, `create_app()` re-runs `flask db upgrade`. Off; `bin/start migrate` already does this. |
+| `SENTRY_DSN`                          | no       | Enables backend Sentry. Blank/unset disables. See [DEVELOPMENT.md §7](./DEVELOPMENT.md#7-error-monitoring-sentry). |
+| `SENTRY_ENVIRONMENT`                  | no       | Sentry environment label (defaults to `FLASK_ENV`).                                            |
+| `SENTRY_TRACES_SAMPLE_RATE`           | no       | Performance traces sample rate (default `0.1` in prod).                                        |
 
 ### DNS / custom domain
 
@@ -134,9 +137,21 @@ Set all of these in Vercel → Project → Settings → Environment Variables:
 | `VITE_FIREBASE_STORAGE_BUCKET`      | `<project>.appspot.com`            |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | From Firebase console.             |
 | `VITE_FIREBASE_APP_ID`              | From Firebase console.             |
+| `VITE_SENTRY_DSN`                   | Optional. Enables browser Sentry. |
+| `VITE_SENTRY_ENVIRONMENT`           | Optional. e.g. `production` / `preview`. |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE`    | Optional. Default `0.1`.           |
+| `SENTRY_AUTH_TOKEN`                 | Build-time only (Production + Preview); mark **Sensitive**. Uploads source maps. |
+| `SENTRY_ORG`                        | Build-time. `transit-explorer`.    |
+| `SENTRY_PROJECT`                    | Build-time. `transit-explorer-frontend`. |
 
 If any `VITE_FIREBASE_*` value is missing, the app throws on first load —
 this is intentional, so misconfiguration is immediately visible.
+
+Sentry is optional: with `VITE_SENTRY_DSN` unset the client init is a no-op,
+and without `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT` the build
+still succeeds (no source-map upload). See
+[DEVELOPMENT.md §7](./DEVELOPMENT.md#7-error-monitoring-sentry) for the full
+Sentry setup.
 
 ### Custom domain
 
