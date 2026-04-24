@@ -14,11 +14,12 @@ hacking), set `AUTO_UPGRADE_ON_BOOT=1` to run `flask db upgrade` from
 within create_app(). This is OFF by default and not used in CI/prod.
 """
 import os
+import uuid
 import logging
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -43,11 +44,8 @@ limiter = Limiter(
 )
 
 # ─── Logging ─────────────────────────────────────────────────────────
-_log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(
-    level=getattr(logging, _log_level, logging.INFO),
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+from app.logging_config import configure_logging  # noqa: E402
+configure_logging()
 _flask_env = os.getenv("FLASK_ENV", "").lower()
 _werkzeug_level = logging.INFO if _flask_env != "production" else logging.WARNING
 logging.getLogger("werkzeug").setLevel(_werkzeug_level)
@@ -152,6 +150,34 @@ def create_app():
             "error": "Rate limit exceeded",
             "detail": getattr(e, "description", "too many requests"),
         }), 429
+
+    # ─── Request tracing ──────────────────────────────────────
+    # nginx generates and forwards `X-Request-ID`. We honor an inbound
+    # value if (and only if) it looks safe — short, ASCII alphanumeric +
+    # dash. Otherwise we mint a fresh UUID4 so a malicious client can't
+    # poison logs with control chars or unbounded strings. The id is
+    # echoed on the response and tagged on Sentry events.
+    @app.before_request
+    def _attach_request_id():
+        incoming = request.headers.get("X-Request-ID", "")
+        if incoming and len(incoming) <= 64 and all(
+            c.isalnum() or c in "-_" for c in incoming
+        ):
+            g.request_id = incoming
+        else:
+            g.request_id = uuid.uuid4().hex
+        try:
+            import sentry_sdk
+            sentry_sdk.set_tag("request_id", g.request_id)
+        except ImportError:
+            pass
+
+    @app.after_request
+    def _echo_request_id(response):
+        rid = getattr(g, "request_id", None)
+        if rid:
+            response.headers["X-Request-ID"] = rid
+        return response
 
     # Boot timestamp is handy for /api/health.
     app.boot_at = datetime.now(timezone.utc).replace(tzinfo=None)

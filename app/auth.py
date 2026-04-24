@@ -60,6 +60,11 @@ def require_auth(f):
             logger.info("Created new user (uid=%s)", firebase_uid)
 
         g.current_user = user
+        # Expose firebase_uid on g so the JSON log filter can stamp it on
+        # every record emitted during this request without having to
+        # touch g.current_user (which may not exist for unauthenticated
+        # paths).
+        g.firebase_uid = user.firebase_uid
         # Tag Sentry events with the Firebase UID for this request.
         # Email intentionally NOT forwarded — keep PII out of error reports.
         try:
