@@ -2,6 +2,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import { fetchUserProfile } from "../services/api";
 import { groupIntoJourneys } from "./journeyGrouping";
 
+function sortByCompletion(a, b) {
+  const completionDiff =
+    (Number(b?.completion_pct) || 0) - (Number(a?.completion_pct) || 0);
+  if (completionDiff !== 0) return completionDiff;
+  return (
+    (Number(b?.completed_segments) || 0) -
+    (Number(a?.completed_segments) || 0)
+  );
+}
+
 function PublicProfile({ userId, fallbackEntry, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -176,7 +186,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
 
 function PPOverview({ progress, achievements }) {
   const top = [...progress]
-    .sort((a, b) => b.completion_pct - a.completion_pct)
+    .sort(sortByCompletion)
     .slice(0, 5);
   if (!progress.length) {
     return (
@@ -243,7 +253,7 @@ function PPRoutes({ progress, journeysByRoute }) {
       </div>
     );
   }
-  const sorted = [...progress].sort((a, b) => b.completion_pct - a.completion_pct);
+  const sorted = [...progress].sort(sortByCompletion);
   return (
     <div className="pp-route-list">
       {sorted.map((r) => {
