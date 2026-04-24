@@ -148,7 +148,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
                   {t.label}
                 </button>
               ))}
-            </nav>
+            </div>
 
             <div className="pp-body">
               {view === "overview" && (

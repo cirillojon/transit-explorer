@@ -31,6 +31,21 @@ export default function useRouteDetail(selectedRoute, { onLoadError } = {}) {
     onLoadErrorRef.current = onLoadError;
   }, [onLoadError]);
 
+  // Track the currently selected route id and mounted state so the async
+  // `refreshAfterValidationError` path can bail out if the user switches
+  // routes (or unmounts) mid-fetch.
+  const selectedRouteIdRef = useRef(selectedRoute?.id ?? null);
+  useEffect(() => {
+    selectedRouteIdRef.current = selectedRoute?.id ?? null;
+  }, [selectedRoute]);
+  const mountedRef = useRef(true);
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!selectedRoute) {
       setRouteDetail(null);
@@ -89,10 +104,16 @@ export default function useRouteDetail(selectedRoute, { onLoadError } = {}) {
   );
 
   const refreshAfterValidationError = async (preferredDirectionId) => {
-    if (!routeDetail?.id) return;
+    const targetId = routeDetail?.id;
+    if (!targetId) return;
     try {
-      invalidateCache(`route:${routeDetail.id}`);
-      const fresh = await fetchRouteDetail(routeDetail.id);
+      invalidateCache(`route:${targetId}`);
+      const fresh = await fetchRouteDetail(targetId);
+      // Bail if the user switched routes (or the hook unmounted) while
+      // the refetch was in flight — otherwise we'd paint stale data
+      // belonging to the previous route.
+      if (!mountedRef.current) return;
+      if (selectedRouteIdRef.current !== targetId) return;
       setRouteDetail(fresh);
       const fallbackDirection =
         normalizeDirectionId(preferredDirectionId) ||
