@@ -182,17 +182,31 @@ organization (`transit-explorer.sentry.io`). If events aren't showing up:
    - Backend: `flyctl ssh console -a transit-explorer -C 'env | grep SENTRY'`
      should print `SENTRY_DSN`.
    - Frontend: open the deployed site, in DevTools console run
-     `import.meta.env.VITE_SENTRY_DSN` (or check the bundle). Vercel env
-     vars only apply to **new** builds — redeploy after changing them.
+     ```js
+     window.__SENTRY__[window.__SENTRY__.version]
+       .defaultCurrentScope.getClient()?.getDsn();
+     ```
+     `undefined` → DSN was missing at build time. Vercel env vars only
+     apply to **new** builds — redeploy without build cache after
+     changing them.
 2. `SENTRY_TRACES_SAMPLE_RATE` must be `> 0` for performance events; errors
    are sent regardless.
-3. Smoke-test directly:
-   ```bash
-   flyctl ssh console -a transit-explorer \
-     -C 'python -c "import sentry_sdk; sentry_sdk.capture_message(\"smoke\")"'
-   ```
-   Frontend: `throw new Error("smoke")` in DevTools.
-4. Check Sentry → Settings → Projects → [project] → **Inbound Filters**
+3. Smoke-test directly — see
+   [DEVELOPMENT.md §9 → Sentry smoke tests](./DEVELOPMENT.md#sentry-smoke-tests).
+   Note: a bare `throw new Error(...)` typed into DevTools does **not**
+   trigger Sentry (DevTools-thrown errors bypass `window.onerror`).
+   Use the `captureException` or `setTimeout(throw)` snippets instead.
+4. **Vercel ↔ Sentry integration gotcha.** Installing the Vercel
+   integration creates/edits non-`VITE_`-prefixed vars (`SENTRY_DSN`,
+   `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`) and may link
+   the project to a *different* Sentry project than the one you set up
+   manually. After adding or removing the integration, verify
+   `VITE_SENTRY_DSN` is still present in Vercel env vars and points at
+   `transit-explorer-frontend`, then redeploy without build cache.
+5. **Ad blockers** (uBlock Origin etc.) block `*.ingest.sentry.io` by
+   default. Re-test in incognito with extensions disabled, or watch the
+   Network tab for blocked envelope requests.
+6. Check Sentry → Settings → Projects → [project] → **Inbound Filters**
    (releases without source maps and certain user agents can be filtered).
 
 See [DEVELOPMENT.md §7](./DEVELOPMENT.md#7-error-monitoring-sentry) for the

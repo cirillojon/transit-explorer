@@ -353,17 +353,11 @@ When all three are present, `vite build` generates source maps, uploads them to 
 
 ### Verifying it works
 
-```bash
-# Backend smoke test (after deploy)
-curl -s https://transit-explorer.fly.dev/api/__sentry-debug 2>/dev/null   # expect 404 if no debug route exists
-flyctl ssh console -a transit-explorer -C 'python -c "import sentry_sdk; sentry_sdk.capture_message(\"backend smoke test\")"'
-
-# Frontend: open the deployed site, in DevTools console run:
-#   throw new Error("frontend smoke test")
-# then check Sentry → Issues for both events.
-```
-
-If events don't show up, check Sentry → Settings → Projects → [project] → **Inbound Filters** (releases without source maps and certain user agents can be filtered).
+See [§9 → Sentry smoke tests](#sentry-smoke-tests) for the canonical
+backend and frontend snippets. The frontend snippet uses
+`captureException` / `setTimeout(throw)` rather than a bare
+`throw new Error(...)` typed into DevTools — see the note in that
+section for why.
 
 ### Source code integration
 
