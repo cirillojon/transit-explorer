@@ -56,14 +56,14 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
   const unlocked = achievements.filter((a) => a.unlocked);
 
   return (
+    // Backdrop click-to-close. Keyboard users dismiss with Escape
+    // (handled by the parent), so a click handler alone is intentional.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div
       className="public-profile-overlay"
       role="dialog"
       aria-modal="true"
       aria-label={`${user.display_name || "Explorer"}'s progress`}
-      // Backdrop click-to-close. Keyboard users dismiss with Escape
-      // (handled by the parent), so a click handler alone is intentional.
-      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
       }}
