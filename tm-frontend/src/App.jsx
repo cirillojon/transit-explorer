@@ -196,6 +196,7 @@ function App() {
     if (details.length) {
       setAllProgressDetails(details);
       setSelectedRoute(null);
+      setHighlightedSegment(null);
       setSidebarOpen(false);
     }
 
