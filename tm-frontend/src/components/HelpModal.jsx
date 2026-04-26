@@ -28,7 +28,6 @@ function HelpModal({
   showDontShowAgain = false,
 }) {
   const closeBtnRef = useRef(null);
-  const platform = detectMobilePlatform();
 
   useEffect(() => {
     if (!open) return;
@@ -45,6 +44,8 @@ function HelpModal({
   }, [open, onClose]);
 
   if (!open) return null;
+
+  const platform = detectMobilePlatform();
 
   return (
     // Backdrop is the dialog itself; Escape closes it (see effect above),
@@ -140,7 +141,7 @@ function HelpModal({
             <strong>📱 Add to Home Screen (iOS)</strong>
             <ol className="help-modal-install-steps">
               <li>
-                Tap the <span className="help-modal-share-icon" aria-label="Share icon">⎙</span>{" "}
+                Tap the <span className="help-modal-share-icon" role="img" aria-label="Share icon">⎙</span>{" "}
                 <strong>Share</strong> button at the bottom of Safari.
               </li>
               <li>
@@ -160,7 +161,7 @@ function HelpModal({
             <strong>📱 Add to Home Screen (Android)</strong>
             <ol className="help-modal-install-steps">
               <li>
-                Tap the <strong><span aria-label="three-dot menu icon">⋮</span></strong> menu in the top-right corner of
+                Tap the <span role="img" aria-label="three-dot menu icon">⋮</span> menu in the top-right corner of
                 Chrome.
               </li>
               <li>
