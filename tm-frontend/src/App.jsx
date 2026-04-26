@@ -662,6 +662,14 @@ function App() {
           >
             🐛 Found a bug or have a suggestion?
           </a>
+          <button
+            type="button"
+            className="refresh-app-btn"
+            onClick={() => window.location.reload()}
+            aria-label="Force refresh application"
+          >
+            🔄 Refresh App
+          </button>
         </div>
       </aside>
 
