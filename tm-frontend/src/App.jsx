@@ -379,7 +379,7 @@ function App() {
   };
 
   const handleStartEditName = () => {
-    setNameInput(profile?.display_name || user.displayName || "");
+    setNameInput(profile?.display_name || "");
     setEditingName(true);
   };
 
@@ -397,7 +397,7 @@ function App() {
       setEditingName(false);
       setNameInput("");
     } catch {
-      // leave the edit open so the user can retry
+      pushToast("Failed to update display name. Please try again.");
     } finally {
       setNameSaving(false);
     }
