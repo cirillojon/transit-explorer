@@ -296,3 +296,97 @@ def test_patch_me_settings_requires_auth(app, client):
     r = client.patch("/api/me/settings", json={"is_private": True})
     assert r.status_code == 401
 
+
+# ── Display name tests ────────────────────────────────────────────────
+
+def test_patch_me_settings_sets_display_name(app, client, auth_headers, fake_uid):
+    """PATCH /api/me/settings with {display_name: ...} must persist the name."""
+    from app import db
+    from app.models import User
+
+    # Ensure the user exists
+    r = client.get("/api/me", headers=auth_headers)
+    assert r.status_code == 200
+
+    r = client.patch(
+        "/api/me/settings",
+        json={"display_name": "  Transit Fan  "},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["display_name"] == "Transit Fan"
+
+    # Verify it's persisted in the DB
+    with app.app_context():
+        u = User.query.filter_by(firebase_uid=fake_uid).first()
+        assert u is not None
+        assert u.display_name == "Transit Fan"
+
+
+def test_patch_me_settings_clears_display_name(app, client, auth_headers, fake_uid):
+    """PATCH /api/me/settings with null or empty display_name clears it."""
+    from app import db
+    from app.models import User
+
+    client.get("/api/me", headers=auth_headers)
+
+    # Set a name first
+    client.patch(
+        "/api/me/settings",
+        json={"display_name": "Someone"},
+        headers=auth_headers,
+    )
+
+    # Clear with null
+    r = client.patch(
+        "/api/me/settings",
+        json={"display_name": None},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.get_json()["display_name"] is None
+
+    with app.app_context():
+        u = User.query.filter_by(firebase_uid=fake_uid).first()
+        assert u.display_name is None
+
+
+def test_patch_me_settings_rejects_too_long_display_name(app, client, auth_headers):
+    """PATCH /api/me/settings with a display_name > 60 chars must return 400."""
+    client.get("/api/me", headers=auth_headers)
+
+    r = client.patch(
+        "/api/me/settings",
+        json={"display_name": "A" * 61},
+        headers=auth_headers,
+    )
+    assert r.status_code == 400
+
+
+def test_patch_me_settings_rejects_non_string_display_name(app, client, auth_headers):
+    """PATCH /api/me/settings with a non-string display_name must return 400."""
+    client.get("/api/me", headers=auth_headers)
+
+    r = client.patch(
+        "/api/me/settings",
+        json={"display_name": 12345},
+        headers=auth_headers,
+    )
+    assert r.status_code == 400
+
+
+def test_patch_me_settings_display_name_returned_in_get_me(app, client, auth_headers):
+    """After updating display_name, GET /api/me must reflect the new name."""
+    client.get("/api/me", headers=auth_headers)
+
+    client.patch(
+        "/api/me/settings",
+        json={"display_name": "My Custom Name"},
+        headers=auth_headers,
+    )
+
+    r = client.get("/api/me", headers=auth_headers)
+    assert r.status_code == 200
+    assert r.get_json()["display_name"] == "My Custom Name"
+

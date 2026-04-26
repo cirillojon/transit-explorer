@@ -7,7 +7,7 @@ from app import db, limiter
 from app.auth import require_auth
 from app.validators import (
     validate_id, validate_direction_id, validate_notes, validate_id_list,
-    validate_duration_ms, validate_completed_at,
+    validate_duration_ms, validate_completed_at, validate_display_name,
 )
 from datetime import datetime, timedelta
 import json
@@ -545,6 +545,9 @@ def update_settings():
     Currently supports:
       - ``is_private`` (bool): when True, hides per-route details from the
         public profile endpoint.
+      - ``display_name`` (str, max 60 chars): custom display name shown in the
+        app and on the leaderboard. Pass null or empty string to clear it and
+        fall back to the Google account name.
     """
     user = g.current_user
     payload = request.get_json(silent=True) or {}
@@ -555,8 +558,18 @@ def update_settings():
             return jsonify({'error': 'is_private must be a boolean'}), 400
         user.is_private = value
 
+    if 'display_name' in payload:
+        try:
+            name = validate_display_name(payload['display_name'])
+        except ValueError as exc:
+            return jsonify({'error': str(exc)}), 400
+        user.display_name = name
+
     db.session.commit()
-    return jsonify({'is_private': bool(user.is_private)})
+    return jsonify({
+        'is_private': bool(user.is_private),
+        'display_name': user.display_name,
+    })
 
 
 @api_blueprint.route('/me/stats')
