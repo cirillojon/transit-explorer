@@ -65,7 +65,7 @@ const Segment = React.memo(function Segment({
               color: done ? "#22c55e" : "#60a5fa",
             }}
           >
-            {done ? "✓ Already marked" : "Click to mark this hop"}
+            {done ? "✓ Already marked" : "Tap a stop to mark this segment"}
           </div>
         </Tooltip>
       </Polyline>
