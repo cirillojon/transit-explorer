@@ -149,14 +149,9 @@ function HelpModal({
                 <strong>Add to Home Screen</strong>.
               </li>
               <li>
-                Tap <strong>Add</strong> — the app icon will appear on your
-                Home Screen.
-              </li>
-              <li>
-                Open the app from your Home Screen icon. If it opens in Safari
-                instead of full-screen, long-press the icon and tap{" "}
-                <strong>Open as Web App</strong> to enable the standalone
-                experience.
+                Tap <strong>Add</strong> — when prompted, select{" "}
+                <strong>Open as Web App</strong> so it launches full-screen.
+                The app icon will appear on your Home Screen.
               </li>
             </ol>
           </div>
@@ -174,15 +169,9 @@ function HelpModal({
                 Tap <strong>Add to Home screen</strong>.
               </li>
               <li>
-                Tap <strong>Add</strong> — the app icon will appear on your
-                Home Screen.
-              </li>
-              <li>
-                Open the app from your Home Screen icon. If it opens inside
-                Chrome instead of full-screen, tap the{" "}
-                <span role="img" aria-label="three-dot menu icon">⋮</span> menu
-                in Chrome, then tap <strong>Open as Web App</strong> to enable
-                the standalone experience.
+                Tap <strong>Add</strong> — when prompted, select{" "}
+                <strong>Open as Web App</strong> so it launches full-screen.
+                The app icon will appear on your Home Screen.
               </li>
             </ol>
           </div>
