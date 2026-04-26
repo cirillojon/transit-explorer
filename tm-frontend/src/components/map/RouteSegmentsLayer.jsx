@@ -17,6 +17,7 @@ const Segment = React.memo(function Segment({
   opacity,
   done,
   isFresh,
+  isMobile,
   onSegmentClick,
   setHoverSeg,
 }) {
@@ -59,6 +60,15 @@ const Segment = React.memo(function Segment({
           </div>
         </Tooltip>
       </Polyline>
+      {isMobile && (
+        <Polyline
+          positions={seg.positions}
+          color={color}
+          weight={weight + 16}
+          opacity={0}
+          eventHandlers={eventHandlers}
+        />
+      )}
       {isFresh && (
         <Polyline
           positions={seg.positions}
@@ -82,6 +92,7 @@ function RouteSegmentsLayer({
   recentlyDone,
   routeColor,
   onSegmentClick,
+  isMobile,
 }) {
   const highlightKey = highlightedSegment
     ? `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`
@@ -107,6 +118,7 @@ function RouteSegmentsLayer({
         opacity={opacity}
         done={done}
         isFresh={isFresh}
+        isMobile={isMobile}
         onSegmentClick={onSegmentClick}
         setHoverSeg={setHoverSeg}
       />
