@@ -3,6 +3,12 @@ import { Marker, CircleMarker, Tooltip } from "react-leaflet";
 import { getStopPickStatus } from "./mapUtils";
 
 const MOBILE_RADIUS_INCREASE = 4;
+// On mobile, before a boarding stop has been picked, shrink the stop dots a
+// touch so the colored route polyline is more visible while the user is
+// still scanning the route to choose where to board. Once a boarding stop
+// is picked we go back to the full-size (and on mobile, MOBILE_RADIUS_INCREASE
+// boosted) markers so they're easy to tap.
+const MOBILE_INITIAL_RADIUS_SHRINK = 1.5;
 
 function StopMarkersLayer({
   visibleStops,
@@ -58,7 +64,10 @@ function StopMarkersLayer({
         className={`stop-marker ${isValidCandidate ? "is-alight-candidate" : ""} ${isUpstreamInvalid ? "is-unavailable" : ""}`.trim()}
         radius={
           (isUpstreamInvalid ? 4 : stop.isTerminus ? 7 : isValidCandidate ? 8 : 5) +
-          (isMobile && pickState ? MOBILE_RADIUS_INCREASE : 0)
+          (isMobile && pickState ? MOBILE_RADIUS_INCREASE : 0) -
+          (isMobile && !pickState && !isUpstreamInvalid
+            ? MOBILE_INITIAL_RADIUS_SHRINK
+            : 0)
         }
         fillColor={
           isUpstreamInvalid
