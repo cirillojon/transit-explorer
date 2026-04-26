@@ -29,7 +29,7 @@ function AllRouteSegmentsLayer({
           <Tooltip sticky pane="tooltipPane">
             <span style={{ fontWeight: 600 }}>{routeInfo.name}</span>
             {" · "}
-            {done ? (
+            {routeInfo.pct >= 100 ? (
               <span style={{ color: "#22c55e" }}>Completed</span>
             ) : (
               <span>{routeInfo.pct}% done</span>
