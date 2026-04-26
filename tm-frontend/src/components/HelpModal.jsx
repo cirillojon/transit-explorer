@@ -46,6 +46,12 @@ function HelpModal({
   if (!open) return null;
 
   const platform = detectMobilePlatform();
+  // The "tap any line directly to mark one hop" shortcut is desktop-only
+  // (too easy to mis-tap on mobile), so don't advertise it on touch devices.
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches;
 
   return (
     // Backdrop is the dialog itself; Escape closes it (see effect above),
@@ -128,7 +134,9 @@ function HelpModal({
         <div className="help-modal-tip">
           <strong>Shortcuts</strong>
           <ul>
-            <li>Tap any line directly to mark just that one hop.</li>
+            {!isCoarsePointer && (
+              <li>Click any line directly to mark just that one hop.</li>
+            )}
             <li>
               Press <kbd>Esc</kbd> or hit <em>Undo boarding</em> to cancel.
             </li>
