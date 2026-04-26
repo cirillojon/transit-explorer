@@ -475,7 +475,6 @@ function TransitMap({
           recentlyDone={recentlyDone}
           routeColor={routeColor}
           onSegmentClick={handleSegmentClick}
-          isMobile={isMobile}
         />
 
         <StopMarkersLayer
