@@ -3585,7 +3585,7 @@ button {
   color: var(--text-muted);
   line-height: 1.5;
 }
-.help-modal-tip strong {
+.help-modal-tip > strong {
   color: var(--text);
   display: block;
   margin-bottom: 6px;
