@@ -283,18 +283,11 @@ function UserProgress({
               type="button"
               className="btn-small last-viewed-clear"
               onClick={() => {
-                if (highlightedSegment) {
-                  onClearHighlight?.();
-                } else {
-                  onSelectRoute?.(null);
-                }
+                onClearHighlight?.();
+                onSelectRoute?.(null);
               }}
-              title={
-                highlightedSegment ? "Clear highlight" : "Clear selected route"
-              }
-              aria-label={
-                highlightedSegment ? "Clear highlight" : "Clear selected route"
-              }
+              title="Clear map"
+              aria-label="Clear map"
             >
               ✕
             </button>
