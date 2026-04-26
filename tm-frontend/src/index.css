@@ -3667,7 +3667,7 @@ button {
   color: var(--text-muted);
   line-height: 1.5;
 }
-.help-modal-tip strong {
+.help-modal-tip > strong {
   color: var(--text);
   display: block;
   margin-bottom: 6px;
@@ -3679,6 +3679,20 @@ button {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+.help-modal-tip--install {
+  border-color: var(--accent);
+}
+.help-modal-install-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.help-modal-share-icon {
+  font-style: normal;
+  font-size: 15px;
 }
 .help-modal-tip kbd {
   background: var(--surface-2);
