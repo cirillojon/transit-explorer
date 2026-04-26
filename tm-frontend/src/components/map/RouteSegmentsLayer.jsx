@@ -30,20 +30,15 @@ const Segment = React.memo(function Segment({
   // devices it's too easy to fat-finger a line and mark the wrong segment, so
   // we drop the click handler on coarse pointers. Hover tooltip stays useful
   // on devices that emulate it.
-  const eventHandlers = useMemo(
-    () =>
-      isCoarsePointer
-        ? {
-            mouseover: () => setHoverSeg(segKey),
-            mouseout: () => setHoverSeg((h) => (h === segKey ? null : h)),
-          }
-        : {
-            click: () => onSegmentClick(seg),
-            mouseover: () => setHoverSeg(segKey),
-            mouseout: () => setHoverSeg((h) => (h === segKey ? null : h)),
-          },
-    [seg, segKey, isCoarsePointer, onSegmentClick, setHoverSeg],
-  );
+  const eventHandlers = useMemo(() => {
+    const base = {
+      mouseover: () => setHoverSeg(segKey),
+      mouseout: () => setHoverSeg((h) => (h === segKey ? null : h)),
+    };
+    return isCoarsePointer
+      ? base
+      : { ...base, click: () => onSegmentClick(seg) };
+  }, [seg, segKey, isCoarsePointer, onSegmentClick, setHoverSeg]);
   return (
     <>
       <Polyline
