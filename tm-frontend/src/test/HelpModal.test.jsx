@@ -43,6 +43,7 @@ describe("HelpModal platform detection", () => {
     render(<HelpModal {...defaultProps} />);
     expect(screen.getByText(/Add to Home Screen \(iOS\)/i)).toBeInTheDocument();
     expect(screen.queryByText(/Add to Home Screen \(Android\)/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Open as Web App/i)).toBeInTheDocument();
   });
 
   it("shows iOS install tip on modern iPad (MacIntel + maxTouchPoints > 1)", () => {
@@ -65,6 +66,7 @@ describe("HelpModal platform detection", () => {
     render(<HelpModal {...defaultProps} />);
     expect(screen.getByText(/Add to Home Screen \(Android\)/i)).toBeInTheDocument();
     expect(screen.queryByText(/Add to Home Screen \(iOS\)/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Open as Web App/i)).toBeInTheDocument();
   });
 
   it("shows no install tip on desktop", () => {
