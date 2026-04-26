@@ -41,7 +41,7 @@ function MapLegend({
           aria-label={legendCollapsed ? "Show legend" : "Hide legend"}
           title={legendCollapsed ? "Show details" : "Hide details"}
         >
-          {legendCollapsed ? "▴" : "▾"}
+          {legendCollapsed ? "▴ Show" : "▾ Hide"}
         </button>
       </div>
       {!legendCollapsed && completionStats && (

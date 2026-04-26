@@ -54,7 +54,7 @@ function PickOverlay({
             setCollapsed(false);
           }}
         >
-          ▴
+          ▴ Show
         </button>
       </div>
     );
@@ -99,7 +99,7 @@ function PickOverlay({
         aria-label="Minimize boarding details"
         onClick={() => setCollapsed(true)}
       >
-        ▾
+        ▾ Hide
       </button>
     </div>
   );

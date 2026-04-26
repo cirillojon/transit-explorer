@@ -846,15 +846,15 @@ button {
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  white-space: nowrap;
   margin-left: 4px;
 }
 .pick-collapse-toggle:hover {
@@ -1182,8 +1182,7 @@ button {
   background: none;
   border: 1px solid var(--border-soft);
   color: var(--text-muted);
-  width: 26px;
-  height: 26px;
+  padding: 3px 8px;
   border-radius: 8px;
   font-size: 12px;
   line-height: 1;
@@ -1192,6 +1191,7 @@ button {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  white-space: nowrap;
   transition:
     color 0.15s,
     border-color 0.15s,
