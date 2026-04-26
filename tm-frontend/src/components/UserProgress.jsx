@@ -114,17 +114,28 @@ function UserProgress({
     );
   }, [highlightedSegment, progress]);
 
-  // The progress entry for whichever route is currently selected on the map
-  // (but not via a specific segment highlight). Used to show "Showing on map"
-  // when the user clicks a route card in the in-progress tab.
+  // Treat a segment highlight as active only when it still matches the route
+  // currently selected on the map, or when no route-level selection exists.
+  const isActiveHighlightedRoute =
+    !!highlightedSegment &&
+    (!selectedRoute || highlightedSegment.routeId === selectedRoute.id);
+
+  // The progress entry for whichever route is currently selected on the map.
+  // Used to show "Showing on map" when the user clicks a route card in the
+  // in-progress tab, and also as a fallback when a stale segment highlight
+  // no longer matches the selected route.
   const selectedRouteProgress = useMemo(() => {
-    if (!selectedRoute || highlightedSegment) return null;
+    if (!selectedRoute) return null;
     return progress.find((rp) => rp.route_id === selectedRoute.id) || null;
-  }, [selectedRoute, highlightedSegment, progress]);
+  }, [selectedRoute, progress]);
 
   // The route to display in the "Showing on map" pill.
-  // Priority: a specific highlighted route > a route-level map selection.
-  const pillRoute = highlightedRoute ?? selectedRouteProgress ?? null;
+  // Prefer a highlighted route only while that highlight is still active for
+  // the currently selected map route.
+  const pillRoute =
+    (isActiveHighlightedRoute ? highlightedRoute : null) ??
+    selectedRouteProgress ??
+    null;
 
   // When the user arrives on Progress with a highlight, jump to Routes view
   // and auto-expand the matching route + journey, then scroll into view.
@@ -278,8 +289,12 @@ function UserProgress({
                   onSelectRoute?.(null);
                 }
               }}
-              title="Clear highlight"
-              aria-label="Clear highlight"
+              title={
+                highlightedSegment ? "Clear highlight" : "Clear selected route"
+              }
+              aria-label={
+                highlightedSegment ? "Clear highlight" : "Clear selected route"
+              }
             >
               ✕
             </button>
