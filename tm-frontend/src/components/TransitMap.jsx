@@ -487,6 +487,7 @@ function TransitMap({
           stopMarkerRefs={stopMarkerRefs}
           onStopClick={handleStopClick}
           showToast={showToast}
+          isMobile={isMobile}
         />
       </MapContainer>
 

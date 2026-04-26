@@ -1,6 +1,8 @@
 import React, { useMemo } from "react";
 import { Polyline, Tooltip } from "react-leaflet";
 
+const MOBILE_TAP_AREA_EXPANSION = 16;
+
 // Memoized single-segment polyline. Pulled out of the parent's render so we
 // only rebuild `pathOptions` (and call leaflet's setStyle) for segments whose
 // visual state actually changed, instead of every segment on every parent
@@ -17,6 +19,7 @@ const Segment = React.memo(function Segment({
   opacity,
   done,
   isFresh,
+  isCoarsePointer,
   onSegmentClick,
   setHoverSeg,
 }) {
@@ -24,6 +27,13 @@ const Segment = React.memo(function Segment({
   const pathOptions = useMemo(
     () => ({ color, weight, opacity }),
     [color, weight, opacity],
+  );
+  // react-leaflet v5 only reactively updates style via `pathOptions`; keep the
+  // hit-target using `pathOptions` too so its width tracks `weight` changes
+  // (highlight, hover, done) rather than freezing at the mount-time value.
+  const hitTargetPathOptions = useMemo(
+    () => ({ weight: weight + MOBILE_TAP_AREA_EXPANSION, opacity: 0 }),
+    [weight],
   );
   const eventHandlers = useMemo(
     () => ({
@@ -59,6 +69,13 @@ const Segment = React.memo(function Segment({
           </div>
         </Tooltip>
       </Polyline>
+      {isCoarsePointer && (
+        <Polyline
+          positions={seg.positions}
+          pathOptions={hitTargetPathOptions}
+          eventHandlers={eventHandlers}
+        />
+      )}
       {isFresh && (
         <Polyline
           positions={seg.positions}
@@ -83,6 +100,15 @@ function RouteSegmentsLayer({
   routeColor,
   onSegmentClick,
 }) {
+  // Use pointer type rather than viewport width so the invisible hit-target
+  // is only rendered for true touch devices (pointer: coarse). On tablets or
+  // small desktop windows that have a mouse (pointer: fine), the hit-target
+  // would otherwise sit on top of the visible polyline and block Tooltip hover.
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches;
+
   const highlightKey = highlightedSegment
     ? `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`
     : null;
@@ -107,6 +133,7 @@ function RouteSegmentsLayer({
         opacity={opacity}
         done={done}
         isFresh={isFresh}
+        isCoarsePointer={isCoarsePointer}
         onSegmentClick={onSegmentClick}
         setHoverSeg={setHoverSeg}
       />
