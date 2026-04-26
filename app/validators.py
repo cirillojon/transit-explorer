@@ -13,6 +13,7 @@ _ID_RE = re.compile(r"^[A-Za-z0-9_\-\.:]{1,80}$")
 
 MAX_NOTES_LEN = 500
 MAX_BULK_IDS = 500
+MAX_DISPLAY_NAME_LEN = 60
 # Cap measured trip duration at 24h to keep the int small and reject
 # obviously-bogus client clocks.
 MAX_DURATION_MS = 24 * 60 * 60 * 1000
@@ -90,6 +91,24 @@ def validate_id_list(value, field):
             raise ValueError(f"{field}[{i}] must be a positive integer")
         out.append(item)
     return out
+
+
+def validate_display_name(value, field="display_name"):
+    """Validate a user-supplied display name.
+
+    Returns the stripped string, or None when ``value`` is None / empty.
+    Rejects non-strings and names that exceed ``MAX_DISPLAY_NAME_LEN``.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be a string")
+    v = value.strip()
+    if not v:
+        return None
+    if len(v) > MAX_DISPLAY_NAME_LEN:
+        raise ValueError(f"{field} exceeds {MAX_DISPLAY_NAME_LEN} characters")
+    return v
 
 
 def validate_completed_at(value, field="completed_at"):

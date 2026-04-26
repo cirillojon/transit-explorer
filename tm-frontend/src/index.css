@@ -375,6 +375,71 @@ button {
   transform: translateX(16px);
 }
 
+/* ── Display name edit ──────────────────────────────────── */
+.display-name-row {
+  margin-top: 8px;
+  padding: 0 4px;
+}
+.display-name-edit-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 0;
+  line-height: 1.4;
+}
+.display-name-edit-btn:hover {
+  color: var(--accent);
+}
+.display-name-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.display-name-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+}
+.display-name-input:focus {
+  border-color: var(--accent);
+}
+.display-name-save-btn,
+.display-name-cancel-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.display-name-save-btn:hover {
+  color: var(--green);
+  border-color: var(--green);
+}
+.display-name-cancel-btn:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+.display-name-save-btn:disabled,
+.display-name-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* ── Tabs ───────────────────────────────────────────────── */
 .sidebar-tabs {
   display: flex;

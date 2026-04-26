@@ -14,6 +14,7 @@ import {
   fetchActivity,
   fetchRouteDetail,
   updateProfilePrivacy,
+  updateDisplayName,
 } from "./services/api";
 import { useAuth } from "./contexts/AuthContext";
 
@@ -71,6 +72,9 @@ function App() {
   const [allProgressDetails, setAllProgressDetails] = useState(null); // "view all routes" mode
   const [isPrivate, setIsPrivate] = useState(false); // private profile toggle
   const [privacySaving, setPrivacySaving] = useState(false);
+  const [editingName, setEditingName] = useState(false); // display name edit mode
+  const [nameInput, setNameInput] = useState(""); // value in the name text field
+  const [nameSaving, setNameSaving] = useState(false);
 
   const pushToast = useCallback((msg) => {
     const id = Date.now() + Math.random();
@@ -374,6 +378,31 @@ function App() {
     }
   };
 
+  const handleStartEditName = () => {
+    setNameInput(profile?.display_name || "");
+    setEditingName(true);
+  };
+
+  const handleCancelEditName = () => {
+    setEditingName(false);
+    setNameInput("");
+  };
+
+  const handleSaveName = async () => {
+    const trimmed = nameInput.trim();
+    setNameSaving(true);
+    try {
+      const result = await updateDisplayName(trimmed || null);
+      setProfile((prev) => prev ? { ...prev, display_name: result.display_name } : prev);
+      setEditingName(false);
+      setNameInput("");
+    } catch {
+      pushToast("Failed to update display name. Please try again.");
+    } finally {
+      setNameSaving(false);
+    }
+  };
+
   const selectedRouteDisplay = selectedRoute
     ? getRouteDisplayText(selectedRoute)
     : null;
@@ -456,16 +485,16 @@ function App() {
             {user.photoURL ? (
               <img
                 src={user.photoURL}
-                alt={`${user.displayName || "You"} avatar`}
+                alt={`${profile?.display_name || user.displayName || "You"} avatar`}
                 className="avatar"
                 referrerPolicy="no-referrer"
               />
             ) : (
               <div className="avatar avatar-placeholder">
-                {(user.displayName || user.email || "?")[0].toUpperCase()}
+                {(profile?.display_name || user.displayName || user.email || "?")[0].toUpperCase()}
               </div>
             )}
-            <span className="user-name">{user.displayName || user.email}</span>
+            <span className="user-name">{profile?.display_name || user.displayName || user.email}</span>
             <button className="sign-out-btn" onClick={signOut} title="Sign out">
               ⎋
             </button>
@@ -483,6 +512,57 @@ function App() {
                 <span>
                   <strong>#{stats.rank}</strong> rank
                 </span>
+              )}
+            </div>
+          )}
+
+          {profile && (
+            <div className="display-name-row">
+              {editingName ? (
+                <form
+                  className="display-name-form"
+                  onSubmit={(e) => { e.preventDefault(); handleSaveName(); }}
+                >
+                  <input
+                    className="display-name-input"
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    maxLength={60}
+                    placeholder="Display name"
+                    aria-label="Display name"
+                    autoFocus
+                    disabled={nameSaving}
+                  />
+                  <button
+                    type="submit"
+                    className="display-name-save-btn"
+                    disabled={nameSaving}
+                    title="Save name"
+                    aria-label="Save name"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    type="button"
+                    className="display-name-cancel-btn"
+                    onClick={handleCancelEditName}
+                    disabled={nameSaving}
+                    title="Cancel"
+                    aria-label="Cancel"
+                  >
+                    ✕
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  className="display-name-edit-btn"
+                  onClick={handleStartEditName}
+                  title="Edit display name"
+                >
+                  ✏️ Edit display name
+                </button>
               )}
             </div>
           )}
