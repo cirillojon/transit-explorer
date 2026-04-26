@@ -301,7 +301,6 @@ def test_patch_me_settings_requires_auth(app, client):
 
 def test_patch_me_settings_sets_display_name(app, client, auth_headers, fake_uid):
     """PATCH /api/me/settings with {display_name: ...} must persist the name."""
-    from app import db
     from app.models import User
 
     # Ensure the user exists
@@ -325,8 +324,7 @@ def test_patch_me_settings_sets_display_name(app, client, auth_headers, fake_uid
 
 
 def test_patch_me_settings_clears_display_name(app, client, auth_headers, fake_uid):
-    """PATCH /api/me/settings with null or empty display_name clears it."""
-    from app import db
+    """PATCH /api/me/settings with null, empty string, or whitespace clears the display name."""
     from app.models import User
 
     client.get("/api/me", headers=auth_headers)
@@ -350,6 +348,34 @@ def test_patch_me_settings_clears_display_name(app, client, auth_headers, fake_u
     with app.app_context():
         u = User.query.filter_by(firebase_uid=fake_uid).first()
         assert u.display_name is None
+
+    # Restore a name, then clear with an empty string
+    client.patch(
+        "/api/me/settings",
+        json={"display_name": "Someone"},
+        headers=auth_headers,
+    )
+    r = client.patch(
+        "/api/me/settings",
+        json={"display_name": ""},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.get_json()["display_name"] is None
+
+    # Restore a name, then clear with a whitespace-only string
+    client.patch(
+        "/api/me/settings",
+        json={"display_name": "Someone"},
+        headers=auth_headers,
+    )
+    r = client.patch(
+        "/api/me/settings",
+        json={"display_name": "   "},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.get_json()["display_name"] is None
 
 
 def test_patch_me_settings_rejects_too_long_display_name(app, client, auth_headers):

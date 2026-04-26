@@ -546,8 +546,9 @@ def update_settings():
       - ``is_private`` (bool): when True, hides per-route details from the
         public profile endpoint.
       - ``display_name`` (str, max 60 chars): custom display name shown in the
-        app and on the leaderboard. Pass null or empty string to clear it and
-        fall back to the Google account name.
+        app and on the leaderboard. Pass null or empty string to clear it;
+        public surfaces (leaderboard, public profile) will then show
+        'Anonymous' in place of a name.
     """
     user = g.current_user
     payload = request.get_json(silent=True) or {}
