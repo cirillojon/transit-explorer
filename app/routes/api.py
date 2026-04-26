@@ -406,10 +406,31 @@ def get_user_profile(user_id):
     Returns the same shape used by the in-app Progress / Achievements panels
     so the frontend can reuse the same rendering. No auth required, but
     nothing mutable is exposed.
+
+    When the user has opted into a private profile (is_private=True), only
+    aggregate totals are returned; the per-route ``progress`` list is omitted
+    so that specific routes and ride details stay hidden.
     """
     user = db.get_or_404(User, user_id)
     summary = _user_summary(user.id)
     achievements = _evaluate_achievements(summary)
+
+    is_private = bool(getattr(user, 'is_private', False))
+
+    if is_private:
+        # Private profile: expose totals only, no per-route details.
+        return jsonify({
+            'user': {
+                'id': user.id,
+                'display_name': user.display_name or 'Anonymous',
+                'avatar_url': user.avatar_url,
+                'created_at': user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
+                'is_private': True,
+            },
+            **summary,
+            'achievements': [],
+            'progress': [],
+        })
 
     # Per-route progress (same logic as /me/progress, without the auth user)
     segments = UserSegment.query.filter_by(user_id=user.id).all()
@@ -493,6 +514,7 @@ def get_user_profile(user_id):
             'display_name': user.display_name or 'Anonymous',
             'avatar_url': user.avatar_url,
             'created_at': user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
+            'is_private': False,
         },
         **summary,
         'achievements': achievements,
@@ -511,6 +533,29 @@ def get_me():
     data = user.to_dict()
     data.update(summary)
     return jsonify(data)
+
+
+@api_blueprint.route('/me/settings', methods=['PATCH'])
+@require_auth
+@limiter.limit("30 per minute")
+def update_settings():
+    """Update the authenticated user's account settings.
+
+    Currently supports:
+      - ``is_private`` (bool): when True, hides per-route details from the
+        public profile endpoint.
+    """
+    user = g.current_user
+    payload = request.get_json(silent=True) or {}
+
+    if 'is_private' in payload:
+        value = payload['is_private']
+        if not isinstance(value, bool):
+            return jsonify({'error': 'is_private must be a boolean'}), 400
+        user.is_private = value
+
+    db.session.commit()
+    return jsonify({'is_private': bool(user.is_private)})
 
 
 @api_blueprint.route('/me/stats')

@@ -13,6 +13,7 @@ import {
   fetchStats,
   fetchActivity,
   fetchRouteDetail,
+  updateProfilePrivacy,
 } from "./services/api";
 import { useAuth } from "./contexts/AuthContext";
 
@@ -68,6 +69,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
   const [viewingUser, setViewingUser] = useState(null); // public profile modal
   const [allProgressDetails, setAllProgressDetails] = useState(null); // "view all routes" mode
+  const [isPrivate, setIsPrivate] = useState(false); // private profile toggle
+  const [privacySaving, setPrivacySaving] = useState(false);
 
   const pushToast = useCallback((msg) => {
     const id = Date.now() + Math.random();
@@ -135,6 +138,7 @@ function App() {
       setProfile(me);
       setStats(st);
       setActivity(act);
+      setIsPrivate(Boolean(me?.is_private));
     } catch (err) {
       if (import.meta.env.DEV) {
         console.error("Failed to load user data:", err);
@@ -355,6 +359,20 @@ function App() {
     }
   }
 
+  const handlePrivacyToggle = async () => {
+    const next = !isPrivate;
+    setIsPrivate(next);
+    setPrivacySaving(true);
+    try {
+      await updateProfilePrivacy(next);
+    } catch {
+      // Revert optimistic update on failure
+      setIsPrivate(!next);
+    } finally {
+      setPrivacySaving(false);
+    }
+  };
+
   const selectedRouteDisplay = selectedRoute
     ? getRouteDisplayText(selectedRoute)
     : null;
@@ -465,6 +483,32 @@ function App() {
                   <strong>#{stats.rank}</strong> rank
                 </span>
               )}
+            </div>
+          )}
+
+          {profile && (
+            <div className="privacy-toggle-row">
+              <label className="privacy-toggle-label" htmlFor="privacy-toggle">
+                <span className="privacy-toggle-text">
+                  {isPrivate ? "🔒 Private profile" : "🌐 Public profile"}
+                </span>
+                <button
+                  id="privacy-toggle"
+                  type="button"
+                  role="switch"
+                  aria-checked={isPrivate}
+                  className={`privacy-toggle-btn ${isPrivate ? "active" : ""}`}
+                  onClick={handlePrivacyToggle}
+                  disabled={privacySaving}
+                  title={
+                    isPrivate
+                      ? "Make your profile public"
+                      : "Make your profile private"
+                  }
+                >
+                  <span className="privacy-toggle-thumb" />
+                </button>
+              </label>
             </div>
           )}
         </div>

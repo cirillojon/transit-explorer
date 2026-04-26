@@ -53,6 +53,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
     display_name: fallbackEntry?.display_name,
     avatar_url: fallbackEntry?.avatar_url,
   };
+  const isPrivate = data?.user?.is_private ?? false;
   const totalSegments =
     data?.total_segments ?? fallbackEntry?.total_segments ?? 0;
   const totalRoutes = data?.total_routes ?? fallbackEntry?.total_routes ?? 0;
@@ -143,45 +144,60 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
               </div>
             </div>
 
-            <div className="pp-tabs" role="tablist">
-              {[
-                { key: "overview", label: "Overview" },
-                { key: "routes", label: `Routes (${progress.length})` },
-                {
-                  key: "achievements",
-                  label: `Badges (${unlocked.length})`,
-                },
-              ].map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={view === t.key}
-                  className={`pp-tab ${view === t.key ? "pp-tab-active" : ""}`}
-                  onClick={() => setView(t.key)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+            {isPrivate ? (
+              <div className="pp-body">
+                <div className="pp-private-notice">
+                  <span className="pp-private-icon">🔒</span>
+                  <p>This explorer has set their profile to private.</p>
+                  <p className="pp-private-sub">
+                    Route details are hidden, but their overall stats are shown
+                    above.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="pp-tabs" role="tablist">
+                  {[
+                    { key: "overview", label: "Overview" },
+                    { key: "routes", label: `Routes (${progress.length})` },
+                    {
+                      key: "achievements",
+                      label: `Badges (${unlocked.length})`,
+                    },
+                  ].map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={view === t.key}
+                      className={`pp-tab ${view === t.key ? "pp-tab-active" : ""}`}
+                      onClick={() => setView(t.key)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
 
-            <div className="pp-body">
-              {view === "overview" && (
-                <PPOverview
-                  progress={progress}
-                  achievements={unlocked.slice(0, 6)}
-                />
-              )}
-              {view === "routes" && (
-                <PPRoutes
-                  progress={progress}
-                  journeysByRoute={journeysByRoute}
-                />
-              )}
-              {view === "achievements" && (
-                <PPAchievements achievements={achievements} />
-              )}
-            </div>
+                <div className="pp-body">
+                  {view === "overview" && (
+                    <PPOverview
+                      progress={progress}
+                      achievements={unlocked.slice(0, 6)}
+                    />
+                  )}
+                  {view === "routes" && (
+                    <PPRoutes
+                      progress={progress}
+                      journeysByRoute={journeysByRoute}
+                    />
+                  )}
+                  {view === "achievements" && (
+                    <PPAchievements achievements={achievements} />
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
