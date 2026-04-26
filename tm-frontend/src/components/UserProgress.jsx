@@ -66,6 +66,7 @@ function UserProgress({
   onClearHighlight,
   onShowAllRoutes,
   onSelectRoute,
+  selectedRoute,
 }) {
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [expandedRide, setExpandedRide] = useState(null);
@@ -112,6 +113,18 @@ function UserProgress({
       progress.find((rp) => rp.route_id === highlightedSegment.routeId) || null
     );
   }, [highlightedSegment, progress]);
+
+  // The progress entry for whichever route is currently selected on the map
+  // (but not via a specific segment highlight). Used to show "Showing on map"
+  // when the user clicks a route card in the in-progress tab.
+  const selectedRouteProgress = useMemo(() => {
+    if (!selectedRoute || highlightedSegment) return null;
+    return progress.find((rp) => rp.route_id === selectedRoute.id) || null;
+  }, [selectedRoute, highlightedSegment, progress]);
+
+  // The route to display in the "Showing on map" pill.
+  // Priority: a specific highlighted route > a route-level map selection.
+  const pillRoute = highlightedRoute ?? selectedRouteProgress ?? null;
 
   // When the user arrives on Progress with a highlight, jump to Routes view
   // and auto-expand the matching route + journey, then scroll into view.
@@ -214,20 +227,20 @@ function UserProgress({
     <div className="user-progress">
       <StatsCard stats={stats} profile={profile} />
 
-      {highlightedSegment && highlightedRoute && (
+      {pillRoute && (
         <div className="last-viewed-pill" role="status" aria-live="polite">
           <span
             className="last-viewed-color"
             style={{
-              background: highlightedRoute.route_color
-                ? `#${highlightedRoute.route_color}`
+              background: pillRoute.route_color
+                ? `#${pillRoute.route_color}`
                 : "var(--accent)",
             }}
           />
           <div className="last-viewed-text">
             <div className="last-viewed-label">Showing on map</div>
             <div className="last-viewed-name">
-              {highlightedRoute.route_name}
+              {pillRoute.route_name}
               {highlightedJourney && (
                 <>
                   {" · "}
@@ -258,7 +271,13 @@ function UserProgress({
             <button
               type="button"
               className="btn-small last-viewed-clear"
-              onClick={() => onClearHighlight?.()}
+              onClick={() => {
+                if (highlightedSegment) {
+                  onClearHighlight?.();
+                } else {
+                  onSelectRoute?.(null);
+                }
+              }}
               title="Clear highlight"
               aria-label="Clear highlight"
             >

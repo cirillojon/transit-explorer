@@ -514,6 +514,7 @@ function App() {
                 onClearHighlight={() => setHighlightedSegment(null)}
                 onShowAllRoutes={handleShowAllProgressRoutes}
                 onSelectRoute={handleSelectRouteFromProgress}
+                selectedRoute={selectedRoute}
               />
             </ErrorBoundary>
           )}
