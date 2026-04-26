@@ -19,7 +19,7 @@ const Segment = React.memo(function Segment({
   opacity,
   done,
   isFresh,
-  isMobile,
+  isCoarsePointer,
   onSegmentClick,
   setHoverSeg,
 }) {
@@ -27,6 +27,13 @@ const Segment = React.memo(function Segment({
   const pathOptions = useMemo(
     () => ({ color, weight, opacity }),
     [color, weight, opacity],
+  );
+  // react-leaflet v5 only reactively updates style via `pathOptions`; keep the
+  // hit-target using `pathOptions` too so its width tracks `weight` changes
+  // (highlight, hover, done) rather than freezing at the mount-time value.
+  const hitTargetPathOptions = useMemo(
+    () => ({ weight: weight + MOBILE_TAP_AREA_EXPANSION, opacity: 0 }),
+    [weight],
   );
   const eventHandlers = useMemo(
     () => ({
@@ -62,11 +69,10 @@ const Segment = React.memo(function Segment({
           </div>
         </Tooltip>
       </Polyline>
-      {isMobile && (
+      {isCoarsePointer && (
         <Polyline
           positions={seg.positions}
-          weight={weight + MOBILE_TAP_AREA_EXPANSION}
-          opacity={0}
+          pathOptions={hitTargetPathOptions}
           eventHandlers={eventHandlers}
         />
       )}
@@ -93,8 +99,16 @@ function RouteSegmentsLayer({
   recentlyDone,
   routeColor,
   onSegmentClick,
-  isMobile,
 }) {
+  // Use pointer type rather than viewport width so the invisible hit-target
+  // is only rendered for true touch devices (pointer: coarse). On tablets or
+  // small desktop windows that have a mouse (pointer: fine), the hit-target
+  // would otherwise sit on top of the visible polyline and block Tooltip hover.
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches;
+
   const highlightKey = highlightedSegment
     ? `${highlightedSegment.routeId}|${highlightedSegment.directionId}|${highlightedSegment.fromStopId}|${highlightedSegment.toStopId}`
     : null;
@@ -119,7 +133,7 @@ function RouteSegmentsLayer({
         opacity={opacity}
         done={done}
         isFresh={isFresh}
-        isMobile={isMobile}
+        isCoarsePointer={isCoarsePointer}
         onSegmentClick={onSegmentClick}
         setHoverSeg={setHoverSeg}
       />
