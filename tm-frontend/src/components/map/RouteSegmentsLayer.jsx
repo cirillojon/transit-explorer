@@ -1,6 +1,8 @@
 import React, { useMemo } from "react";
 import { Polyline, Tooltip } from "react-leaflet";
 
+const MOBILE_TAP_AREA_EXPANSION = 16;
+
 // Memoized single-segment polyline. Pulled out of the parent's render so we
 // only rebuild `pathOptions` (and call leaflet's setStyle) for segments whose
 // visual state actually changed, instead of every segment on every parent
@@ -63,8 +65,7 @@ const Segment = React.memo(function Segment({
       {isMobile && (
         <Polyline
           positions={seg.positions}
-          color={color}
-          weight={weight + 16}
+          weight={weight + MOBILE_TAP_AREA_EXPANSION}
           opacity={0}
           eventHandlers={eventHandlers}
         />

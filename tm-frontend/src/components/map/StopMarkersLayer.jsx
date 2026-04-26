@@ -2,6 +2,8 @@ import React from "react";
 import { Marker, CircleMarker, Tooltip } from "react-leaflet";
 import { getStopPickStatus } from "./mapUtils";
 
+const MOBILE_RADIUS_INCREASE = 4;
+
 function StopMarkersLayer({
   visibleStops,
   pickState,
@@ -53,7 +55,7 @@ function StopMarkersLayer({
         className={`stop-marker ${isValidCandidate ? "is-alight-candidate" : ""} ${isUpstreamInvalid ? "is-unavailable" : ""}`.trim()}
         radius={
           (isUpstreamInvalid ? 4 : stop.isTerminus ? 7 : isValidCandidate ? 8 : 5) +
-          (isMobile ? 4 : 0)
+          (isMobile ? MOBILE_RADIUS_INCREASE : 0)
         }
         fillColor={
           isUpstreamInvalid
