@@ -12,6 +12,7 @@ class User(db.Model):
     display_name = db.Column(db.String(120))
     avatar_url = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_private = db.Column(db.Boolean, default=False, nullable=False, server_default='0')
 
     segments = db.relationship(
         'UserSegment',
@@ -29,6 +30,7 @@ class User(db.Model):
             'display_name': self.display_name,
             'avatar_url': self.avatar_url,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'is_private': bool(self.is_private),
         }
 
 

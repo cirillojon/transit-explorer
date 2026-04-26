@@ -158,6 +158,9 @@ export const deleteSegment = (segmentId) =>
 export const bulkDeleteSegments = (payload) =>
   api.delete("/api/me/segments/bulk", { data: payload }).then((r) => r.data);
 
+export const updateProfilePrivacy = (isPrivate) =>
+  api.patch("/api/me/settings", { is_private: isPrivate }).then((r) => r.data);
+
 /* Re-export retry helper for components that want optimistic flows */
 export async function retry(fn, { tries = 3, delayMs = 600 } = {}) {
   let lastErr;

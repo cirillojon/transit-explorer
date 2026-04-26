@@ -201,3 +201,98 @@ def test_profile_progress_tie_broken_by_completed_segments(app, client, fake_uid
     # Q has 3 completed segments vs P's 1 → Q must be first
     assert progress[0]["route_id"] == "Q_route"
     assert progress[1]["route_id"] == "P_route"
+
+
+# ── Private profile tests ─────────────────────────────────────────────
+
+
+def test_private_profile_hides_progress(app, client, fake_uid):
+    """When is_private=True, the progress list must be empty and is_private
+    must be reflected in the user object."""
+    user = _seed_two_routes(app, fake_uid + "_priv")
+    # Mark the user's profile as private
+    from app import db
+    user.is_private = True
+    db.session.commit()
+
+    r = client.get(f"/api/users/{user.id}/profile")
+    assert r.status_code == 200
+    body = r.get_json()
+
+    # Progress list must be empty (routes are hidden)
+    assert body["progress"] == []
+    # Achievements must be empty
+    assert body["achievements"] == []
+    # The is_private flag must be returned in the user object
+    assert body["user"]["is_private"] is True
+    # Aggregate totals are still exposed
+    assert body["total_routes"] > 0
+    assert body["total_segments"] > 0
+
+
+def test_public_profile_includes_is_private_false(app, client, fake_uid):
+    """When is_private=False (default), is_private=False appears in the user
+    object and progress is populated normally."""
+    user = _seed_two_routes(app, fake_uid + "_pub")
+
+    r = client.get(f"/api/users/{user.id}/profile")
+    assert r.status_code == 200
+    body = r.get_json()
+
+    assert body["user"]["is_private"] is False
+    assert len(body["progress"]) == 2
+
+
+def test_patch_me_settings_sets_is_private(app, client, auth_headers, fake_uid):
+    """PATCH /api/me/settings with {is_private: true} must persist the flag."""
+    from app import db
+    from app.models import User
+
+    # Ensure the authed user exists (auth_headers fixture creates the user
+    # on the first authed request via require_auth).
+    r = client.get("/api/me", headers=auth_headers)
+    assert r.status_code == 200
+
+    # Enable private mode
+    r = client.patch(
+        "/api/me/settings",
+        json={"is_private": True},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.get_json()["is_private"] is True
+
+    # Verify it's persisted in the DB
+    with app.app_context():
+        u = User.query.filter_by(firebase_uid=fake_uid).first()
+        assert u is not None
+        assert u.is_private is True
+
+    # Disable private mode
+    r = client.patch(
+        "/api/me/settings",
+        json={"is_private": False},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.get_json()["is_private"] is False
+
+
+def test_patch_me_settings_rejects_non_bool(app, client, auth_headers):
+    """PATCH /api/me/settings with a non-boolean is_private must return 400."""
+    # Ensure the authed user exists
+    client.get("/api/me", headers=auth_headers)
+
+    r = client.patch(
+        "/api/me/settings",
+        json={"is_private": "yes"},
+        headers=auth_headers,
+    )
+    assert r.status_code == 400
+
+
+def test_patch_me_settings_requires_auth(app, client):
+    """PATCH /api/me/settings without auth must return 401."""
+    r = client.patch("/api/me/settings", json={"is_private": True})
+    assert r.status_code == 401
+
