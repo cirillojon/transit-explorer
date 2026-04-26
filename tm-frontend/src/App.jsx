@@ -539,6 +539,7 @@ function App() {
                     className="display-name-save-btn"
                     disabled={nameSaving}
                     title="Save name"
+                    aria-label="Save name"
                   >
                     ✓
                   </button>
@@ -548,6 +549,7 @@ function App() {
                     onClick={handleCancelEditName}
                     disabled={nameSaving}
                     title="Cancel"
+                    aria-label="Cancel"
                   >
                     ✕
                   </button>
