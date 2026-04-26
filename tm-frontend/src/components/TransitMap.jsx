@@ -336,7 +336,7 @@ function TransitMap({
     submitMark(normalizedDirectionId, pickState.fromStopId, stopId);
   };
 
-  // Click a polyline directly to mark just that one hop.
+  // Handle clicks on route segment polylines.
   //
   // We keep the latest values in a ref and read from it inside a stable
   // useCallback. This lets the memoized child <Segment> components keep a
@@ -344,12 +344,14 @@ function TransitMap({
   // on unrelated re-renders) without lying to the exhaustive-deps lint.
   const segmentClickStateRef = useRef({
     marking,
+    pickState,
     effectiveCompleted,
     submitMark,
     showToast,
   });
   segmentClickStateRef.current = {
     marking,
+    pickState,
     effectiveCompleted,
     submitMark,
     showToast,
@@ -357,6 +359,10 @@ function TransitMap({
   const handleSegmentClick = useCallback((seg) => {
     const s = segmentClickStateRef.current;
     if (s.marking) return;
+    if (!s.pickState) {
+      s.showToast("Tap a stop on the route to begin marking", "info");
+      return;
+    }
     if (s.effectiveCompleted.has(seg.key)) {
       s.showToast("Already marked", "info");
       return;

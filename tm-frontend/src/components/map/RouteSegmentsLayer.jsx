@@ -1,8 +1,6 @@
 import React, { useMemo } from "react";
 import { Polyline, Tooltip } from "react-leaflet";
 
-const MOBILE_TAP_AREA_EXPANSION = 16;
-
 // Memoized single-segment polyline. Pulled out of the parent's render so we
 // only rebuild `pathOptions` (and call leaflet's setStyle) for segments whose
 // visual state actually changed, instead of every segment on every parent
@@ -28,21 +26,19 @@ const Segment = React.memo(function Segment({
     () => ({ color, weight, opacity }),
     [color, weight, opacity],
   );
-  // react-leaflet v5 only reactively updates style via `pathOptions`; keep the
-  // hit-target using `pathOptions` too so its width tracks `weight` changes
-  // (highlight, hover, done) rather than freezing at the mount-time value.
-  const hitTargetPathOptions = useMemo(
-    () => ({ weight: weight + MOBILE_TAP_AREA_EXPANSION, opacity: 0 }),
-    [weight],
-  );
-  const eventHandlers = useMemo(
-    () => ({
-      click: () => onSegmentClick(seg),
+  // The "tap a polyline to mark one hop" shortcut is desktop-only. On touch
+  // devices it's too easy to fat-finger a line and mark the wrong segment, so
+  // we drop the click handler on coarse pointers. Hover tooltip stays useful
+  // on devices that emulate it.
+  const eventHandlers = useMemo(() => {
+    const base = {
       mouseover: () => setHoverSeg(segKey),
       mouseout: () => setHoverSeg((h) => (h === segKey ? null : h)),
-    }),
-    [seg, segKey, onSegmentClick, setHoverSeg],
-  );
+    };
+    return isCoarsePointer
+      ? base
+      : { ...base, click: () => onSegmentClick(seg) };
+  }, [seg, segKey, isCoarsePointer, onSegmentClick, setHoverSeg]);
   return (
     <>
       <Polyline
@@ -65,17 +61,14 @@ const Segment = React.memo(function Segment({
               color: done ? "#22c55e" : "#60a5fa",
             }}
           >
-            {done ? "✓ Already marked" : "Click to mark this hop"}
+            {done
+              ? "✓ Already marked"
+              : isCoarsePointer
+                ? "Tap a stop to mark this segment"
+                : "Click to mark this hop · or tap a stop"}
           </div>
         </Tooltip>
       </Polyline>
-      {isCoarsePointer && (
-        <Polyline
-          positions={seg.positions}
-          pathOptions={hitTargetPathOptions}
-          eventHandlers={eventHandlers}
-        />
-      )}
       {isFresh && (
         <Polyline
           positions={seg.positions}
@@ -100,10 +93,10 @@ function RouteSegmentsLayer({
   routeColor,
   onSegmentClick,
 }) {
-  // Use pointer type rather than viewport width so the invisible hit-target
-  // is only rendered for true touch devices (pointer: coarse). On tablets or
-  // small desktop windows that have a mouse (pointer: fine), the hit-target
-  // would otherwise sit on top of the visible polyline and block Tooltip hover.
+  // Detect coarse-pointer (touch) devices. On those we disable the
+  // "tap a polyline directly to mark one hop" shortcut: it's too easy
+  // to mis-tap on mobile, especially with the previously-expanded hit
+  // target. Desktop (pointer: fine) keeps the click-to-mark shortcut.
   const isCoarsePointer =
     typeof window !== "undefined" &&
     typeof window.matchMedia === "function" &&
