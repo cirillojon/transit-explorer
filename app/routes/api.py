@@ -413,9 +413,8 @@ def get_user_profile(user_id):
     """
     user = db.get_or_404(User, user_id)
     summary = _user_summary(user.id)
-    achievements = _evaluate_achievements(summary)
 
-    is_private = bool(getattr(user, 'is_private', False))
+    is_private = bool(user.is_private)
 
     if is_private:
         # Private profile: expose totals only, no per-route details.
@@ -508,13 +507,15 @@ def get_user_profile(user_id):
             ),
         )
 
+    achievements = _evaluate_achievements(summary)
+
     return jsonify({
         'user': {
             'id': user.id,
             'display_name': user.display_name or 'Anonymous',
             'avatar_url': user.avatar_url,
             'created_at': user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
-            'is_private': False,
+            'is_private': is_private,
         },
         **summary,
         'achievements': achievements,
