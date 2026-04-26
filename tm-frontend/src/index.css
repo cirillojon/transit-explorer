@@ -3474,7 +3474,12 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  /* Respect iOS safe-area insets in PWA / standalone mode so the modal
+     content never slides behind the Dynamic Island or home indicator. */
+  padding: max(20px, env(safe-area-inset-top, 0px))
+           max(20px, env(safe-area-inset-right, 0px))
+           max(20px, env(safe-area-inset-bottom, 0px))
+           max(20px, env(safe-area-inset-left, 0px));
   animation: fade-in 0.2s ease;
 }
 @keyframes fade-in {
@@ -3493,7 +3498,7 @@ button {
   box-shadow: var(--shadow-lg, 0 24px 48px rgba(0, 0, 0, 0.45));
   width: 100%;
   max-width: 540px;
-  max-height: calc(100dvh - 40px);
+  max-height: calc(100dvh - max(20px, env(safe-area-inset-top, 0px)) - max(20px, env(safe-area-inset-bottom, 0px)));
   overflow-y: auto;
   padding: 28px 28px 24px;
   color: var(--text);
