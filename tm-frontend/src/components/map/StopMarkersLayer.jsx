@@ -85,6 +85,7 @@ function StopMarkersLayer({
         }}
         eventHandlers={{
           click: (e) => {
+            e.originalEvent.stopPropagation();
             if (isUpstreamInvalid) {
               showToast(
                 "That stop is behind your boarding point — pick one ahead or change directions.",
@@ -92,7 +93,6 @@ function StopMarkersLayer({
               );
               return;
             }
-            e.originalEvent.stopPropagation();
             onStopClick(stop.directionId, stop.id, stop.name);
           },
         }}
