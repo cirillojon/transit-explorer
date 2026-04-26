@@ -1,6 +1,22 @@
 import React, { useEffect, useRef } from "react";
 
 /**
+ * Detect the mobile platform to show appropriate "Add to Home Screen" tips.
+ * Returns 'ios', 'android', or null.
+ */
+function detectMobilePlatform() {
+  const ua = navigator.userAgent || "";
+  if (/android/i.test(ua)) return "android";
+  // iOS: iPhone/iPod/iPad (including modern iPads that report MacIntel)
+  if (
+    /iP(hone|od|ad)/i.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  )
+    return "ios";
+  return null;
+}
+
+/**
  * Onboarding / how-to-use-the-map modal. Shown automatically the first
  * time a signed-in user lands on the app, and re-openable from the
  * floating "?" button on the map.
@@ -12,6 +28,7 @@ function HelpModal({
   showDontShowAgain = false,
 }) {
   const closeBtnRef = useRef(null);
+  const platform = detectMobilePlatform();
 
   useEffect(() => {
     if (!open) return;
@@ -117,6 +134,45 @@ function HelpModal({
             <li>Use the search box to jump to a stop by name.</li>
           </ul>
         </div>
+
+        {platform === "ios" && (
+          <div className="help-modal-tip help-modal-tip--install">
+            <strong>📱 Add to Home Screen (iOS)</strong>
+            <ol className="help-modal-install-steps">
+              <li>
+                Tap the <span className="help-modal-share-icon">⎙</span>{" "}
+                <strong>Share</strong> button at the bottom of Safari.
+              </li>
+              <li>
+                Scroll down and tap{" "}
+                <strong>Add to Home Screen</strong>.
+              </li>
+              <li>
+                Tap <strong>Add</strong> — the app icon will appear on your
+                Home Screen.
+              </li>
+            </ol>
+          </div>
+        )}
+
+        {platform === "android" && (
+          <div className="help-modal-tip help-modal-tip--install">
+            <strong>📱 Add to Home Screen (Android)</strong>
+            <ol className="help-modal-install-steps">
+              <li>
+                Tap the <strong>⋮</strong> menu in the top-right corner of
+                Chrome.
+              </li>
+              <li>
+                Tap <strong>Add to Home screen</strong>.
+              </li>
+              <li>
+                Tap <strong>Add</strong> — the app icon will appear on your
+                Home Screen.
+              </li>
+            </ol>
+          </div>
+        )}
 
         <div className="help-modal-actions">
           {showDontShowAgain && (
