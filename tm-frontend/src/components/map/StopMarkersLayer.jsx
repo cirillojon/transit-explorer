@@ -33,7 +33,10 @@ function StopMarkersLayer({
               stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] = el;
           }}
           eventHandlers={{
-            click: () => onStopClick(stop.directionId, stop.id, stop.name),
+            click: (e) => {
+              e.originalEvent.stopPropagation();
+              onStopClick(stop.directionId, stop.id, stop.name);
+            },
           }}
         >
           <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
@@ -55,7 +58,7 @@ function StopMarkersLayer({
         className={`stop-marker ${isValidCandidate ? "is-alight-candidate" : ""} ${isUpstreamInvalid ? "is-unavailable" : ""}`.trim()}
         radius={
           (isUpstreamInvalid ? 4 : stop.isTerminus ? 7 : isValidCandidate ? 8 : 5) +
-          (isMobile ? MOBILE_RADIUS_INCREASE : 0)
+          (isMobile && pickState ? MOBILE_RADIUS_INCREASE : 0)
         }
         fillColor={
           isUpstreamInvalid
@@ -81,7 +84,8 @@ function StopMarkersLayer({
           if (el) stopMarkerRefs.current[`${stop.directionId}-${stop.id}`] = el;
         }}
         eventHandlers={{
-          click: () => {
+          click: (e) => {
+            e.originalEvent.stopPropagation();
             if (isUpstreamInvalid) {
               showToast(
                 "That stop is behind your boarding point — pick one ahead or change directions.",
