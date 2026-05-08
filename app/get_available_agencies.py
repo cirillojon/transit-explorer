@@ -11,4 +11,10 @@ client = OnebusawaySDK(
 coverage = client.agencies_with_coverage.list()
 
 for entry in coverage.data.list:
-    print(entry.agency_id, entry.lat, entry.lon)
+    agency = client.agency.retrieve(entry.agency_id)
+    print(
+        entry.agency_id,
+        agency.data.entry.name,
+        entry.lat,
+        entry.lon,
+    )
