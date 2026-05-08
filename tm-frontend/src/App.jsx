@@ -309,7 +309,7 @@ function App() {
           <div className="login-logo">🚌</div>
           <h1>Transit Explorer</h1>
           <p>
-            Track every Seattle Metro and Sound Transit ride. Unlock segments,
+            Track Puget Sound transit rides. Unlock segments,
             chase achievements, climb the leaderboard.
           </p>
           <button className="login-button" onClick={signIn}>
@@ -477,7 +477,7 @@ function App() {
             <span className="brand-icon">🚌</span>
             <div>
               <h1>Transit Explorer</h1>
-              <p className="brand-sub">Seattle · Puget Sound</p>
+              <p className="brand-sub">Puget Sound</p>
             </div>
           </div>
 

@@ -19,7 +19,7 @@ import RouteSegmentsLayer from "./map/RouteSegmentsLayer";
 import AllRouteSegmentsLayer from "./map/AllRouteSegmentsLayer";
 import StopMarkersLayer from "./map/StopMarkersLayer";
 import {
-  SEATTLE_CENTER,
+  DEFAULT_MAP_CENTER,
   formatDuration,
   getTripStats,
   normalizeDirectionId,
@@ -430,7 +430,7 @@ function TransitMap({
     <div className="map-wrapper">
       <MapContainer
         ref={mapRef}
-        center={SEATTLE_CENTER}
+        center={DEFAULT_MAP_CENTER}
         zoom={12}
         style={{ height: "100%", width: "100%" }}
       >

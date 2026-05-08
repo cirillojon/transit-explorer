@@ -7,8 +7,21 @@ logger = logging.getLogger(__name__)
 
 OBA_BASE_URL = "https://api.pugetsound.onebusaway.org/"
 
-# Seattle-area agencies
-AGENCIES = ["1", "40"]  # 1 = King County Metro, 40 = Sound Transit
+# Puget Sound agencies currently available via OneBusAway coverage.
+# These IDs are derived from the deployment's agencies-with-coverage endpoint.
+AGENCIES = [
+    "1",   # Metro Transit
+    "23",  # City of Seattle
+    "3",   # Pierce Transit
+    "29",  # Community Transit
+    "19",  # Intercity Transit
+    "95",  # Washington State Ferries
+    "51",  # Amtrak
+    "40",  # Sound Transit
+    "96",  # Seattle Center Monorail
+    "97",  # Everett Transit
+    "20",  # Kitsap Transit
+]
 
 
 def get_client():

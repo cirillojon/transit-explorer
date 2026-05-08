@@ -1,6 +1,6 @@
 import polyline from "@mapbox/polyline";
 
-export const SEATTLE_CENTER = [47.6062, -122.3321];
+export const DEFAULT_MAP_CENTER = [47.6062, -122.3321];
 
 export const HELP_SEEN_KEY = "te-help-seen-v1";
 const TRIP_TIMES_KEY = "te-trip-times-v1";
@@ -111,7 +111,7 @@ export function getStopPickStatus(stop, pickState, boardingOrderIndex) {
 }
 
 // Squared-degree distance threshold used to decide a stop is "off-route"
-// (i.e. the agency-supplied polyline doesn't actually reach it). At Seattle
+// (i.e. the agency-supplied polyline doesn't actually reach it). At local
 // latitudes this is roughly ~150m. When either endpoint of a segment is
 // off-route we return `null` for that segment rather than fabricating a
 // straight line through unrelated geometry — the agency polyline is the
