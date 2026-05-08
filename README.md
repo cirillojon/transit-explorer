@@ -5,7 +5,7 @@
 [![Frontend](https://img.shields.io/website?url=https%3A%2F%2Ftransit-explorer.org&label=frontend&up_message=live&down_message=down)](https://transit-explorer.org/)
 [![Backend](https://img.shields.io/website?url=https%3A%2F%2Ftransit-explorer.fly.dev%2Fapi%2Fhealth&label=backend&up_message=healthy&down_message=down)](https://transit-explorer.fly.dev/api/health)
 
-> A gamified transit map for Seattle. Ride a bus or train, mark the segment
+> A gamified transit map for Puget Sound. Ride a bus or train, mark the segment
 > you traveled, and watch the network fill in. Earn achievements, climb the
 > leaderboard, and discover the corners of the system you've never been on.
 
@@ -22,9 +22,9 @@ tap your boarding stop, tap your ending stop — the segment lights up on
 your personal map. Over time you can see exactly which parts of the network
 you've ridden, and which you still haven't.
 
-It runs on real OneBusAway data for the Puget Sound region (Seattle, King
-County Metro, Sound Transit, Community Transit, and friends), and is built to
-stay essentially free to host.
+It runs on real OneBusAway data for the Puget Sound region (King County
+Metro, Sound Transit, Community Transit, and friends), and is built to stay
+essentially free to host.
 
 ---
 

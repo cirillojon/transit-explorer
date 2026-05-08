@@ -2,7 +2,7 @@
   "name": "transit-explorer-frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "Transit Explorer web client — track Seattle Metro and Sound Transit rides.",
+  "description": "Transit Explorer web client — track Puget Sound transit rides.",
   "license": "MIT",
   "type": "module",
   "repository": {
