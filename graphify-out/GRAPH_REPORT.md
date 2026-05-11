@@ -1,11 +1,11 @@
-# Graph Report - transit-explorer  (2026-05-08)
+# Graph Report - transit-explorer  (2026-05-11)
 
 ## Corpus Check
-- 76 files · ~117,895 words
+- 77 files · ~123,715 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 494 nodes · 1112 edges · 32 communities detected
+- 497 nodes · 1112 edges · 34 communities detected
 - Extraction: 43% EXTRACTED · 57% INFERRED · 0% AMBIGUOUS · INFERRED: 636 edges (avg confidence: 0.55)
 - Token cost: 0 input · 0 output
 
@@ -30,7 +30,6 @@
 - [[_COMMUNITY_Community 19|Community 19]]
 - [[_COMMUNITY_Community 20|Community 20]]
 - [[_COMMUNITY_Community 21|Community 21]]
-- [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 33|Community 33]]
 - [[_COMMUNITY_Community 34|Community 34]]
 - [[_COMMUNITY_Community 35|Community 35]]
@@ -42,6 +41,9 @@
 - [[_COMMUNITY_Community 41|Community 41]]
 - [[_COMMUNITY_Community 42|Community 42]]
 - [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `RouteDirection` - 94 edges
@@ -156,56 +158,64 @@ Nodes (2): Config, Static fallback config. The Flask app factory reads env vars 
 Cohesion: 1.0
 Nodes (2): groupIntoJourneys(), makeJourney()
 
-### Community 32 - "Community 32"
-Cohesion: 1.0
-Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
-
 ### Community 33 - "Community 33"
 Cohesion: 1.0
-Nodes (1): OBA direction_ids are typically '0' or '1' but can be agency-specific     short
+Nodes (1): Fetch all routes for a given agency.
 
 ### Community 34 - "Community 34"
 Cohesion: 1.0
-Nodes (1): Optional measured trip duration in milliseconds.      Accepts None / missing (
+Nodes (1): Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP
 
 ### Community 35 - "Community 35"
 Cohesion: 1.0
-Nodes (1): Validate a list of positive integer IDs (e.g. for bulk delete).      Always ca
+Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
 
 ### Community 36 - "Community 36"
 Cohesion: 1.0
-Nodes (1): Optional ISO-8601 timestamp for backdating segment completion.      Returns a
+Nodes (1): OBA direction_ids are typically '0' or '1' but can be agency-specific     short
 
 ### Community 37 - "Community 37"
 Cohesion: 1.0
-Nodes (1): Initialize Firebase Admin SDK for token verification.
+Nodes (1): Optional measured trip duration in milliseconds.      Accepts None / missing (
 
 ### Community 38 - "Community 38"
 Cohesion: 1.0
-Nodes (1): User A creates a segment; user B must not be able to PATCH it.
+Nodes (1): Validate a list of positive integer IDs (e.g. for bulk delete).      Always ca
 
 ### Community 39 - "Community 39"
 Cohesion: 1.0
-Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
+Nodes (1): Optional ISO-8601 timestamp for backdating segment completion.      Returns a
 
 ### Community 40 - "Community 40"
 Cohesion: 1.0
-Nodes (1): OBA direction_ids are typically '0' or '1' but can be agency-specific     short
+Nodes (1): Initialize Firebase Admin SDK for token verification.
 
 ### Community 41 - "Community 41"
 Cohesion: 1.0
-Nodes (1): Optional measured trip duration in milliseconds.      Accepts None / missing (
+Nodes (1): User A creates a segment; user B must not be able to PATCH it.
 
 ### Community 42 - "Community 42"
 Cohesion: 1.0
-Nodes (1): Initialize Firebase Admin SDK for token verification.
+Nodes (1): Per-agency snapshot of the last OneBusAway data import.      One row per agency.
 
 ### Community 43 - "Community 43"
+Cohesion: 1.0
+Nodes (1): OBA direction_ids are typically '0' or '1' but can be agency-specific     short
+
+### Community 44 - "Community 44"
+Cohesion: 1.0
+Nodes (1): Optional measured trip duration in milliseconds.      Accepts None / missing (
+
+### Community 45 - "Community 45"
+Cohesion: 1.0
+Nodes (1): Initialize Firebase Admin SDK for token verification.
+
+### Community 46 - "Community 46"
 Cohesion: 1.0
 Nodes (1): Initialize Firebase Admin SDK for token verification.
 
 ## Knowledge Gaps
-- **55 isolated node(s):** `Static fallback config. The Flask app factory reads env vars directly,     so th`, `JSON-structured logging for the Flask backend.  Why JSON: Fly's log shipper (a`, `Inject Flask `g.request_id` / `g.firebase_uid` into every record.`, `Idempotent root-logger setup. Safe to call multiple times.      Reads:`, `Per-agency snapshot of the last OneBusAway data import.      One row per agency.` (+50 more)
+- **57 isolated node(s):** `Static fallback config. The Flask app factory reads env vars directly,     so th`, `JSON-structured logging for the Flask backend.  Why JSON: Fly's log shipper (a`, `Inject Flask `g.request_id` / `g.firebase_uid` into every record.`, `Idempotent root-logger setup. Safe to call multiple times.      Reads:`, `Per-agency snapshot of the last OneBusAway data import.      One row per agency.` (+52 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **Thin community `Community 15`** (6 nodes): `Regression coverage for Phase 4 observability:  - Every response carries an X-`, `test_distinct_request_ids_per_call()`, `test_response_has_request_id_header()`, `test_safe_inbound_request_id_is_echoed()`, `test_unsafe_inbound_request_id_replaced()`, `test_request_id.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -213,40 +223,44 @@ Nodes (1): Initialize Firebase Admin SDK for token verification.
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 21`** (3 nodes): `groupIntoJourneys()`, `makeJourney()`, `journeyGrouping.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 32`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
+- **Thin community `Community 33`** (1 nodes): `Fetch all routes for a given agency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 33`** (1 nodes): `OBA direction_ids are typically '0' or '1' but can be agency-specific     short`
+- **Thin community `Community 34`** (1 nodes): `Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (1 nodes): `Optional measured trip duration in milliseconds.      Accepts None / missing (`
+- **Thin community `Community 35`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 35`** (1 nodes): `Validate a list of positive integer IDs (e.g. for bulk delete).      Always ca`
+- **Thin community `Community 36`** (1 nodes): `OBA direction_ids are typically '0' or '1' but can be agency-specific     short`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 36`** (1 nodes): `Optional ISO-8601 timestamp for backdating segment completion.      Returns a`
+- **Thin community `Community 37`** (1 nodes): `Optional measured trip duration in milliseconds.      Accepts None / missing (`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+- **Thin community `Community 38`** (1 nodes): `Validate a list of positive integer IDs (e.g. for bulk delete).      Always ca`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (1 nodes): `User A creates a segment; user B must not be able to PATCH it.`
+- **Thin community `Community 39`** (1 nodes): `Optional ISO-8601 timestamp for backdating segment completion.      Returns a`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
+- **Thin community `Community 40`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (1 nodes): `OBA direction_ids are typically '0' or '1' but can be agency-specific     short`
+- **Thin community `Community 41`** (1 nodes): `User A creates a segment; user B must not be able to PATCH it.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 41`** (1 nodes): `Optional measured trip duration in milliseconds.      Accepts None / missing (`
+- **Thin community `Community 42`** (1 nodes): `Per-agency snapshot of the last OneBusAway data import.      One row per agency.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 42`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+- **Thin community `Community 43`** (1 nodes): `OBA direction_ids are typically '0' or '1' but can be agency-specific     short`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+- **Thin community `Community 44`** (1 nodes): `Optional measured trip duration in milliseconds.      Accepts None / missing (`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 45`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 46`** (1 nodes): `Initialize Firebase Admin SDK for token verification.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `React` connect `Community 0` to `Community 2`?**
-  _High betweenness centrality (0.235) - this node is a cross-community bridge._
+  _High betweenness centrality (0.232) - this node is a cross-community bridge._
 - **Why does `Flask` connect `Community 2` to `Community 3`, `Community 4`?**
-  _High betweenness centrality (0.174) - this node is a cross-community bridge._
+  _High betweenness centrality (0.172) - this node is a cross-community bridge._
 - **Why does `Transit Explorer` connect `Community 2` to `Community 0`?**
-  _High betweenness centrality (0.144) - this node is a cross-community bridge._
+  _High betweenness centrality (0.142) - this node is a cross-community bridge._
 - **Are the 92 inferred relationships involving `RouteDirection` (e.g. with `Flask CLI commands for Transit Explorer.  Registered in app/__init__.py via ap` and `Refresh transit routes/stops/directions from OneBusAway.`) actually correct?**
   _`RouteDirection` has 92 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 87 inferred relationships involving `Route` (e.g. with `Inspect ``httpx.HTTPStatusError`` / ``requests.HTTPError`` for     retryable sta` and `Refresh transit data for the requested agencies (TTL gated).`) actually correct?**
