@@ -655,18 +655,18 @@
       "file_type": "rationale",
       "source_file": "app/oba_service.py",
       "source_location": "L38",
-      "id": "oba_service_rationale_38",
       "community": 14,
-      "norm_label": "fetch all routes for a given agency."
+      "norm_label": "fetch all routes for a given agency.",
+      "id": "oba_service_rationale_38"
     },
     {
       "label": "Fetch stops grouped by direction with polylines for a route.      Uses raw HTTP",
       "file_type": "rationale",
       "source_file": "app/oba_service.py",
       "source_location": "L62",
-      "id": "oba_service_rationale_62",
       "community": 14,
-      "norm_label": "fetch stops grouped by direction with polylines for a route.      uses raw http"
+      "norm_label": "fetch stops grouped by direction with polylines for a route.      uses raw http",
+      "id": "oba_service_rationale_62"
     },
     {
       "label": "observability.py",
