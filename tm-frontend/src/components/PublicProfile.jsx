@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { fetchUserProfile } from "../services/api";
+import { MapContainer, TileLayer } from "react-leaflet";
+import { fetchUserProfile, fetchRouteDetail } from "../services/api";
 import { groupIntoJourneys } from "./journeyGrouping";
+import {
+  decode,
+  DEFAULT_MAP_CENTER,
+  slicePolylineByStopsWithFallbacks,
+  normalizeDirectionId,
+} from "./map/mapUtils";
+import { FitBounds } from "./map/FitBounds";
+import AllRouteSegmentsLayer from "./map/AllRouteSegmentsLayer";
 
 /**
  * Comparator for sorting route progress entries: completion_pct DESC,
@@ -12,8 +21,7 @@ function sortByCompletion(a, b) {
     (Number(b?.completion_pct) || 0) - (Number(a?.completion_pct) || 0);
   if (completionDiff !== 0) return completionDiff;
   return (
-    (Number(b?.completed_segments) || 0) -
-    (Number(a?.completed_segments) || 0)
+    (Number(b?.completed_segments) || 0) - (Number(a?.completed_segments) || 0)
   );
 }
 
@@ -165,6 +173,10 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
                       key: "achievements",
                       label: `Badges (${unlocked.length})`,
                     },
+                    {
+                      key: "map",
+                      label: `View Progress Map (${progress.length})`,
+                    },
                   ].map((t) => (
                     <button
                       key={t.key}
@@ -195,6 +207,7 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
                   {view === "achievements" && (
                     <PPAchievements achievements={achievements} />
                   )}
+                  {view === "map" && <PPMap progress={progress} />}
                 </div>
               </>
             )}
@@ -205,10 +218,139 @@ function PublicProfile({ userId, fallbackEntry, onClose }) {
   );
 }
 
+function PPMap({ progress }) {
+  const [routeDetails, setRouteDetails] = useState([]);
+
+  useEffect(() => {
+    const fetchDetails = async () => {
+      const details = [];
+      for (const rp of progress) {
+        try {
+          const detail = await fetchRouteDetail(rp.route_id);
+          details.push(detail);
+        } catch (e) {
+          console.error("Failed to fetch route detail for", rp.route_id, e);
+        }
+      }
+      setRouteDetails(details);
+    };
+    if (progress.length > 0) {
+      fetchDetails();
+    } else {
+      setRouteDetails([]);
+    }
+  }, [progress]);
+
+  const { segments, effectiveCompleted, allRouteStatsById, allPositions } =
+    useMemo(() => {
+      const segments = [];
+      const effectiveCompleted = new Set();
+      const allRouteStatsById = new Map();
+      const allPositions = [];
+
+      // First, collect ridden and completed segments from progress
+      const riddenKeys = new Set();
+      for (const rp of progress) {
+        for (const seg of rp.segments || []) {
+          const key = `${rp.route_id}|${seg.direction_id}|${seg.from_stop_id}|${seg.to_stop_id}`;
+          riddenKeys.add(key);
+          if (seg.completed) {
+            effectiveCompleted.add(key);
+          }
+        }
+        allRouteStatsById.set(rp.route_id, {
+          name: rp.route_name,
+          pct: rp.completion_pct || 0,
+        });
+      }
+
+      for (const detail of routeDetails) {
+        const color = detail.color ? `#${detail.color}` : "#64748b";
+        // allRouteStatsById set below
+
+        // Build segments like in useAllRoutesView
+        for (const dir of detail.directions || []) {
+          const dirId = normalizeDirectionId(dir.direction_id);
+          const variants = dir.encoded_polylines?.length
+            ? dir.encoded_polylines
+            : dir.encoded_polyline
+              ? [dir.encoded_polyline]
+              : [];
+          const decoded = variants
+            .map((enc) => decode(enc))
+            .filter((line) => line && line.length > 0);
+          const line = decoded[0] || [];
+          const fallbackLines = decoded.slice(1);
+          const stopIds = dir.stop_ids || [];
+          const stopsMap = detail.stops || {};
+          const filteredStopIds = stopIds.filter((id) => Boolean(stopsMap[id]));
+          const stopPositions = filteredStopIds.map((id) => {
+            const stop = stopsMap[id];
+            return [stop.lat, stop.lon];
+          });
+          const polySegs = slicePolylineByStopsWithFallbacks(
+            line,
+            fallbackLines,
+            stopPositions,
+          );
+          const segmentCount = Math.min(
+            polySegs.length,
+            Math.max(0, filteredStopIds.length - 1),
+          );
+          for (let i = 0; i < segmentCount; i++) {
+            const key = `${detail.id}|${dir.direction_id}|${filteredStopIds[i]}|${filteredStopIds[i + 1]}`;
+            if (riddenKeys.has(key)) {
+              segments.push({
+                routeId: detail.id,
+                directionId: dir.direction_id,
+                fromStopId: filteredStopIds[i],
+                toStopId: filteredStopIds[i + 1],
+                positions: polySegs[i],
+                color,
+                key,
+              });
+              if (polySegs[i]) allPositions.push(...polySegs[i]);
+            }
+          }
+        }
+      }
+      return { segments, effectiveCompleted, allRouteStatsById, allPositions };
+    }, [routeDetails, progress]);
+
+  if (!progress.length) {
+    return (
+      <div className="empty-state mini">
+        This explorer hasn&apos;t logged any rides yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="pp-map-container">
+      <MapContainer
+        center={DEFAULT_MAP_CENTER}
+        zoom={10}
+        style={{ height: "400px", width: "100%" }}
+        zoomControl={true}
+        scrollWheelZoom={false}
+      >
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
+        />
+        {allPositions.length > 0 && <FitBounds positions={allPositions} />}
+        <AllRouteSegmentsLayer
+          segments={segments}
+          effectiveCompleted={effectiveCompleted}
+          allRouteStatsById={allRouteStatsById}
+        />
+      </MapContainer>
+    </div>
+  );
+}
+
 function PPOverview({ progress, achievements }) {
-  const top = [...progress]
-    .sort(sortByCompletion)
-    .slice(0, 5);
+  const top = [...progress].sort(sortByCompletion).slice(0, 5);
   if (!progress.length) {
     return (
       <div className="empty-state mini">
